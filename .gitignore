@@ -217,3 +217,8 @@ data/*
 
 # Ignore all shell scripts
 *.sh
+
+# Other files to ignore
+gtdbtk_data.tar.gz
+nohup.out
+release226/*
