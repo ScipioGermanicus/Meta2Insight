@@ -79,3 +79,4 @@ AMG database:
 2025-11-04 15:05:42,645 - Annotating NNF_AD15_mmlongv091.bin.1.2
 2025-11-04 15:05:53,021 - Turning genes from prodigal to mmseqs2 db
 2025-11-04 15:05:54,638 - Getting forward best hits from kegg
+slurmstepd: error: *** JOB 2034746 ON bio-node12 CANCELLED AT 2025-11-06T13:18:04 ***

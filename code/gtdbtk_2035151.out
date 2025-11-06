@@ -1,0 +1,99 @@
+[2025-11-05 21:35:32] INFO: GTDB-Tk v2.5.2
+[2025-11-05 21:35:32] INFO: gtdbtk classify_wf --skip_ani_screen --genome_dir /home/student.aau.dk/yr42on/Thesis/data/koeng_mags/bins --extension fa --out_dir /home/student.aau.dk/yr42on/Thesis/data/gtdbtk_test/output --cpus 8 --pplacer_cpus 2
+[2025-11-05 21:35:32] INFO: Using GTDB-Tk reference data version r226: /databases/GTDB/gtdbtk_packages/GTDB-TK_release226_2025_04_11
+[2025-11-05 21:35:33] INFO: Identifying markers in 124 genomes with 8 threads.
+[2025-11-05 21:35:33] TASK: Running Prodigal V2.6.3 to identify genes.
+[2025-11-05 21:37:12] INFO: Completed 124 genomes in 1.64 minutes (75.74 genomes/minute).
+[2025-11-05 21:37:12] TASK: Identifying TIGRFAM protein families.
+[2025-11-05 21:38:06] INFO: Completed 124 genomes in 53.68 seconds (2.31 genomes/second).
+[2025-11-05 21:38:06] TASK: Identifying Pfam protein families.
+[2025-11-05 21:38:08] INFO: Completed 124 genomes in 2.52 seconds (49.16 genomes/second).
+[2025-11-05 21:38:08] INFO: Annotations done using HMMER 3.4 (Aug 2023).
+[2025-11-05 21:38:08] TASK: Summarising identified marker genes.
+[2025-11-05 21:38:09] INFO: Completed 124 genomes in 0.77 seconds (160.29 genomes/second).
+[2025-11-05 21:38:09] INFO: Done.
+[2025-11-05 21:38:14] INFO: Aligning markers in 124 genomes with 8 CPUs.
+[2025-11-05 21:38:15] INFO: Processing 119 genomes identified as bacterial.
+[2025-11-05 21:39:26] INFO: Read concatenated alignment for 136,646 GTDB genomes.
+[2025-11-05 21:39:26] TASK: Generating concatenated alignment for each marker.
+[2025-11-05 21:39:27] INFO: Completed 119 genomes in 0.11 seconds (1,119.91 genomes/second).
+[2025-11-05 21:39:27] TASK: Aligning 120 identified markers using hmmalign 3.4 (Aug 2023).
+[2025-11-05 21:39:31] INFO: Completed 120 markers in 2.49 seconds (48.16 markers/second).
+[2025-11-05 21:39:31] TASK: Masking columns of bacterial multiple sequence alignment using canonical mask.
+[2025-11-05 21:41:19] INFO: Completed 136,765 sequences in 1.79 minutes (76,478.02 sequences/minute).
+[2025-11-05 21:41:19] INFO: Masked bacterial alignment from 41,084 to 5,036 AAs.
+[2025-11-05 21:41:19] INFO: 0 bacterial user genomes have amino acids in <10.0% of columns in filtered MSA.
+[2025-11-05 21:41:19] INFO: Creating concatenated alignment for 136,765 bacterial GTDB and user genomes.
+[2025-11-05 21:41:49] INFO: Creating concatenated alignment for 119 bacterial user genomes.
+[2025-11-05 21:41:49] INFO: Processing 5 genomes identified as archaeal.
+[2025-11-05 21:41:50] INFO: Read concatenated alignment for 6,968 GTDB genomes.
+[2025-11-05 21:41:50] TASK: Generating concatenated alignment for each marker.
+[2025-11-05 21:41:51] INFO: Completed 5 genomes in 0.01 seconds (505.53 genomes/second).
+[2025-11-05 21:41:51] TASK: Aligning 52 identified markers using hmmalign 3.4 (Aug 2023).
+[2025-11-05 21:41:52] INFO: Completed 52 markers in 0.05 seconds (999.39 markers/second).
+[2025-11-05 21:41:52] TASK: Masking columns of archaeal multiple sequence alignment using canonical mask.
+[2025-11-05 21:41:55] INFO: Completed 6,973 sequences in 3.23 seconds (2,159.59 sequences/second).
+[2025-11-05 21:41:56] INFO: Masked archaeal alignment from 13,540 to 8,062 AAs.
+[2025-11-05 21:41:56] INFO: 0 archaeal user genomes have amino acids in <10.0% of columns in filtered MSA.
+[2025-11-05 21:41:56] INFO: Creating concatenated alignment for 6,973 archaeal GTDB and user genomes.
+[2025-11-05 21:41:58] INFO: Creating concatenated alignment for 5 archaeal user genomes.
+[2025-11-05 21:41:58] INFO: Done.
+[2025-11-05 21:41:58] TASK: Placing 5 archaeal genomes into reference tree with pplacer using 2 CPUs (be patient).
+[2025-11-05 21:42:02] INFO: pplacer version: 7d62912
+[2025-11-05 21:44:55] INFO: Calculating RED values based on reference tree.
+[2025-11-05 21:44:55] TASK: Traversing tree to determine classification method.
+[2025-11-05 21:44:55] INFO: Completed 5 genomes in 0.00 seconds (5,827.04 genomes/second).
+[2025-11-05 21:44:58] TASK: Calculating average nucleotide identity using skani (v0.3.1).
+[2025-11-05 21:45:00] INFO: Completed 121 comparisons in 1.70 seconds (71.24 comparisons/second).
+[2025-11-05 21:45:00] INFO: 5 genome(s) have been classified using skani and pplacer.
+[2025-11-05 21:45:00] TASK: Placing 119 bacterial genomes into backbone reference tree with pplacer using 2 CPUs (be patient).
+[2025-11-05 21:45:00] INFO: pplacer version: 7d62912
+[2025-11-05 21:48:27] INFO: Calculating RED values based on reference tree.
+[2025-11-05 21:48:27] INFO: 119 out of 119 have an class assignments. Those genomes will be reclassified.
+[2025-11-05 21:48:27] TASK: Placing 61 bacterial genomes into class-level reference tree 4 (1/6) with pplacer using 2 CPUs (be patient).
+[2025-11-05 21:55:18] INFO: Calculating RED values based on reference tree.
+[2025-11-05 21:55:19] TASK: Traversing tree to determine classification method.
+[2025-11-05 21:55:19] INFO: Completed 61 genomes in 0.07 seconds (872.56 genomes/second).
+[2025-11-05 21:55:22] TASK: Calculating average nucleotide identity using skani (v0.3.1).
+[2025-11-05 21:55:25] INFO: Completed 404 comparisons in 3.22 seconds (125.31 comparisons/second).
+[2025-11-05 21:55:29] INFO: 50 genome(s) have been classified using skani and pplacer.
+[2025-11-05 21:55:29] TASK: Placing 47 bacterial genomes into class-level reference tree 6 (2/6) with pplacer using 2 CPUs (be patient).
+[2025-11-05 22:02:58] INFO: Calculating RED values based on reference tree.
+[2025-11-05 22:02:59] TASK: Traversing tree to determine classification method.
+[2025-11-05 22:02:59] INFO: Completed 47 genomes in 0.00 seconds (18,683.75 genomes/second).
+[2025-11-05 22:03:02] TASK: Calculating average nucleotide identity using skani (v0.3.1).
+[2025-11-05 22:03:06] INFO: Completed 317 comparisons in 3.31 seconds (95.72 comparisons/second).
+[2025-11-05 22:03:09] INFO: 43 genome(s) have been classified using skani and pplacer.
+[2025-11-05 22:03:09] TASK: Placing 5 bacterial genomes into class-level reference tree 8 (3/6) with pplacer using 2 CPUs (be patient).
+[2025-11-05 22:04:54] INFO: Calculating RED values based on reference tree.
+[2025-11-05 22:04:54] TASK: Traversing tree to determine classification method.
+[2025-11-05 22:04:54] INFO: Completed 5 genomes in 0.00 seconds (44,715.39 genomes/second).
+[2025-11-05 22:04:54] TASK: Calculating average nucleotide identity using skani (v0.3.1).
+[2025-11-05 22:04:55] INFO: Completed 19 comparisons in 0.78 seconds (24.33 comparisons/second).
+[2025-11-05 22:04:56] INFO: 5 genome(s) have been classified using skani and pplacer.
+[2025-11-05 22:04:56] TASK: Placing 4 bacterial genomes into class-level reference tree 2 (4/6) with pplacer using 2 CPUs (be patient).
+[2025-11-05 22:10:24] INFO: Calculating RED values based on reference tree.
+[2025-11-05 22:10:26] TASK: Traversing tree to determine classification method.
+[2025-11-05 22:10:26] INFO: Completed 4 genomes in 0.00 seconds (25,266.89 genomes/second).
+[2025-11-05 22:10:27] TASK: Calculating average nucleotide identity using skani (v0.3.1).
+[2025-11-05 22:10:28] INFO: Completed 24 comparisons in 0.75 seconds (32.18 comparisons/second).
+[2025-11-05 22:10:28] INFO: 4 genome(s) have been classified using skani and pplacer.
+[2025-11-05 22:10:28] TASK: Placing 1 bacterial genomes into class-level reference tree 5 (5/6) with pplacer using 2 CPUs (be patient).
+[2025-11-05 22:13:43] INFO: Calculating RED values based on reference tree.
+[2025-11-05 22:13:44] TASK: Traversing tree to determine classification method.
+[2025-11-05 22:13:44] INFO: Completed 1 genome in 0.00 seconds (10,255.02 genomes/second).
+[2025-11-05 22:13:45] TASK: Calculating average nucleotide identity using skani (v0.3.1).
+[2025-11-05 22:13:45] INFO: Completed 4 comparisons in 0.79 seconds (5.06 comparisons/second).
+[2025-11-05 22:13:46] INFO: 1 genome(s) have been classified using skani and pplacer.
+[2025-11-05 22:13:46] TASK: Placing 1 bacterial genomes into class-level reference tree 7 (6/6) with pplacer using 2 CPUs (be patient).
+[2025-11-05 22:17:12] INFO: Calculating RED values based on reference tree.
+[2025-11-05 22:17:14] TASK: Traversing tree to determine classification method.
+[2025-11-05 22:17:14] INFO: Completed 1 genome in 0.00 seconds (5,526.09 genomes/second).
+[2025-11-05 22:17:14] TASK: Calculating average nucleotide identity using skani (v0.3.1).
+[2025-11-05 22:17:15] INFO: Completed 6 comparisons in 0.76 seconds (7.88 comparisons/second).
+[2025-11-05 22:17:15] INFO: 1 genome(s) have been classified using skani and pplacer.
+[2025-11-05 22:17:15] INFO: Note that Tk classification mode is insufficient for publication of new taxonomic designations. New designations should be based on one or more de novo trees, an example of which can be produced by Tk in de novo mode.
+[2025-11-05 22:17:15] INFO: Done.
+[2025-11-05 22:17:15] INFO: Removing intermediate files.
+[2025-11-05 22:17:21] INFO: Intermediate files removed.
+[2025-11-05 22:17:21] INFO: Done.

@@ -217,8 +217,11 @@ data/*
 
 # Ignore all shell scripts
 *.sh
-!code/database_pipeline/*.sh
+!code/database_pipeline/script/*.sh
 # Other files to ignore
 gtdbtk_data.tar.gz
 nohup.out
 release226/*
+code/database_pipeline/*
+!code/database_pipeline/script/
+!code/database_pipeline/script/**

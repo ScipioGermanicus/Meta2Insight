@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 
-cd ~/Thesis/data/database
+cd ~/Thesis/code/database_pipeline/MAGs
 
 set -euo pipefail
 
 # Config
-SRC_DIR=~/Thesis/data/koeng_mags/bins
-DST_DIR=~/Thesis/data/database
+SRC_DIR=~/Thesis/code/database_pipeline/MAGs
+DST_DIR=~/Thesis/code/database_pipeline/intermediate/MAGs_formatted
 OUT_PREFIX="MAG"          # will produce MAG0001, MAG0002, ...
 PAD=4                     # zero padding width
 
