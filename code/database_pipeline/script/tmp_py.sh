@@ -13,5 +13,5 @@ else
   source "$HOME/anaconda3/etc/profile.d/conda.sh"
 fi
 
-conda activate pyenv
-python script/05_a_quality_filtering.py
+conda activate barrnap_env
+python script/07_a_count_copies_per_genome.py

@@ -10,8 +10,8 @@
 import pandas as pd
 import os
 
-barrnap_bacteria = os.listdir('genomes_to_search_barrnap/bacteria')
-barrnap_archaea = os.listdir('genomes_to_search_barrnap/archaea')
+barrnap_bacteria = os.listdir('intermediate/qc/bins/bacteria')
+barrnap_archaea = os.listdir('intermediate/qc/bins/archaea')
 
 bac_md = pd.read_csv('bac120_metadata_r220.tsv', index_col=0, header=0, sep='\t')
 arc_md = pd.read_csv('ar53_metadata_r220.tsv', index_col=0, header=0, sep='\t')

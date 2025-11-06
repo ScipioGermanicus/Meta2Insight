@@ -43,15 +43,18 @@ source ~/.bashrc
 conda activate pyenv
 python script/05_a_quality_filtering.py
 
-# 6_extracting_16S.sh (IN PROGRESS)
-    # Extracts 16S rRNA sequences using Barrnap
+# 6_predict_16S.sh (IN PROGRESS)
+    # Predicts 16S rRNA gene using Barrnap
     # Outputs are stored in separate folders for bacteria and archaea
-source ~/.bashrc
-conda activate pyenv
-python script/05_a_quality_filtering.py
+J3=$(sbatch --parsable script/06_a_predict_16S.sh)
 
-# 7_count_copies_per_genome (IN PROGRESS)
+
+# 7_count_copies_per_genome (FINISHED)
+    # Check paths once all is in place
     # Counts copies per genome and gets files with multiple 16S copies only
+J4=$(sbatch --parsable script/07_a_count_copies_per_genome.sh)
+
+
 
 
 # ...
