@@ -1,4 +1,6 @@
 #!/usr/bin/bash -l
+
+cd ~/Thesis/code/database_pipeline/
 set -euo pipefail
 
 # Robust conda init (works even if 'conda init' wasn’t run)
@@ -12,4 +14,4 @@ else
 fi
 
 conda activate pyenv
-python 03_a_domain_classification.py
+python script/05_a_quality_filtering.py

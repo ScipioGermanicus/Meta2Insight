@@ -35,14 +35,20 @@ python script/03_a_domain_classification.py
     # Runs CheckM for quality metadata
 J2=$(sbatch --parsable script/04_a_quality_control.sh)
 
-# 5_quality_filtering.sh (IN PROGRESS)
-    # Uses CheckM1 output to filter genomes based on quality thresholds
 
+# 5_quality_filtering.sh (FINISHED)
+    # Check paths and filenames once all is in place
+    # Uses CheckM1 output to filter genomes based on quality thresholds
+source ~/.bashrc
+conda activate pyenv
+python script/05_a_quality_filtering.py
 
 # 6_extracting_16S.sh (IN PROGRESS)
     # Extracts 16S rRNA sequences using Barrnap
     # Outputs are stored in separate folders for bacteria and archaea
-
+source ~/.bashrc
+conda activate pyenv
+python script/05_a_quality_filtering.py
 
 # 7_count_copies_per_genome (IN PROGRESS)
     # Counts copies per genome and gets files with multiple 16S copies only

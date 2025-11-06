@@ -31,7 +31,7 @@ for genome in barrnap_bacteria:
   else:
     bac_count += 1
 
-    
+
 arc_count = 0
 for genome in barrnap_archaea:
   if genome not in genomes:
