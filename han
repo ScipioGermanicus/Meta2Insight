@@ -3,7 +3,7 @@
 #SBATCH --job-name=sshdbridge
 #SBATCH --time=0-9:00:00
 #SBATCH --cpus-per-task=1
-#SBATCH --mem=32G
+#SBATCH --mem=2G
 
 # exit on first error or unset variable
 set -eu
