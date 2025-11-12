@@ -1,1 +1,2 @@
 /var/spool/slurmd/job2038041/slurm_script: line 17: module: command not found
+slurmstepd: error: *** JOB 2038041 ON bio-node15 CANCELLED AT 2025-11-09T15:29:30 DUE TO TIME LIMIT ***

@@ -82,7 +82,12 @@ J6=$(sbatch --parsable script/10_cluster_single_16S_genes.sh)
 J7=$(sbatch --parsable script/11_align_16S.sh)
 
 
-
+# 12_choose_best_genome
+    # Selects best genome per cluster using CheckM completeness->contamination
+    # Reewrites aligned centroid FASTA IDs to the chosen best
+source ~/.bashrc
+conda activate pyenv
+python script/12_choose_best_genome.py
 
 # ...
 

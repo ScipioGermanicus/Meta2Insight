@@ -14,4 +14,4 @@ else
 fi
 
 conda activate barrnap_env
-python script/07_a_count_copies_per_genome.py
+python script/12_choose_best_genome.py
