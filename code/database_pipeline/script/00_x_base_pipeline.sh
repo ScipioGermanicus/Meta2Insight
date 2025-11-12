@@ -73,10 +73,16 @@ python script/09_single_16S_per_genome.py
 
 # 10_cluster_single_16S_genes (FINISHED)
     # Takes final per-MAG 16S seqs and removes exact duplicates
-J5=$(sbatch --parsable script/10_cluster_single_16S_genes.sh)
+J6=$(sbatch --parsable script/10_cluster_single_16S_genes.sh)
 
 
-# 11_align_sequences
+# 11_align_sequences ()
+    # Aligns the 16S sequences 
+    # Uses Infernal (cmalign) # Rfam models instead of ssualign (not available)
+J7=$(sbatch --parsable script/11_align_16S.sh)
+
+
+
 
 # ...
 
