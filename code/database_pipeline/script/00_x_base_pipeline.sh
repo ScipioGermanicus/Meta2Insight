@@ -27,7 +27,11 @@ J1=$(sbatch --parsable script/02_a_infer_taxonomy.sh)
     # Splits genomes into bacteria and archaea folders
 source ~/.bashrc
 conda activate pyenv
-python script/03_a_domain_classification.py
+python3 script/12_choose_best_genome.py \
+  --clusters ~/Thesis/code/database_pipeline/intermediate/count_copies_per_genome/archaea_16S_clusters.uc \
+  --aligned-fasta ~/Thesis/code/database_pipeline/intermediate/ssu_align/archaea_16S_centroids_ssu_align.fna \
+  --metadata ~/Thesis/code/database_pipeline/intermediate/CheckM/merged/checkm_results_wide.tsv \
+  --domain archaea
 
 
 # 04_quality_control.sh (ALMOST FINISHED)
@@ -76,20 +80,61 @@ python script/09_single_16S_per_genome.py
 J6=$(sbatch --parsable script/10_cluster_single_16S_genes.sh)
 
 
-# 11_align_sequences ()
+# 11_align_sequences)
     # Aligns the 16S sequences 
     # Uses Infernal (cmalign) # Rfam models instead of ssualign (not available)
 J7=$(sbatch --parsable script/11_align_16S.sh)
 
 
-# 12_choose_best_genome
+# 12_choose_best_genome_arc.py
     # Selects best genome per cluster using CheckM completeness->contamination
-    # Reewrites aligned centroid FASTA IDs to the chosen best
+    # Rewrites aligned centroid FASTA IDs to the chosen best
 source ~/.bashrc
-conda activate pyenv
-python script/12_choose_best_genome.py
+conda activate barrnap_env
+python script/12_choose_best_genome_arc.py
 
-# ...
+
+# 13_choose_best_genome_bac
+    # Same thing as step 12, but for bacteria
+source ~/.bashrc
+conda activate barrnap_env
+python script/13_choose_best_genome_bac.py
+   
+
+# 14_raxmlng_check.s (INCOMPLETE)
+#--># Skip archaea for now - requires at least four genomes
+    # Auto-detects alignment length, sequence problems, and drops duplicates, writing a cleaned PHYLIP alignment
+
+
+# 15_convert_archaea_alignment (MISSING)
+# COMPLETELY MISSING (ARCHAEAL-SPECIFIC)
+
+
+# 16_build_trees.py (INCOMPLETE)
+    # HAS TO BE EDITED FOR ARCHAEA TO BE INCLUDED
+    # Builds trees using IQ-Tree based on given genomes
+    # One for bacteria, one for archaea
+
+
+# 17_run_raxml
+    # UNCOMMENT ARCHAEA PART LATER
+
+
+# 18_convert_phylip_to_fasta.py
+    # Archaea
+    # Converts the cleaned PHYLIP alignment from RAxML-NG back to FASTA format for downstream analyses
+source ~/.bashrc
+conda activate barrnap_env
+python script/18_convert_phylip_to_fasta.py
+   
+# 19_convert_fasta_reformat_hmms.sh
+    # ARCHAEA
+    # Converts FASTA to DNA FASTA and Stockholm with HMMER/Easel tools, builds HMM
+
+
+
+
+
 
 
 
