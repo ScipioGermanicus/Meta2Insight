@@ -14,4 +14,6 @@ else
 fi
 
 conda activate barrnap_env
-python script/12_choose_best_genome.py
+  python script/24_build_kotable.py \
+      --bac-dir intermediate/eggnog_out \
+      --bac-out intermediate/ko/ko.txt.gz

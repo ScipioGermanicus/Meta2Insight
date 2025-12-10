@@ -151,6 +151,21 @@ python script/18_convert_phylip_to_fasta.py
 # 23_annotation.sh
     # remember archaea later
 
+# 24_build_kotable.py
+python 24_build_kotable.py \
+  --bac-dir /home/student.aau.dk/yr42on/Thesis/code/database_pipeline/intermediate/eggnog_out \
+  --bac-out /home/student.aau.dk/yr42on/Thesis/code/database_pipeline/intermediate/ko.txt.gz
+
+
+
+# This is what it should look like when also using archaea (adjust paths)
+source ~/.bashrc
+conda activate barrnap_env
+python 24_build_kotable.py \
+  --bac-dir /home/student.aau.dk/yr42on/Thesis/data/database/eggnog/bacteria \
+  --bac-out /home/student.aau.dk/yr42on/Thesis/picrust_db/default_files/bacteria/ko.txt.gz \
+  --arc-dir /home/student.aau.dk/yr42on/Thesis/data/database/eggnog/archaea \
+  --arc-out /home/student.aau.dk/yr42on/Thesis/picrust_db/default_files/archaea/ko.txt.gz
 
 
 
