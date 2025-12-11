@@ -1,0 +1,126 @@
+---
+title: "module_coverage_test"
+author: "Lasse Steffensen"
+date: "2025-12-11"
+output: html_document
+---
+
+```{r setup, message=FALSE, warning=FALSE}
+
+# wd
+setwd("~/R/wd")
+
+
+# Libraries
+library(tidyverse)
+library(ComplexHeatmap)
+
+# Data
+df <- read.csv("module_completeness.tsv", sep="\t")
+
+
+# Numeric percentages in Percent_steps_found
+df$Percent_steps_found <- as.numeric(df$Percent_steps_found)
+
+
+```
+
+
+```{r}
+## Add arbitrary abundance and filter data
+
+# Add abundance values
+set.seed(123)
+
+genome_abundance <- df %>%
+  dplyr::distinct(Genome_name) %>%
+  dplyr::mutate(Abundance = sample(1:100, size = n(), replace = TRUE))
+
+df <- df %>%
+  dplyr::left_join(genome_abundance, by="Genome_name")
+
+df$Abundance <- as.numeric(df$Abundance)
+
+
+# Filter data (100% and 75% cutoffs)
+df_100 <- df %>%
+  filter(Percent_steps_found == 100)
+
+df_75 <- df %>%
+  filter(Percent_steps_found >= 75)
+
+```
+
+
+```{r}
+## Build presence/absence matrix and abundance matrix
+
+# Presence/absence matrix (genomes x modules)
+matrix_presence_absence <- df_100 %>%
+  mutate(present = 1L) %>%
+  select(Genome_name, Module_id, present) %>%
+  distinct() %>%
+  pivot_wider(
+    names_from = Module_id,
+    values_from = present,
+    values_fill = list(present = 0L)
+  )
+
+
+# Store row names, then drop Genome_name column
+presence_mat <- as.data.frame(presence_mat)
+rownames(presence_mat) <- presence_mat$Genome_name
+presence_mat$Genome_name <- NULL
+presence_mat <- as.matrix(presence_mat)
+
+
+# Abundance per genome
+genome_abun <- df_100 %>%
+  distinct(Genome_name, Abundance)
+
+# Check that ordering matches matrix row names
+genome_abun <- genome_abun[match(rownames(presence_mat), 
+                                 genome_abun$Genome_name), ]
+
+
+# Abundance matrix
+abun_vec <- genome_abun$Abundance
+abun_mat <- matrix(
+  abun_vec,
+  nrow = nrow(presence_mat),
+  ncol = ncol(presence_mat),
+  dimnames = dimnames(presence_mat)
+)
+
+```
+
+
+```{r}
+
+
+# Colour gradient for abundance
+
+
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+

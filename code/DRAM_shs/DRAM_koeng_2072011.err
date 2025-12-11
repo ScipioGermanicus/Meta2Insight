@@ -1,0 +1,282 @@
++ source /usr/local/Miniforge3/etc/profile.d/conda.sh
+++ export CONDA_EXE=/usr/local/Miniforge3-25.3.1-0-Linux-x86_64/bin/conda
+++ CONDA_EXE=/usr/local/Miniforge3-25.3.1-0-Linux-x86_64/bin/conda
+++ export _CE_M=
+++ _CE_M=
+++ export _CE_CONDA=
+++ _CE_CONDA=
+++ export CONDA_PYTHON_EXE=/usr/local/Miniforge3-25.3.1-0-Linux-x86_64/bin/python
+++ CONDA_PYTHON_EXE=/usr/local/Miniforge3-25.3.1-0-Linux-x86_64/bin/python
+++ '[' -z x ']'
++ conda activate DRAM2
++ local cmd=activate
++ case "$cmd" in
++ __conda_activate activate DRAM2
++ '[' -n '' ']'
++ local ask_conda
+++ PS1=
+++ __conda_exe shell.posix activate DRAM2
+++ '[' -n '' ']'
+++ /usr/local/Miniforge3-25.3.1-0-Linux-x86_64/bin/conda shell.posix activate DRAM2
++ ask_conda='unset _CE_M
+unset _CE_CONDA
+PS1='\''(DRAM2) '\''
+export PATH='\''/home/student.aau.dk/yr42on/.conda/envs/DRAM2/bin:/home/student.aau.dk/yr42on/.local/bin:/software/bin:/home/student.aau.dk/yr42on/.vscode-server/data/User/globalStorage/github.copilot-chat/debugCommand:/home/student.aau.dk/yr42on/.vscode-server/data/User/globalStorage/github.copilot-chat/copilotCli:/home/student.aau.dk/yr42on/.vscode-server/cli/servers/Stable-bf9252a2fb45be6893dd8870c0bf37e2e1766d61/server/bin/remote-cli:/home/student.aau.dk/yr42on/.local/bin:/software/bin:/usr/local/Miniforge3-25.3.1-0-Linux-x86_64/condabin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/home/student.aau.dk/yr42on/.vscode-server/extensions/ms-python.debugpy-2025.16.0-linux-x64/bundled/scripts/noConfigScripts'\''
+export CONDA_PREFIX='\''/home/student.aau.dk/yr42on/.conda/envs/DRAM2'\''
+export CONDA_SHLVL='\''1'\''
+export CONDA_DEFAULT_ENV='\''DRAM2'\''
+export CONDA_PROMPT_MODIFIER='\''(DRAM2) '\''
+export CONDA_EXE='\''/usr/local/Miniforge3-25.3.1-0-Linux-x86_64/bin/conda'\''
+export CONDA_PYTHON_EXE='\''/usr/local/Miniforge3-25.3.1-0-Linux-x86_64/bin/python'\''
+. "/home/student.aau.dk/yr42on/.conda/envs/DRAM2/etc/conda/activate.d/libxml2_activate.sh"
+. "/home/student.aau.dk/yr42on/.conda/envs/DRAM2/etc/conda/activate.d/ruby_activate.sh"'
++ eval 'unset _CE_M
+unset _CE_CONDA
+PS1='\''(DRAM2) '\''
+export PATH='\''/home/student.aau.dk/yr42on/.conda/envs/DRAM2/bin:/home/student.aau.dk/yr42on/.local/bin:/software/bin:/home/student.aau.dk/yr42on/.vscode-server/data/User/globalStorage/github.copilot-chat/debugCommand:/home/student.aau.dk/yr42on/.vscode-server/data/User/globalStorage/github.copilot-chat/copilotCli:/home/student.aau.dk/yr42on/.vscode-server/cli/servers/Stable-bf9252a2fb45be6893dd8870c0bf37e2e1766d61/server/bin/remote-cli:/home/student.aau.dk/yr42on/.local/bin:/software/bin:/usr/local/Miniforge3-25.3.1-0-Linux-x86_64/condabin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/home/student.aau.dk/yr42on/.vscode-server/extensions/ms-python.debugpy-2025.16.0-linux-x64/bundled/scripts/noConfigScripts'\''
+export CONDA_PREFIX='\''/home/student.aau.dk/yr42on/.conda/envs/DRAM2'\''
+export CONDA_SHLVL='\''1'\''
+export CONDA_DEFAULT_ENV='\''DRAM2'\''
+export CONDA_PROMPT_MODIFIER='\''(DRAM2) '\''
+export CONDA_EXE='\''/usr/local/Miniforge3-25.3.1-0-Linux-x86_64/bin/conda'\''
+export CONDA_PYTHON_EXE='\''/usr/local/Miniforge3-25.3.1-0-Linux-x86_64/bin/python'\''
+. "/home/student.aau.dk/yr42on/.conda/envs/DRAM2/etc/conda/activate.d/libxml2_activate.sh"
+. "/home/student.aau.dk/yr42on/.conda/envs/DRAM2/etc/conda/activate.d/ruby_activate.sh"'
+++ unset _CE_M
+++ unset _CE_CONDA
+++ PS1='(DRAM2) '
+++ export PATH=/home/student.aau.dk/yr42on/.conda/envs/DRAM2/bin:/home/student.aau.dk/yr42on/.local/bin:/software/bin:/home/student.aau.dk/yr42on/.vscode-server/data/User/globalStorage/github.copilot-chat/debugCommand:/home/student.aau.dk/yr42on/.vscode-server/data/User/globalStorage/github.copilot-chat/copilotCli:/home/student.aau.dk/yr42on/.vscode-server/cli/servers/Stable-bf9252a2fb45be6893dd8870c0bf37e2e1766d61/server/bin/remote-cli:/home/student.aau.dk/yr42on/.local/bin:/software/bin:/usr/local/Miniforge3-25.3.1-0-Linux-x86_64/condabin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/home/student.aau.dk/yr42on/.vscode-server/extensions/ms-python.debugpy-2025.16.0-linux-x64/bundled/scripts/noConfigScripts
+++ PATH=/home/student.aau.dk/yr42on/.conda/envs/DRAM2/bin:/home/student.aau.dk/yr42on/.local/bin:/software/bin:/home/student.aau.dk/yr42on/.vscode-server/data/User/globalStorage/github.copilot-chat/debugCommand:/home/student.aau.dk/yr42on/.vscode-server/data/User/globalStorage/github.copilot-chat/copilotCli:/home/student.aau.dk/yr42on/.vscode-server/cli/servers/Stable-bf9252a2fb45be6893dd8870c0bf37e2e1766d61/server/bin/remote-cli:/home/student.aau.dk/yr42on/.local/bin:/software/bin:/usr/local/Miniforge3-25.3.1-0-Linux-x86_64/condabin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/home/student.aau.dk/yr42on/.vscode-server/extensions/ms-python.debugpy-2025.16.0-linux-x64/bundled/scripts/noConfigScripts
+++ export CONDA_PREFIX=/home/student.aau.dk/yr42on/.conda/envs/DRAM2
+++ CONDA_PREFIX=/home/student.aau.dk/yr42on/.conda/envs/DRAM2
+++ export CONDA_SHLVL=1
+++ CONDA_SHLVL=1
+++ export CONDA_DEFAULT_ENV=DRAM2
+++ CONDA_DEFAULT_ENV=DRAM2
+++ export 'CONDA_PROMPT_MODIFIER=(DRAM2) '
+++ CONDA_PROMPT_MODIFIER='(DRAM2) '
+++ export CONDA_EXE=/usr/local/Miniforge3-25.3.1-0-Linux-x86_64/bin/conda
+++ CONDA_EXE=/usr/local/Miniforge3-25.3.1-0-Linux-x86_64/bin/conda
+++ export CONDA_PYTHON_EXE=/usr/local/Miniforge3-25.3.1-0-Linux-x86_64/bin/python
+++ CONDA_PYTHON_EXE=/usr/local/Miniforge3-25.3.1-0-Linux-x86_64/bin/python
+++ . /home/student.aau.dk/yr42on/.conda/envs/DRAM2/etc/conda/activate.d/libxml2_activate.sh
++++ test -n ''
++++ xml_catalog_files_libxml2=
++++ XML_CATALOG_FILES=
++++ conda_catalog_files=
++++ ifs_libxml2=' 	
+'
++++ IFS=' '
++++ rem=/home/student.aau.dk/yr42on/.conda/envs/DRAM2
++++ for pre in ${rem}
++++ test '' = /home/student.aau.dk/yr42on/.conda/envs/DRAM2
++++ conda_catalog_files=/home/student.aau.dk/yr42on/.conda/envs/DRAM2
++++ rem=
++++ IFS=' 	
+'
++++ conda_catalog_files='file:///home/student.aau.dk/yr42on/.conda/envs/DRAM2/etc/xml/catalog file:///etc/xml/catalog'
++++ export 'XML_CATALOG_FILES=file:///home/student.aau.dk/yr42on/.conda/envs/DRAM2/etc/xml/catalog file:///etc/xml/catalog'
++++ XML_CATALOG_FILES='file:///home/student.aau.dk/yr42on/.conda/envs/DRAM2/etc/xml/catalog file:///etc/xml/catalog'
++++ unset conda_catalog_files ifs_libxml2 rem
+++ . /home/student.aau.dk/yr42on/.conda/envs/DRAM2/etc/conda/activate.d/ruby_activate.sh
++++ export GEM_HOME=/home/student.aau.dk/yr42on/.conda/envs/DRAM2/share/rubygems/
++++ GEM_HOME=/home/student.aau.dk/yr42on/.conda/envs/DRAM2/share/rubygems/
++++ export PATH=/home/student.aau.dk/yr42on/.conda/envs/DRAM2/share/rubygems/bin:/home/student.aau.dk/yr42on/.conda/envs/DRAM2/bin:/home/student.aau.dk/yr42on/.local/bin:/software/bin:/home/student.aau.dk/yr42on/.vscode-server/data/User/globalStorage/github.copilot-chat/debugCommand:/home/student.aau.dk/yr42on/.vscode-server/data/User/globalStorage/github.copilot-chat/copilotCli:/home/student.aau.dk/yr42on/.vscode-server/cli/servers/Stable-bf9252a2fb45be6893dd8870c0bf37e2e1766d61/server/bin/remote-cli:/home/student.aau.dk/yr42on/.local/bin:/software/bin:/usr/local/Miniforge3-25.3.1-0-Linux-x86_64/condabin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/home/student.aau.dk/yr42on/.vscode-server/extensions/ms-python.debugpy-2025.16.0-linux-x64/bundled/scripts/noConfigScripts
++++ PATH=/home/student.aau.dk/yr42on/.conda/envs/DRAM2/share/rubygems/bin:/home/student.aau.dk/yr42on/.conda/envs/DRAM2/bin:/home/student.aau.dk/yr42on/.local/bin:/software/bin:/home/student.aau.dk/yr42on/.vscode-server/data/User/globalStorage/github.copilot-chat/debugCommand:/home/student.aau.dk/yr42on/.vscode-server/data/User/globalStorage/github.copilot-chat/copilotCli:/home/student.aau.dk/yr42on/.vscode-server/cli/servers/Stable-bf9252a2fb45be6893dd8870c0bf37e2e1766d61/server/bin/remote-cli:/home/student.aau.dk/yr42on/.local/bin:/software/bin:/usr/local/Miniforge3-25.3.1-0-Linux-x86_64/condabin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/home/student.aau.dk/yr42on/.vscode-server/extensions/ms-python.debugpy-2025.16.0-linux-x64/bundled/scripts/noConfigScripts
++ __conda_hashr
++ '[' -n '' ']'
++ '[' -n '' ']'
++ hash -r
++ BINS_DIR=/home/student.aau.dk/yr42on/Thesis/data/koeng_mags/bins
++ OUT_BASE=/home/student.aau.dk/yr42on/Thesis/data/DRAM_test_koeng_23_2
++ ANNOTATE_OUT=/home/student.aau.dk/yr42on/Thesis/data/DRAM_test_koeng_23_2/annotate
++ DISTILL_OUT=/home/student.aau.dk/yr42on/Thesis/data/DRAM_test_koeng_23_2/distill
++ DRAM.py annotate -i '/home/student.aau.dk/yr42on/Thesis/data/koeng_mags/bins/*.fa' -o /home/student.aau.dk/yr42on/Thesis/data/DRAM_test_koeng_23_2/annotate --threads 24 --low_mem_mode
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:2: UserWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html. The pkg_resources package is slated for removal as early as 2025-11-30. Refrain from using this package or pin to Setuptools<81.
+  from pkg_resources import resource_filename
+2025-12-11 10:11:55,921 - The log file is created at /home/student.aau.dk/yr42on/Thesis/data/DRAM_test_koeng_23_2/annotate/annotate.log.
+2025-12-11 10:11:55,921 - 124 FASTAs found
+2025-12-11 10:11:56,199 - Starting the Annotation of Bins with database configuration: 
+ there are no settings, the config is corrupted or too old.
+2025-12-11 10:11:56,208 - Retrieved database locations and descriptions
+2025-12-11 10:11:56,208 - Annotating NNF_AD15_mmlongv091.bin.1.2
+2025-12-11 10:12:14,557 - Turning genes from prodigal to mmseqs2 db
+2025-12-11 10:12:17,627 - Getting hits from kofam
+2025-12-11 10:26:03,293 - No KEGG source provided so distillation will be of limited use.
+2025-12-11 10:26:03,303 - Getting forward best hits from peptidase
+2025-12-11 10:26:44,401 - Getting reverse best hits from peptidase
+2025-12-11 10:26:52,665 - Getting descriptions of hits from peptidase
+2025-12-11 10:26:58,505 - Getting hits from pfam
+2025-12-11 10:29:12,928 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+2025-12-11 10:29:24,284 - Merging ORF annotations
+2025-12-11 10:29:46,897 - Annotating NNF_AD15_mmlongv091.bin.3.49
+2025-12-11 10:29:57,689 - Turning genes from prodigal to mmseqs2 db
+2025-12-11 10:29:59,759 - Getting hits from kofam
+2025-12-11 10:37:15,351 - No KEGG source provided so distillation will be of limited use.
+2025-12-11 10:37:15,468 - Getting forward best hits from peptidase
+2025-12-11 10:37:20,191 - Getting reverse best hits from peptidase
+2025-12-11 10:37:22,749 - Getting descriptions of hits from peptidase
+2025-12-11 10:37:22,893 - Getting hits from pfam
+2025-12-11 10:37:44,356 - Getting hits from dbCAN
+2025-12-11 10:37:50,438 - Merging ORF annotations
+2025-12-11 10:38:07,177 - Annotating NNF_AD15_mmlongv091.bin.2.80
+2025-12-11 10:38:23,925 - Turning genes from prodigal to mmseqs2 db
+2025-12-11 10:38:26,594 - Getting hits from kofam
+2025-12-11 10:50:33,948 - No KEGG source provided so distillation will be of limited use.
+2025-12-11 10:50:33,957 - Getting forward best hits from peptidase
+2025-12-11 10:50:45,276 - Getting reverse best hits from peptidase
+2025-12-11 10:50:47,412 - Getting descriptions of hits from peptidase
+2025-12-11 10:50:47,424 - Getting hits from pfam
+2025-12-11 10:51:10,368 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+2025-12-11 10:51:20,921 - Merging ORF annotations
+2025-12-11 10:51:44,527 - Annotating NNF_AD15_mmlongv091.bin.1.131
+2025-12-11 10:52:05,077 - Turning genes from prodigal to mmseqs2 db
+2025-12-11 10:52:07,801 - Getting hits from kofam
+2025-12-11 11:04:25,344 - No KEGG source provided so distillation will be of limited use.
+2025-12-11 11:04:25,431 - Getting forward best hits from peptidase
+2025-12-11 11:04:31,712 - Getting reverse best hits from peptidase
+2025-12-11 11:04:33,761 - Getting descriptions of hits from peptidase
+2025-12-11 11:04:33,768 - Getting hits from pfam
+2025-12-11 11:04:57,645 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+2025-12-11 11:05:07,131 - Merging ORF annotations
+2025-12-11 11:05:29,913 - Annotating NNF_AD15_mmlongv091.bin.1.22
+2025-12-11 11:05:49,008 - Turning genes from prodigal to mmseqs2 db
+2025-12-11 11:05:51,490 - Getting hits from kofam
+2025-12-11 11:18:30,366 - No KEGG source provided so distillation will be of limited use.
+2025-12-11 11:18:30,375 - Getting forward best hits from peptidase
+2025-12-11 11:18:36,467 - Getting reverse best hits from peptidase
+2025-12-11 11:18:38,555 - Getting descriptions of hits from peptidase
+2025-12-11 11:18:38,564 - Getting hits from pfam
+2025-12-11 11:19:02,933 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+2025-12-11 11:19:12,020 - Merging ORF annotations
+2025-12-11 11:19:31,142 - Annotating NNF_AD15_mmlongv091.bin.3.9
+2025-12-11 11:19:42,375 - Turning genes from prodigal to mmseqs2 db
+2025-12-11 11:19:44,994 - Getting hits from kofam
+2025-12-11 11:33:50,183 - No KEGG source provided so distillation will be of limited use.
+2025-12-11 11:33:50,286 - Getting forward best hits from peptidase
+2025-12-11 11:33:56,481 - Getting reverse best hits from peptidase
+2025-12-11 11:33:58,173 - Getting descriptions of hits from peptidase
+2025-12-11 11:33:58,182 - Getting hits from pfam
+2025-12-11 11:34:21,456 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glyco_tranf_2_3 look like an id from dbcan_description
+  warnings.warn(
+2025-12-11 11:34:31,045 - Merging ORF annotations
+2025-12-11 11:34:52,759 - Annotating NNF_AD15_mmlongv091.bin.1.147
+2025-12-11 11:35:03,155 - Turning genes from prodigal to mmseqs2 db
+2025-12-11 11:35:06,437 - Getting hits from kofam
+2025-12-11 11:46:10,519 - No KEGG source provided so distillation will be of limited use.
+2025-12-11 11:46:10,525 - Getting forward best hits from peptidase
+2025-12-11 11:46:15,889 - Getting reverse best hits from peptidase
+2025-12-11 11:46:17,969 - Getting descriptions of hits from peptidase
+2025-12-11 11:46:17,977 - Getting hits from pfam
+2025-12-11 11:46:40,362 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glyco_tranf_2_3 look like an id from dbcan_description
+  warnings.warn(
+2025-12-11 11:46:48,673 - Merging ORF annotations
+2025-12-11 11:47:12,679 - Annotating NNF_AD15_mmlongv091.bin.1.80
+2025-12-11 11:47:23,346 - Turning genes from prodigal to mmseqs2 db
+2025-12-11 11:47:25,782 - Getting hits from kofam
+2025-12-11 12:00:29,341 - No KEGG source provided so distillation will be of limited use.
+2025-12-11 12:00:29,348 - Getting forward best hits from peptidase
+2025-12-11 12:00:35,754 - Getting reverse best hits from peptidase
+2025-12-11 12:00:37,709 - Getting descriptions of hits from peptidase
+2025-12-11 12:00:37,719 - Getting hits from pfam
+2025-12-11 12:01:01,167 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+2025-12-11 12:01:13,173 - Merging ORF annotations
+2025-12-11 12:01:35,278 - Annotating NNF_AD15_mmlongv091.bin.1.21
+2025-12-11 12:01:47,483 - Turning genes from prodigal to mmseqs2 db
+2025-12-11 12:01:50,323 - Getting hits from kofam
+2025-12-11 12:14:20,058 - No KEGG source provided so distillation will be of limited use.
+2025-12-11 12:14:20,223 - Getting forward best hits from peptidase
+2025-12-11 12:14:25,868 - Getting reverse best hits from peptidase
+2025-12-11 12:14:28,324 - Getting descriptions of hits from peptidase
+2025-12-11 12:14:28,332 - Getting hits from pfam
+2025-12-11 12:14:51,597 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+2025-12-11 12:15:00,659 - Merging ORF annotations
+2025-12-11 12:15:20,601 - Annotating NNF_AD15_mmlongv091.bin.1.3
+2025-12-11 12:15:38,500 - Turning genes from prodigal to mmseqs2 db
+2025-12-11 12:15:41,117 - Getting hits from kofam
+2025-12-11 12:27:20,474 - No KEGG source provided so distillation will be of limited use.
+2025-12-11 12:27:20,481 - Getting forward best hits from peptidase
+2025-12-11 12:27:26,688 - Getting reverse best hits from peptidase
+2025-12-11 12:27:28,617 - Getting descriptions of hits from peptidase
+2025-12-11 12:27:28,628 - Getting hits from pfam
+2025-12-11 12:27:52,222 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+2025-12-11 12:28:01,054 - Merging ORF annotations
+2025-12-11 12:28:31,186 - Annotating NNF_AD15_mmlongv091.bin.1.14
+2025-12-11 12:28:40,952 - Turning genes from prodigal to mmseqs2 db
+2025-12-11 12:28:43,446 - Getting hits from kofam
+2025-12-11 12:42:49,678 - No KEGG source provided so distillation will be of limited use.
+2025-12-11 12:42:49,685 - Getting forward best hits from peptidase
+2025-12-11 12:42:55,688 - Getting reverse best hits from peptidase
+2025-12-11 12:42:57,723 - Getting descriptions of hits from peptidase
+2025-12-11 12:42:57,730 - Getting hits from pfam
+2025-12-11 12:43:21,225 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+2025-12-11 12:43:31,262 - Merging ORF annotations
+2025-12-11 12:43:50,929 - Annotating NNF_AD15_mmlongv091.bin.1.124
+2025-12-11 12:43:57,843 - Turning genes from prodigal to mmseqs2 db
+2025-12-11 12:44:00,120 - Getting hits from kofam
+2025-12-11 12:56:24,985 - No KEGG source provided so distillation will be of limited use.
+2025-12-11 12:56:24,991 - Getting forward best hits from peptidase
+2025-12-11 12:56:31,158 - Getting reverse best hits from peptidase
+2025-12-11 12:56:33,304 - Getting descriptions of hits from peptidase
+2025-12-11 12:56:33,314 - Getting hits from pfam
+2025-12-11 12:56:57,728 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+2025-12-11 12:57:08,955 - Merging ORF annotations
+2025-12-11 12:57:27,904 - Annotating NNF_AD15_mmlongv091.bin.1.84
+2025-12-11 12:57:42,710 - Turning genes from prodigal to mmseqs2 db
+2025-12-11 12:57:45,739 - Getting hits from kofam
+2025-12-11 13:11:27,854 - No KEGG source provided so distillation will be of limited use.
+2025-12-11 13:11:27,861 - Getting forward best hits from peptidase
+2025-12-11 13:11:33,208 - Getting reverse best hits from peptidase
+2025-12-11 13:11:35,215 - Getting descriptions of hits from peptidase
+2025-12-11 13:11:35,223 - Getting hits from pfam
+2025-12-11 13:11:58,658 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+2025-12-11 13:12:08,535 - Merging ORF annotations
+2025-12-11 13:12:23,256 - Annotating NNF_AD15_mmlongv091.bin.1.15
+2025-12-11 13:12:42,896 - Turning genes from prodigal to mmseqs2 db
+2025-12-11 13:12:45,480 - Getting hits from kofam
+2025-12-11 13:26:06,346 - No KEGG source provided so distillation will be of limited use.
+2025-12-11 13:26:06,366 - Getting forward best hits from peptidase
+2025-12-11 13:26:12,635 - Getting reverse best hits from peptidase
+2025-12-11 13:26:15,123 - Getting descriptions of hits from peptidase
+2025-12-11 13:26:15,131 - Getting hits from pfam
+2025-12-11 13:26:37,779 - Getting hits from dbCAN

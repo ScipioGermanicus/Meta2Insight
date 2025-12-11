@@ -228,3 +228,7 @@ code/database_pipeline/*
 annotation_DRAM_20250917/
 han
 din
+code/module_coverage/enrichm/*
+R/rstudio-server/*
+R/wd/module_completeness.tsv
+code/database_midas/*
