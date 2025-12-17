@@ -280,3 +280,1543 @@ export CONDA_PYTHON_EXE='\''/usr/local/Miniforge3-25.3.1-0-Linux-x86_64/bin/pyth
 2025-12-11 13:26:15,123 - Getting descriptions of hits from peptidase
 2025-12-11 13:26:15,131 - Getting hits from pfam
 2025-12-11 13:26:37,779 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glyco_tranf_2_3 look like an id from dbcan_description
+  warnings.warn(
+2025-12-11 13:26:48,859 - Merging ORF annotations
+2025-12-11 13:27:09,260 - Annotating NNF_AD15_mmlongv091.bin.2.48
+2025-12-11 13:27:21,822 - Turning genes from prodigal to mmseqs2 db
+2025-12-11 13:27:24,870 - Getting hits from kofam
+2025-12-11 13:38:37,582 - No KEGG source provided so distillation will be of limited use.
+2025-12-11 13:38:37,591 - Getting forward best hits from peptidase
+2025-12-11 13:38:43,737 - Getting reverse best hits from peptidase
+2025-12-11 13:38:47,007 - Getting descriptions of hits from peptidase
+2025-12-11 13:38:47,017 - Getting hits from pfam
+2025-12-11 13:39:11,237 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+2025-12-11 13:39:21,844 - Merging ORF annotations
+2025-12-11 13:39:38,549 - Annotating NNF_AD15_mmlongv091.bin.1.101
+2025-12-11 13:40:00,174 - Turning genes from prodigal to mmseqs2 db
+2025-12-11 13:40:03,224 - Getting hits from kofam
+2025-12-11 13:53:44,602 - No KEGG source provided so distillation will be of limited use.
+2025-12-11 13:53:44,610 - Getting forward best hits from peptidase
+2025-12-11 13:53:50,742 - Getting reverse best hits from peptidase
+2025-12-11 13:53:52,491 - Getting descriptions of hits from peptidase
+2025-12-11 13:53:52,498 - Getting hits from pfam
+2025-12-11 13:54:16,348 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glyco_tranf_2_3 look like an id from dbcan_description
+  warnings.warn(
+2025-12-11 13:54:28,014 - Merging ORF annotations
+2025-12-11 13:54:43,582 - Annotating NNF_AD15_mmlongv091.bin.2.66
+2025-12-11 13:55:03,015 - Turning genes from prodigal to mmseqs2 db
+2025-12-11 13:55:05,947 - Getting hits from kofam
+2025-12-11 14:08:54,248 - No KEGG source provided so distillation will be of limited use.
+2025-12-11 14:08:54,255 - Getting forward best hits from peptidase
+2025-12-11 14:09:00,200 - Getting reverse best hits from peptidase
+2025-12-11 14:09:02,426 - Getting descriptions of hits from peptidase
+2025-12-11 14:09:02,433 - Getting hits from pfam
+2025-12-11 14:09:27,236 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glyco_tranf_2_3 look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+2025-12-11 14:09:37,874 - Merging ORF annotations
+2025-12-11 14:10:07,009 - Annotating NNF_AD15_mmlongv091.bin.2.22
+2025-12-11 14:10:12,757 - Turning genes from prodigal to mmseqs2 db
+2025-12-11 14:10:15,925 - Getting hits from kofam
+2025-12-11 14:19:11,383 - No KEGG source provided so distillation will be of limited use.
+2025-12-11 14:19:11,390 - Getting forward best hits from peptidase
+2025-12-11 14:19:17,073 - Getting reverse best hits from peptidase
+2025-12-11 14:19:18,861 - Getting descriptions of hits from peptidase
+2025-12-11 14:19:18,870 - Getting hits from pfam
+2025-12-11 14:19:41,595 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+2025-12-11 14:19:50,156 - Merging ORF annotations
+2025-12-11 14:20:12,197 - Annotating NNF_AD15_mmlongv091.bin.1.123
+2025-12-11 14:20:17,997 - Turning genes from prodigal to mmseqs2 db
+2025-12-11 14:20:20,582 - Getting hits from kofam
+2025-12-11 14:31:21,783 - No KEGG source provided so distillation will be of limited use.
+2025-12-11 14:31:21,793 - Getting forward best hits from peptidase
+2025-12-11 14:31:28,415 - Getting reverse best hits from peptidase
+2025-12-11 14:31:30,865 - Getting descriptions of hits from peptidase
+2025-12-11 14:31:30,876 - Getting hits from pfam
+2025-12-11 14:31:56,593 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+2025-12-11 14:32:05,258 - Merging ORF annotations
+2025-12-11 14:32:26,206 - Annotating NNF_AD15_mmlongv091.bin.1.113
+2025-12-11 14:32:53,696 - Turning genes from prodigal to mmseqs2 db
+2025-12-11 14:32:56,505 - Getting hits from kofam
+2025-12-11 14:47:16,075 - No KEGG source provided so distillation will be of limited use.
+2025-12-11 14:47:16,086 - Getting forward best hits from peptidase
+2025-12-11 14:47:22,025 - Getting reverse best hits from peptidase
+2025-12-11 14:47:23,910 - Getting descriptions of hits from peptidase
+2025-12-11 14:47:23,921 - Getting hits from pfam
+2025-12-11 14:47:47,712 - Getting hits from dbCAN
+2025-12-11 14:47:58,353 - Merging ORF annotations
+2025-12-11 14:48:25,170 - Annotating NNF_AD15_mmlongv091.bin.2.32
+2025-12-11 14:48:33,503 - Turning genes from prodigal to mmseqs2 db
+2025-12-11 14:48:36,305 - Getting hits from kofam
+2025-12-11 15:02:31,183 - No KEGG source provided so distillation will be of limited use.
+2025-12-11 15:02:31,205 - Getting forward best hits from peptidase
+2025-12-11 15:02:37,263 - Getting reverse best hits from peptidase
+2025-12-11 15:02:39,094 - Getting descriptions of hits from peptidase
+2025-12-11 15:02:39,103 - Getting hits from pfam
+2025-12-11 15:03:02,985 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this  look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this cohesin look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glyco_tranf_2_3 look like an id from dbcan_description
+  warnings.warn(
+2025-12-11 15:03:15,105 - Merging ORF annotations
+2025-12-11 15:03:33,634 - Annotating NNF_AD15_mmlongv091.bin.1.48
+2025-12-11 15:04:18,472 - Turning genes from prodigal to mmseqs2 db
+2025-12-11 15:04:20,946 - Getting hits from kofam
+2025-12-11 15:18:37,556 - No KEGG source provided so distillation will be of limited use.
+2025-12-11 15:18:37,563 - Getting forward best hits from peptidase
+2025-12-11 15:18:45,350 - Getting reverse best hits from peptidase
+2025-12-11 15:18:47,246 - Getting descriptions of hits from peptidase
+2025-12-11 15:18:47,254 - Getting hits from pfam
+2025-12-11 15:19:13,289 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+2025-12-11 15:19:28,029 - Merging ORF annotations
+2025-12-11 15:19:58,580 - Annotating NNF_AD15_mmlongv091.bin.1.81
+2025-12-11 15:20:28,303 - Turning genes from prodigal to mmseqs2 db
+2025-12-11 15:20:30,690 - Getting hits from kofam
+2025-12-11 15:34:20,289 - No KEGG source provided so distillation will be of limited use.
+2025-12-11 15:34:20,296 - Getting forward best hits from peptidase
+2025-12-11 15:34:27,290 - Getting reverse best hits from peptidase
+2025-12-11 15:34:29,349 - Getting descriptions of hits from peptidase
+2025-12-11 15:34:29,357 - Getting hits from pfam
+2025-12-11 15:34:53,657 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+2025-12-11 15:35:04,961 - Merging ORF annotations
+2025-12-11 15:35:24,306 - Annotating NNF_AD15_mmlongv091.bin.1.77
+2025-12-11 15:35:47,918 - Turning genes from prodigal to mmseqs2 db
+2025-12-11 15:35:50,690 - Getting hits from kofam
+2025-12-11 15:48:51,890 - No KEGG source provided so distillation will be of limited use.
+2025-12-11 15:48:51,897 - Getting forward best hits from peptidase
+2025-12-11 15:48:58,145 - Getting reverse best hits from peptidase
+2025-12-11 15:48:59,898 - Getting descriptions of hits from peptidase
+2025-12-11 15:48:59,909 - Getting hits from pfam
+2025-12-11 15:49:24,035 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glyco_tranf_2_3 look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+2025-12-11 15:49:33,981 - Merging ORF annotations
+2025-12-11 15:49:57,222 - Annotating NNF_AD15_mmlongv091.bin.1.33
+2025-12-11 15:50:18,781 - Turning genes from prodigal to mmseqs2 db
+2025-12-11 15:50:21,930 - Getting hits from kofam
+2025-12-11 16:01:18,504 - No KEGG source provided so distillation will be of limited use.
+2025-12-11 16:01:18,609 - Getting forward best hits from peptidase
+2025-12-11 16:01:38,276 - Getting reverse best hits from peptidase
+2025-12-11 16:01:48,425 - Getting descriptions of hits from peptidase
+2025-12-11 16:01:48,436 - Getting hits from pfam
+2025-12-11 16:02:13,374 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+2025-12-11 16:02:21,685 - Merging ORF annotations
+2025-12-11 16:02:41,320 - Annotating NNF_AD15_mmlongv091.bin.2.38
+2025-12-11 16:02:48,268 - Turning genes from prodigal to mmseqs2 db
+2025-12-11 16:02:51,307 - Getting hits from kofam
+2025-12-11 16:16:23,873 - No KEGG source provided so distillation will be of limited use.
+2025-12-11 16:16:23,884 - Getting forward best hits from peptidase
+2025-12-11 16:16:30,527 - Getting reverse best hits from peptidase
+2025-12-11 16:16:32,651 - Getting descriptions of hits from peptidase
+2025-12-11 16:16:32,662 - Getting hits from pfam
+2025-12-11 16:16:59,231 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this  look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this cohesin look like an id from dbcan_description
+  warnings.warn(
+2025-12-11 16:17:09,926 - Merging ORF annotations
+2025-12-11 16:17:33,039 - Annotating NNF_AD15_mmlongv091.bin.1.40
+2025-12-11 16:17:49,100 - Turning genes from prodigal to mmseqs2 db
+2025-12-11 16:17:51,724 - Getting hits from kofam
+2025-12-11 16:32:42,025 - No KEGG source provided so distillation will be of limited use.
+2025-12-11 16:32:42,030 - Getting forward best hits from peptidase
+2025-12-11 16:32:48,944 - Getting reverse best hits from peptidase
+2025-12-11 16:32:50,818 - Getting descriptions of hits from peptidase
+2025-12-11 16:32:50,827 - Getting hits from pfam
+2025-12-11 16:33:15,163 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+2025-12-11 16:33:27,681 - Merging ORF annotations
+2025-12-11 16:33:47,280 - Annotating NNF_AD15_mmlongv091.bin.2.39
+2025-12-11 16:33:58,066 - Turning genes from prodigal to mmseqs2 db
+2025-12-11 16:34:00,515 - Getting hits from kofam
+2025-12-11 16:47:22,658 - No KEGG source provided so distillation will be of limited use.
+2025-12-11 16:47:22,752 - Getting forward best hits from peptidase
+2025-12-11 16:47:29,843 - Getting reverse best hits from peptidase
+2025-12-11 16:47:31,774 - Getting descriptions of hits from peptidase
+2025-12-11 16:47:31,786 - Getting hits from pfam
+2025-12-11 16:47:57,254 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this  look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this cohesin look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glyco_tranf_2_3 look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+2025-12-11 16:48:09,780 - Merging ORF annotations
+2025-12-11 16:48:41,103 - Annotating NNF_AD15_mmlongv091.bin.1.107
+2025-12-11 16:48:47,466 - Turning genes from prodigal to mmseqs2 db
+2025-12-11 16:48:50,164 - Getting hits from kofam
+2025-12-11 17:01:11,743 - No KEGG source provided so distillation will be of limited use.
+2025-12-11 17:01:11,843 - Getting forward best hits from peptidase
+2025-12-11 17:01:18,052 - Getting reverse best hits from peptidase
+2025-12-11 17:01:20,190 - Getting descriptions of hits from peptidase
+2025-12-11 17:01:20,199 - Getting hits from pfam
+2025-12-11 17:01:43,458 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+2025-12-11 17:01:52,343 - Merging ORF annotations
+2025-12-11 17:02:14,161 - Annotating NNF_AD15_mmlongv091.bin.2.12
+2025-12-11 17:02:24,626 - Turning genes from prodigal to mmseqs2 db
+2025-12-11 17:02:27,642 - Getting hits from kofam
+2025-12-11 17:09:43,189 - No KEGG source provided so distillation will be of limited use.
+2025-12-11 17:09:43,197 - Getting forward best hits from peptidase
+2025-12-11 17:09:47,572 - Getting reverse best hits from peptidase
+2025-12-11 17:09:49,370 - Getting descriptions of hits from peptidase
+2025-12-11 17:09:49,377 - Getting hits from pfam
+2025-12-11 17:10:12,085 - Getting hits from dbCAN
+2025-12-11 17:10:18,582 - Merging ORF annotations
+2025-12-11 17:10:35,897 - Annotating NNF_AD15_mmlongv091.bin.2.47
+2025-12-11 17:10:37,906 - Turning genes from prodigal to mmseqs2 db
+2025-12-11 17:10:40,400 - Getting hits from kofam
+2025-12-11 17:17:41,331 - No KEGG source provided so distillation will be of limited use.
+2025-12-11 17:17:41,338 - Getting forward best hits from peptidase
+2025-12-11 17:17:45,412 - Getting reverse best hits from peptidase
+2025-12-11 17:17:47,820 - Getting descriptions of hits from peptidase
+2025-12-11 17:17:47,827 - Getting hits from pfam
+2025-12-11 17:18:09,725 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+2025-12-11 17:18:16,006 - Merging ORF annotations
+2025-12-11 17:18:26,111 - Annotating NNF_AD15_mmlongv091.bin.2.72
+2025-12-11 17:18:40,673 - Turning genes from prodigal to mmseqs2 db
+2025-12-11 17:18:43,216 - Getting hits from kofam
+2025-12-11 17:28:50,722 - No KEGG source provided so distillation will be of limited use.
+2025-12-11 17:28:50,731 - Getting forward best hits from peptidase
+2025-12-11 17:28:56,368 - Getting reverse best hits from peptidase
+2025-12-11 17:28:58,265 - Getting descriptions of hits from peptidase
+2025-12-11 17:28:58,276 - Getting hits from pfam
+2025-12-11 17:29:21,422 - Getting hits from dbCAN
+2025-12-11 17:29:30,530 - Merging ORF annotations
+2025-12-11 17:29:50,419 - Annotating NNF_AD15_mmlongv091.bin.1.1
+2025-12-11 17:30:21,582 - Turning genes from prodigal to mmseqs2 db
+2025-12-11 17:30:24,410 - Getting hits from kofam
+2025-12-11 17:44:54,281 - No KEGG source provided so distillation will be of limited use.
+2025-12-11 17:44:54,302 - Getting forward best hits from peptidase
+2025-12-11 17:45:01,698 - Getting reverse best hits from peptidase
+2025-12-11 17:45:03,530 - Getting descriptions of hits from peptidase
+2025-12-11 17:45:03,539 - Getting hits from pfam
+2025-12-11 17:45:29,617 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+2025-12-11 17:45:43,537 - Merging ORF annotations
+2025-12-11 17:46:17,145 - Annotating NNF_AD15_mmlongv091.bin.2.59
+2025-12-11 17:46:45,265 - Turning genes from prodigal to mmseqs2 db
+2025-12-11 17:46:48,322 - Getting hits from kofam
+2025-12-11 17:59:18,674 - No KEGG source provided so distillation will be of limited use.
+2025-12-11 17:59:18,698 - Getting forward best hits from peptidase
+2025-12-11 17:59:24,866 - Getting reverse best hits from peptidase
+2025-12-11 17:59:26,923 - Getting descriptions of hits from peptidase
+2025-12-11 17:59:26,933 - Getting hits from pfam
+2025-12-11 17:59:51,208 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+2025-12-11 18:00:00,583 - Merging ORF annotations
+2025-12-11 18:00:30,959 - Annotating NNF_AD15_mmlongv091.bin.1.74
+2025-12-11 18:00:53,015 - Turning genes from prodigal to mmseqs2 db
+2025-12-11 18:00:55,559 - Getting hits from kofam
+2025-12-11 18:12:36,557 - No KEGG source provided so distillation will be of limited use.
+2025-12-11 18:12:36,627 - Getting forward best hits from peptidase
+2025-12-11 18:12:41,938 - Getting reverse best hits from peptidase
+2025-12-11 18:12:43,757 - Getting descriptions of hits from peptidase
+2025-12-11 18:12:43,763 - Getting hits from pfam
+2025-12-11 18:13:07,682 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+2025-12-11 18:13:16,484 - Merging ORF annotations
+2025-12-11 18:13:35,552 - Annotating NNF_AD15_mmlongv091.bin.3.40
+2025-12-11 18:13:42,904 - Turning genes from prodigal to mmseqs2 db
+2025-12-11 18:13:46,271 - Getting hits from kofam
+2025-12-11 18:27:32,227 - No KEGG source provided so distillation will be of limited use.
+2025-12-11 18:27:32,259 - Getting forward best hits from peptidase
+2025-12-11 18:27:39,234 - Getting reverse best hits from peptidase
+2025-12-11 18:27:41,122 - Getting descriptions of hits from peptidase
+2025-12-11 18:27:41,131 - Getting hits from pfam
+2025-12-11 18:28:07,046 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+2025-12-11 18:28:19,206 - Merging ORF annotations
+2025-12-11 18:28:39,475 - Annotating NNF_AD15_mmlongv091.bin.1.138
+2025-12-11 18:28:47,527 - Turning genes from prodigal to mmseqs2 db
+2025-12-11 18:28:49,998 - Getting hits from kofam
+2025-12-11 18:41:50,101 - No KEGG source provided so distillation will be of limited use.
+2025-12-11 18:41:50,109 - Getting forward best hits from peptidase
+2025-12-11 18:41:56,298 - Getting reverse best hits from peptidase
+2025-12-11 18:41:58,261 - Getting descriptions of hits from peptidase
+2025-12-11 18:41:58,269 - Getting hits from pfam
+2025-12-11 18:42:22,208 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this PL9_2 look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+2025-12-11 18:42:34,944 - Merging ORF annotations
+2025-12-11 18:43:07,766 - Annotating NNF_AD15_mmlongv091.bin.2.36
+2025-12-11 18:43:19,331 - Turning genes from prodigal to mmseqs2 db
+2025-12-11 18:43:22,073 - Getting hits from kofam
+2025-12-11 18:54:43,953 - No KEGG source provided so distillation will be of limited use.
+2025-12-11 18:54:43,960 - Getting forward best hits from peptidase
+2025-12-11 18:54:49,559 - Getting reverse best hits from peptidase
+2025-12-11 18:54:51,276 - Getting descriptions of hits from peptidase
+2025-12-11 18:54:51,286 - Getting hits from pfam
+2025-12-11 18:55:15,430 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+2025-12-11 18:55:24,462 - Merging ORF annotations
+2025-12-11 18:55:50,774 - Annotating NNF_AD15_mmlongv091.bin.1.44
+2025-12-11 18:56:00,531 - Turning genes from prodigal to mmseqs2 db
+2025-12-11 18:56:03,098 - Getting hits from kofam
+2025-12-11 19:08:12,920 - No KEGG source provided so distillation will be of limited use.
+2025-12-11 19:08:12,927 - Getting forward best hits from peptidase
+2025-12-11 19:08:18,478 - Getting reverse best hits from peptidase
+2025-12-11 19:08:20,345 - Getting descriptions of hits from peptidase
+2025-12-11 19:08:20,355 - Getting hits from pfam
+2025-12-11 19:08:43,736 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glyco_tranf_2_5 look like an id from dbcan_description
+  warnings.warn(
+2025-12-11 19:08:52,902 - Merging ORF annotations
+2025-12-11 19:09:02,544 - Annotating NNF_AD15_mmlongv091.bin.1.51
+2025-12-11 19:09:22,197 - Turning genes from prodigal to mmseqs2 db
+2025-12-11 19:09:25,057 - Getting hits from kofam
+2025-12-11 19:20:39,379 - No KEGG source provided so distillation will be of limited use.
+2025-12-11 19:20:39,390 - Getting forward best hits from peptidase
+2025-12-11 19:20:45,672 - Getting reverse best hits from peptidase
+2025-12-11 19:20:47,562 - Getting descriptions of hits from peptidase
+2025-12-11 19:20:47,571 - Getting hits from pfam
+2025-12-11 19:21:11,566 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+2025-12-11 19:21:20,458 - Merging ORF annotations
+2025-12-11 19:21:39,700 - Annotating NNF_AD15_mmlongv091.bin.1.97
+2025-12-11 19:21:54,589 - Turning genes from prodigal to mmseqs2 db
+2025-12-11 19:21:57,489 - Getting hits from kofam
+2025-12-11 19:34:17,387 - No KEGG source provided so distillation will be of limited use.
+2025-12-11 19:34:17,407 - Getting forward best hits from peptidase
+2025-12-11 19:34:23,014 - Getting reverse best hits from peptidase
+2025-12-11 19:34:24,854 - Getting descriptions of hits from peptidase
+2025-12-11 19:34:24,863 - Getting hits from pfam
+2025-12-11 19:34:48,736 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+2025-12-11 19:34:57,909 - Merging ORF annotations
+2025-12-11 19:35:23,771 - Annotating NNF_AD15_mmlongv091.bin.2.33
+2025-12-11 19:35:34,612 - Turning genes from prodigal to mmseqs2 db
+2025-12-11 19:35:36,990 - Getting hits from kofam
+2025-12-11 19:48:08,291 - No KEGG source provided so distillation will be of limited use.
+2025-12-11 19:48:08,318 - Getting forward best hits from peptidase
+2025-12-11 19:48:14,195 - Getting reverse best hits from peptidase
+2025-12-11 19:48:15,961 - Getting descriptions of hits from peptidase
+2025-12-11 19:48:15,969 - Getting hits from pfam
+2025-12-11 19:48:41,655 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+2025-12-11 19:48:51,255 - Merging ORF annotations
+2025-12-11 19:49:05,567 - Annotating NNF_AD15_mmlongv091.bin.1.103
+2025-12-11 19:49:30,168 - Turning genes from prodigal to mmseqs2 db
+2025-12-11 19:49:33,709 - Getting hits from kofam
+2025-12-11 20:01:11,148 - No KEGG source provided so distillation will be of limited use.
+2025-12-11 20:01:11,161 - Getting forward best hits from peptidase
+2025-12-11 20:01:17,214 - Getting reverse best hits from peptidase
+2025-12-11 20:01:19,165 - Getting descriptions of hits from peptidase
+2025-12-11 20:01:19,172 - Getting hits from pfam
+2025-12-11 20:01:42,767 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+2025-12-11 20:01:52,185 - Merging ORF annotations
+2025-12-11 20:02:11,422 - Annotating NNF_AD15_mmlongv091.bin.1.142
+2025-12-11 20:02:24,840 - Turning genes from prodigal to mmseqs2 db
+2025-12-11 20:02:27,428 - Getting hits from kofam
+2025-12-11 20:14:36,898 - No KEGG source provided so distillation will be of limited use.
+2025-12-11 20:14:36,906 - Getting forward best hits from peptidase
+2025-12-11 20:14:42,964 - Getting reverse best hits from peptidase
+2025-12-11 20:14:44,635 - Getting descriptions of hits from peptidase
+2025-12-11 20:14:44,642 - Getting hits from pfam
+2025-12-11 20:15:08,422 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+2025-12-11 20:15:18,884 - Merging ORF annotations
+2025-12-11 20:15:41,530 - Annotating NNF_AD15_mmlongv091.bin.1.30
+2025-12-11 20:15:47,942 - Turning genes from prodigal to mmseqs2 db
+2025-12-11 20:15:51,327 - Getting hits from kofam
+2025-12-11 20:26:37,069 - No KEGG source provided so distillation will be of limited use.
+2025-12-11 20:26:37,077 - Getting forward best hits from peptidase
+2025-12-11 20:26:42,373 - Getting reverse best hits from peptidase
+2025-12-11 20:26:44,417 - Getting descriptions of hits from peptidase
+2025-12-11 20:26:44,426 - Getting hits from pfam
+2025-12-11 20:27:08,543 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+2025-12-11 20:27:19,144 - Merging ORF annotations
+2025-12-11 20:27:42,009 - Annotating NNF_AD15_mmlongv091.bin.1.11
+2025-12-11 20:27:46,973 - Turning genes from prodigal to mmseqs2 db
+2025-12-11 20:27:49,538 - Getting hits from kofam
+2025-12-11 20:40:56,183 - No KEGG source provided so distillation will be of limited use.
+2025-12-11 20:40:56,206 - Getting forward best hits from peptidase
+2025-12-11 20:41:02,491 - Getting reverse best hits from peptidase
+2025-12-11 20:41:04,302 - Getting descriptions of hits from peptidase
+2025-12-11 20:41:04,311 - Getting hits from pfam
+2025-12-11 20:41:28,493 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+2025-12-11 20:41:39,600 - Merging ORF annotations
+2025-12-11 20:41:50,467 - Annotating NNF_AD15_mmlongv091.bin.1.43
+2025-12-11 20:42:03,033 - Turning genes from prodigal to mmseqs2 db
+2025-12-11 20:42:05,994 - Getting hits from kofam
+2025-12-11 20:54:00,033 - No KEGG source provided so distillation will be of limited use.
+2025-12-11 20:54:00,087 - Getting forward best hits from peptidase
+2025-12-11 20:54:06,261 - Getting reverse best hits from peptidase
+2025-12-11 20:54:08,175 - Getting descriptions of hits from peptidase
+2025-12-11 20:54:08,187 - Getting hits from pfam
+2025-12-11 20:54:38,372 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+2025-12-11 20:54:47,475 - Merging ORF annotations
+2025-12-11 20:55:11,912 - Annotating NNF_AD15_mmlongv091.bin.1.86
+2025-12-11 20:55:31,057 - Turning genes from prodigal to mmseqs2 db
+2025-12-11 20:55:33,701 - Getting hits from kofam
+2025-12-11 21:09:34,085 - No KEGG source provided so distillation will be of limited use.
+2025-12-11 21:09:34,092 - Getting forward best hits from peptidase
+2025-12-11 21:09:39,591 - Getting reverse best hits from peptidase
+2025-12-11 21:09:41,562 - Getting descriptions of hits from peptidase
+2025-12-11 21:09:41,572 - Getting hits from pfam
+2025-12-11 21:10:04,912 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+2025-12-11 21:10:14,229 - Merging ORF annotations
+2025-12-11 21:10:39,721 - Annotating NNF_AD15_mmlongv091.bin.1.111
+2025-12-11 21:10:45,323 - Turning genes from prodigal to mmseqs2 db
+2025-12-11 21:10:47,651 - Getting hits from kofam
+2025-12-11 21:23:01,983 - No KEGG source provided so distillation will be of limited use.
+2025-12-11 21:23:02,073 - Getting forward best hits from peptidase
+2025-12-11 21:23:07,176 - Getting reverse best hits from peptidase
+2025-12-11 21:23:08,911 - Getting descriptions of hits from peptidase
+2025-12-11 21:23:08,918 - Getting hits from pfam
+2025-12-11 21:23:31,736 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glyco_tranf_2_3 look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+2025-12-11 21:23:39,843 - Merging ORF annotations
+2025-12-11 21:23:58,755 - Annotating NNF_AD15_mmlongv091.bin.2.5
+2025-12-11 21:24:10,777 - Turning genes from prodigal to mmseqs2 db
+2025-12-11 21:24:13,839 - Getting hits from kofam
+2025-12-11 21:34:45,604 - No KEGG source provided so distillation will be of limited use.
+2025-12-11 21:34:45,626 - Getting forward best hits from peptidase
+2025-12-11 21:34:56,931 - Getting reverse best hits from peptidase
+2025-12-11 21:34:58,901 - Getting descriptions of hits from peptidase
+2025-12-11 21:34:58,911 - Getting hits from pfam
+2025-12-11 21:35:22,959 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+2025-12-11 21:35:32,436 - Merging ORF annotations
+2025-12-11 21:35:59,088 - Annotating NNF_AD15_mmlongv091.bin.2.28
+2025-12-11 21:36:10,965 - Turning genes from prodigal to mmseqs2 db
+2025-12-11 21:36:13,476 - Getting hits from kofam
+2025-12-11 21:49:57,973 - No KEGG source provided so distillation will be of limited use.
+2025-12-11 21:49:58,036 - Getting forward best hits from peptidase
+2025-12-11 21:50:04,977 - Getting reverse best hits from peptidase
+2025-12-11 21:50:06,724 - Getting descriptions of hits from peptidase
+2025-12-11 21:50:06,733 - Getting hits from pfam
+2025-12-11 21:50:31,160 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glyco_tranf_2_3 look like an id from dbcan_description
+  warnings.warn(
+2025-12-11 21:50:43,027 - Merging ORF annotations
+2025-12-11 21:50:59,548 - Annotating NNF_AD15_mmlongv091.bin.2.53
+2025-12-11 21:51:15,264 - Turning genes from prodigal to mmseqs2 db
+2025-12-11 21:51:18,122 - Getting hits from kofam
+2025-12-11 22:06:47,782 - No KEGG source provided so distillation will be of limited use.
+2025-12-11 22:06:47,843 - Getting forward best hits from peptidase
+2025-12-11 22:06:54,530 - Getting reverse best hits from peptidase
+2025-12-11 22:06:56,530 - Getting descriptions of hits from peptidase
+2025-12-11 22:06:56,541 - Getting hits from pfam
+2025-12-11 22:07:22,313 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glyco_tranf_2_3 look like an id from dbcan_description
+  warnings.warn(
+2025-12-11 22:07:34,462 - Merging ORF annotations
+2025-12-11 22:07:54,399 - Annotating NNF_AD15_mmlongv091.bin.1.42
+2025-12-11 22:08:05,260 - Turning genes from prodigal to mmseqs2 db
+2025-12-11 22:08:07,946 - Getting hits from kofam
+2025-12-11 22:21:10,539 - No KEGG source provided so distillation will be of limited use.
+2025-12-11 22:21:10,546 - Getting forward best hits from peptidase
+2025-12-11 22:21:17,101 - Getting reverse best hits from peptidase
+2025-12-11 22:21:18,813 - Getting descriptions of hits from peptidase
+2025-12-11 22:21:18,822 - Getting hits from pfam
+2025-12-11 22:21:43,348 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+2025-12-11 22:21:53,596 - Merging ORF annotations
+2025-12-11 22:22:11,490 - Annotating NNF_AD15_mmlongv091.bin.2.10
+2025-12-11 22:22:21,113 - Turning genes from prodigal to mmseqs2 db
+2025-12-11 22:22:23,682 - Getting hits from kofam
+2025-12-11 22:34:07,588 - No KEGG source provided so distillation will be of limited use.
+2025-12-11 22:34:07,632 - Getting forward best hits from peptidase
+2025-12-11 22:34:13,757 - Getting reverse best hits from peptidase
+2025-12-11 22:34:15,510 - Getting descriptions of hits from peptidase
+2025-12-11 22:34:15,516 - Getting hits from pfam
+2025-12-11 22:34:39,107 - Getting hits from dbCAN
+2025-12-11 22:34:47,981 - Merging ORF annotations
+2025-12-11 22:34:59,414 - Annotating NNF_AD15_mmlongv091.bin.1.18
+2025-12-11 22:35:12,933 - Turning genes from prodigal to mmseqs2 db
+2025-12-11 22:35:16,281 - Getting hits from kofam
+2025-12-11 22:48:57,087 - No KEGG source provided so distillation will be of limited use.
+2025-12-11 22:48:57,112 - Getting forward best hits from peptidase
+2025-12-11 22:49:04,071 - Getting reverse best hits from peptidase
+2025-12-11 22:49:06,108 - Getting descriptions of hits from peptidase
+2025-12-11 22:49:06,116 - Getting hits from pfam
+2025-12-11 22:49:30,496 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+2025-12-11 22:49:43,229 - Merging ORF annotations
+2025-12-11 22:49:53,438 - Annotating NNF_AD15_mmlongv091.bin.3.74
+2025-12-11 22:50:02,737 - Turning genes from prodigal to mmseqs2 db
+2025-12-11 22:50:04,987 - Getting hits from kofam
+2025-12-11 22:58:29,415 - No KEGG source provided so distillation will be of limited use.
+2025-12-11 22:58:29,424 - Getting forward best hits from peptidase
+2025-12-11 22:58:34,997 - Getting reverse best hits from peptidase
+2025-12-11 22:58:36,761 - Getting descriptions of hits from peptidase
+2025-12-11 22:58:36,768 - Getting hits from pfam
+2025-12-11 22:58:59,930 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+2025-12-11 22:59:08,734 - Merging ORF annotations
+2025-12-11 22:59:26,278 - Annotating NNF_AD15_mmlongv091.bin.1.82
+2025-12-11 22:59:40,030 - Turning genes from prodigal to mmseqs2 db
+2025-12-11 22:59:42,608 - Getting hits from kofam
+2025-12-11 23:11:07,887 - No KEGG source provided so distillation will be of limited use.
+2025-12-11 23:11:07,893 - Getting forward best hits from peptidase
+2025-12-11 23:11:13,207 - Getting reverse best hits from peptidase
+2025-12-11 23:11:14,860 - Getting descriptions of hits from peptidase
+2025-12-11 23:11:14,869 - Getting hits from pfam
+2025-12-11 23:11:37,278 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+2025-12-11 23:11:45,274 - Merging ORF annotations
+2025-12-11 23:12:08,733 - Annotating NNF_AD15_mmlongv091.bin.2.51
+2025-12-11 23:12:21,384 - Turning genes from prodigal to mmseqs2 db
+2025-12-11 23:12:24,027 - Getting hits from kofam
+2025-12-11 23:21:10,951 - No KEGG source provided so distillation will be of limited use.
+2025-12-11 23:21:11,333 - Getting forward best hits from peptidase
+2025-12-11 23:21:16,734 - Getting reverse best hits from peptidase
+2025-12-11 23:21:18,816 - Getting descriptions of hits from peptidase
+2025-12-11 23:21:18,825 - Getting hits from pfam
+2025-12-11 23:21:42,170 - Getting hits from dbCAN
+2025-12-11 23:21:49,952 - Merging ORF annotations
+2025-12-11 23:22:06,191 - Annotating NNF_AD15_mmlongv091.bin.2.17
+2025-12-11 23:22:31,766 - Turning genes from prodigal to mmseqs2 db
+2025-12-11 23:22:34,069 - Getting hits from kofam
+2025-12-11 23:33:14,662 - No KEGG source provided so distillation will be of limited use.
+2025-12-11 23:33:14,669 - Getting forward best hits from peptidase
+2025-12-11 23:33:20,835 - Getting reverse best hits from peptidase
+2025-12-11 23:33:22,819 - Getting descriptions of hits from peptidase
+2025-12-11 23:33:22,826 - Getting hits from pfam
+2025-12-11 23:33:47,108 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+2025-12-11 23:33:58,741 - Merging ORF annotations
+2025-12-11 23:34:23,969 - Annotating NNF_AD15_mmlongv091.bin.1.112
+2025-12-11 23:34:34,170 - Turning genes from prodigal to mmseqs2 db
+2025-12-11 23:34:36,989 - Getting hits from kofam
+2025-12-11 23:46:15,939 - No KEGG source provided so distillation will be of limited use.
+2025-12-11 23:46:16,088 - Getting forward best hits from peptidase
+2025-12-11 23:46:21,850 - Getting reverse best hits from peptidase
+2025-12-11 23:46:23,631 - Getting descriptions of hits from peptidase
+2025-12-11 23:46:23,639 - Getting hits from pfam
+2025-12-11 23:46:47,066 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+2025-12-11 23:46:56,633 - Merging ORF annotations
+2025-12-11 23:47:13,640 - Annotating NNF_AD15_mmlongv091.bin.1.34
+2025-12-11 23:47:38,189 - Turning genes from prodigal to mmseqs2 db
+2025-12-11 23:47:40,661 - Getting hits from kofam
+2025-12-12 00:00:22,717 - No KEGG source provided so distillation will be of limited use.
+2025-12-12 00:00:22,808 - Getting forward best hits from peptidase
+2025-12-12 00:00:29,113 - Getting reverse best hits from peptidase
+2025-12-12 00:00:31,066 - Getting descriptions of hits from peptidase
+2025-12-12 00:00:31,076 - Getting hits from pfam
+2025-12-12 00:00:55,296 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+2025-12-12 00:01:05,434 - Merging ORF annotations
+2025-12-12 00:01:18,483 - Annotating NNF_AD15_mmlongv091.bin.2.74
+2025-12-12 00:01:39,783 - Turning genes from prodigal to mmseqs2 db
+2025-12-12 00:01:42,180 - Getting hits from kofam
+2025-12-12 00:12:58,216 - No KEGG source provided so distillation will be of limited use.
+2025-12-12 00:12:58,249 - Getting forward best hits from peptidase
+2025-12-12 00:13:04,580 - Getting reverse best hits from peptidase
+2025-12-12 00:13:06,364 - Getting descriptions of hits from peptidase
+2025-12-12 00:13:06,372 - Getting hits from pfam
+2025-12-12 00:13:30,337 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+2025-12-12 00:13:40,778 - Merging ORF annotations
+2025-12-12 00:14:07,589 - Annotating NNF_AD15_mmlongv091.bin.2.27
+2025-12-12 00:14:14,627 - Turning genes from prodigal to mmseqs2 db
+2025-12-12 00:14:17,240 - Getting hits from kofam
+2025-12-12 00:27:01,757 - No KEGG source provided so distillation will be of limited use.
+2025-12-12 00:27:01,802 - Getting forward best hits from peptidase
+2025-12-12 00:27:07,259 - Getting reverse best hits from peptidase
+2025-12-12 00:27:09,094 - Getting descriptions of hits from peptidase
+2025-12-12 00:27:09,102 - Getting hits from pfam
+2025-12-12 00:27:32,657 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+2025-12-12 00:27:42,623 - Merging ORF annotations
+2025-12-12 00:27:51,036 - Annotating NNF_AD15_mmlongv091.bin.3.33
+2025-12-12 00:28:01,514 - Turning genes from prodigal to mmseqs2 db
+2025-12-12 00:28:04,062 - Getting hits from kofam
+2025-12-12 00:39:47,381 - No KEGG source provided so distillation will be of limited use.
+2025-12-12 00:39:47,388 - Getting forward best hits from peptidase
+2025-12-12 00:39:53,698 - Getting reverse best hits from peptidase
+2025-12-12 00:39:55,521 - Getting descriptions of hits from peptidase
+2025-12-12 00:39:55,529 - Getting hits from pfam
+2025-12-12 00:40:19,325 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+2025-12-12 00:40:30,521 - Merging ORF annotations
+2025-12-12 00:40:49,853 - Annotating NNF_AD15_mmlongv091.bin.2.45
+2025-12-12 00:41:04,084 - Turning genes from prodigal to mmseqs2 db
+2025-12-12 00:41:07,030 - Getting hits from kofam
+2025-12-12 00:52:09,119 - No KEGG source provided so distillation will be of limited use.
+2025-12-12 00:52:09,147 - Getting forward best hits from peptidase
+2025-12-12 00:52:15,073 - Getting reverse best hits from peptidase
+2025-12-12 00:52:16,776 - Getting descriptions of hits from peptidase
+2025-12-12 00:52:16,783 - Getting hits from pfam
+2025-12-12 00:52:39,500 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+2025-12-12 00:52:48,976 - Merging ORF annotations
+2025-12-12 00:53:02,660 - Annotating NNF_AD15_mmlongv091.bin.1.50
+2025-12-12 00:53:27,380 - Turning genes from prodigal to mmseqs2 db
+2025-12-12 00:53:30,168 - Getting hits from kofam
+2025-12-12 01:07:12,582 - No KEGG source provided so distillation will be of limited use.
+2025-12-12 01:07:12,589 - Getting forward best hits from peptidase
+2025-12-12 01:07:18,968 - Getting reverse best hits from peptidase
+2025-12-12 01:07:20,715 - Getting descriptions of hits from peptidase
+2025-12-12 01:07:20,722 - Getting hits from pfam
+2025-12-12 01:07:45,109 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+2025-12-12 01:07:59,408 - Merging ORF annotations
+2025-12-12 01:08:24,304 - Annotating NNF_AD15_mmlongv091.bin.2.1
+2025-12-12 01:08:42,190 - Turning genes from prodigal to mmseqs2 db
+2025-12-12 01:08:44,713 - Getting hits from kofam
+2025-12-12 01:22:17,304 - No KEGG source provided so distillation will be of limited use.
+2025-12-12 01:22:17,309 - Getting forward best hits from peptidase
+2025-12-12 01:22:23,704 - Getting reverse best hits from peptidase
+2025-12-12 01:22:25,637 - Getting descriptions of hits from peptidase
+2025-12-12 01:22:25,645 - Getting hits from pfam
+2025-12-12 01:22:49,140 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this  look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this cohesin look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glyco_tranf_2_3 look like an id from dbcan_description
+  warnings.warn(
+2025-12-12 01:22:58,876 - Merging ORF annotations
+2025-12-12 01:23:23,642 - Annotating NNF_AD15_mmlongv091.bin.1.99
+2025-12-12 01:23:35,829 - Turning genes from prodigal to mmseqs2 db
+2025-12-12 01:23:38,820 - Getting hits from kofam
+2025-12-12 01:35:32,797 - No KEGG source provided so distillation will be of limited use.
+2025-12-12 01:35:32,886 - Getting forward best hits from peptidase
+2025-12-12 01:35:39,121 - Getting reverse best hits from peptidase
+2025-12-12 01:35:40,906 - Getting descriptions of hits from peptidase
+2025-12-12 01:35:40,913 - Getting hits from pfam
+2025-12-12 01:36:04,048 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+2025-12-12 01:36:13,289 - Merging ORF annotations
+2025-12-12 01:36:38,491 - Annotating NNF_AD15_mmlongv091.bin.2.76
+2025-12-12 01:36:50,356 - Turning genes from prodigal to mmseqs2 db
+2025-12-12 01:36:53,318 - Getting hits from kofam
+2025-12-12 01:49:16,237 - No KEGG source provided so distillation will be of limited use.
+2025-12-12 01:49:16,245 - Getting forward best hits from peptidase
+2025-12-12 01:49:22,423 - Getting reverse best hits from peptidase
+2025-12-12 01:49:24,261 - Getting descriptions of hits from peptidase
+2025-12-12 01:49:24,271 - Getting hits from pfam
+2025-12-12 01:49:47,238 - Getting hits from dbCAN
+2025-12-12 01:49:56,479 - Merging ORF annotations
+2025-12-12 01:50:29,595 - Annotating NNF_AD15_mmlongv091.bin.2.24
+2025-12-12 01:50:58,703 - Turning genes from prodigal to mmseqs2 db
+2025-12-12 01:51:01,338 - Getting hits from kofam
+2025-12-12 02:05:12,929 - No KEGG source provided so distillation will be of limited use.
+2025-12-12 02:05:12,936 - Getting forward best hits from peptidase
+2025-12-12 02:05:21,020 - Getting reverse best hits from peptidase
+2025-12-12 02:05:23,043 - Getting descriptions of hits from peptidase
+2025-12-12 02:05:23,057 - Getting hits from pfam
+2025-12-12 02:05:50,410 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glyco_tranf_2_3 look like an id from dbcan_description
+  warnings.warn(
+2025-12-12 02:06:06,731 - Merging ORF annotations
+2025-12-12 02:06:35,015 - Annotating NNF_AD15_mmlongv091.bin.2.8
+2025-12-12 02:06:45,033 - Turning genes from prodigal to mmseqs2 db
+2025-12-12 02:06:48,542 - Getting hits from kofam
+2025-12-12 02:14:43,581 - No KEGG source provided so distillation will be of limited use.
+2025-12-12 02:14:43,671 - Getting forward best hits from peptidase
+2025-12-12 02:14:48,677 - Getting reverse best hits from peptidase
+2025-12-12 02:14:50,364 - Getting descriptions of hits from peptidase
+2025-12-12 02:14:50,371 - Getting hits from pfam
+2025-12-12 02:15:12,754 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+2025-12-12 02:15:19,905 - Merging ORF annotations
+2025-12-12 02:15:29,115 - No rRNAs were detected, no rrnas.tsv file will be created.
+2025-12-12 02:15:30,089 - Annotating NNF_AD15_mmlongv091.bin.2.30
+2025-12-12 02:15:44,658 - Turning genes from prodigal to mmseqs2 db
+2025-12-12 02:15:47,384 - Getting hits from kofam
+2025-12-12 02:27:47,496 - No KEGG source provided so distillation will be of limited use.
+2025-12-12 02:27:47,619 - Getting forward best hits from peptidase
+2025-12-12 02:27:53,877 - Getting reverse best hits from peptidase
+2025-12-12 02:27:55,676 - Getting descriptions of hits from peptidase
+2025-12-12 02:27:55,684 - Getting hits from pfam
+2025-12-12 02:28:18,947 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+2025-12-12 02:28:27,848 - Merging ORF annotations
+2025-12-12 02:28:47,626 - Annotating NNF_AD15_mmlongv091.bin.1.75
+2025-12-12 02:29:13,654 - Turning genes from prodigal to mmseqs2 db
+2025-12-12 02:29:16,422 - Getting hits from kofam
+2025-12-12 02:43:08,005 - No KEGG source provided so distillation will be of limited use.
+2025-12-12 02:43:08,015 - Getting forward best hits from peptidase
+2025-12-12 02:43:14,643 - Getting reverse best hits from peptidase
+2025-12-12 02:43:16,580 - Getting descriptions of hits from peptidase
+2025-12-12 02:43:16,587 - Getting hits from pfam
+2025-12-12 02:43:40,528 - Getting hits from dbCAN
+2025-12-12 02:43:55,224 - Merging ORF annotations
+2025-12-12 02:44:21,767 - Annotating NNF_AD15_mmlongv091.bin.2.2
+2025-12-12 02:44:25,339 - Turning genes from prodigal to mmseqs2 db
+2025-12-12 02:44:27,890 - Getting hits from kofam
+2025-12-12 02:55:08,389 - No KEGG source provided so distillation will be of limited use.
+2025-12-12 02:55:08,396 - Getting forward best hits from peptidase
+2025-12-12 02:55:13,397 - Getting reverse best hits from peptidase
+2025-12-12 02:55:15,184 - Getting descriptions of hits from peptidase
+2025-12-12 02:55:15,192 - Getting hits from pfam
+2025-12-12 02:55:37,985 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this  look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this cohesin look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+2025-12-12 02:55:46,675 - Merging ORF annotations
+2025-12-12 02:56:00,316 - Annotating NNF_AD15_mmlongv091.bin.2.71
+2025-12-12 02:56:10,676 - Turning genes from prodigal to mmseqs2 db
+2025-12-12 02:56:13,683 - Getting hits from kofam
+2025-12-12 03:07:35,019 - No KEGG source provided so distillation will be of limited use.
+2025-12-12 03:07:35,167 - Getting forward best hits from peptidase
+2025-12-12 03:07:41,374 - Getting reverse best hits from peptidase
+2025-12-12 03:07:43,394 - Getting descriptions of hits from peptidase
+2025-12-12 03:07:43,405 - Getting hits from pfam
+2025-12-12 03:08:07,516 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+2025-12-12 03:08:17,531 - Merging ORF annotations
+2025-12-12 03:08:38,768 - Annotating NNF_AD15_mmlongv091.bin.1.16
+2025-12-12 03:08:50,783 - Turning genes from prodigal to mmseqs2 db
+2025-12-12 03:08:53,510 - Getting hits from kofam
+2025-12-12 03:21:30,447 - No KEGG source provided so distillation will be of limited use.
+2025-12-12 03:21:30,500 - Getting forward best hits from peptidase
+2025-12-12 03:21:36,102 - Getting reverse best hits from peptidase
+2025-12-12 03:21:37,948 - Getting descriptions of hits from peptidase
+2025-12-12 03:21:37,955 - Getting hits from pfam
+2025-12-12 03:22:00,973 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+2025-12-12 03:22:11,744 - Merging ORF annotations
+2025-12-12 03:22:31,579 - Annotating NNF_AD15_mmlongv091.bin.2.13
+2025-12-12 03:22:37,676 - Turning genes from prodigal to mmseqs2 db
+2025-12-12 03:22:40,213 - Getting hits from kofam
+2025-12-12 03:31:11,619 - No KEGG source provided so distillation will be of limited use.
+2025-12-12 03:31:11,626 - Getting forward best hits from peptidase
+2025-12-12 03:31:16,501 - Getting reverse best hits from peptidase
+2025-12-12 03:31:18,443 - Getting descriptions of hits from peptidase
+2025-12-12 03:31:18,452 - Getting hits from pfam
+2025-12-12 03:31:41,323 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+2025-12-12 03:31:48,568 - Merging ORF annotations
+2025-12-12 03:32:09,089 - Annotating NNF_AD15_mmlongv091.bin.2.81
+2025-12-12 03:32:17,469 - Turning genes from prodigal to mmseqs2 db
+2025-12-12 03:32:20,649 - Getting hits from kofam
+2025-12-12 03:46:00,294 - No KEGG source provided so distillation will be of limited use.
+2025-12-12 03:46:00,359 - Getting forward best hits from peptidase
+2025-12-12 03:46:06,437 - Getting reverse best hits from peptidase
+2025-12-12 03:46:08,327 - Getting descriptions of hits from peptidase
+2025-12-12 03:46:08,334 - Getting hits from pfam
+2025-12-12 03:46:30,978 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glyco_tranf_2_3 look like an id from dbcan_description
+  warnings.warn(
+2025-12-12 03:46:42,104 - Merging ORF annotations
+2025-12-12 03:47:00,871 - Annotating NNF_AD15_mmlongv091.bin.2.56
+2025-12-12 03:47:18,681 - Turning genes from prodigal to mmseqs2 db
+2025-12-12 03:47:21,751 - Getting hits from kofam
+2025-12-12 03:58:09,050 - No KEGG source provided so distillation will be of limited use.
+2025-12-12 03:58:09,060 - Getting forward best hits from peptidase
+2025-12-12 03:58:14,741 - Getting reverse best hits from peptidase
+2025-12-12 03:58:16,521 - Getting descriptions of hits from peptidase
+2025-12-12 03:58:16,531 - Getting hits from pfam
+2025-12-12 03:58:39,524 - Getting hits from dbCAN
+2025-12-12 03:58:47,582 - Merging ORF annotations
+2025-12-12 03:59:08,182 - Annotating NNF_AD15_mmlongv091.bin.2.41
+2025-12-12 03:59:16,257 - Turning genes from prodigal to mmseqs2 db
+2025-12-12 03:59:18,635 - Getting hits from kofam
+2025-12-12 04:12:45,584 - No KEGG source provided so distillation will be of limited use.
+2025-12-12 04:12:45,602 - Getting forward best hits from peptidase
+2025-12-12 04:12:51,778 - Getting reverse best hits from peptidase
+2025-12-12 04:12:53,564 - Getting descriptions of hits from peptidase
+2025-12-12 04:12:53,570 - Getting hits from pfam
+2025-12-12 04:13:16,710 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glyco_tranf_2_3 look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+2025-12-12 04:13:26,789 - Merging ORF annotations
+2025-12-12 04:13:45,643 - Annotating NNF_AD15_mmlongv091.bin.1.102
+2025-12-12 04:13:50,241 - Turning genes from prodigal to mmseqs2 db
+2025-12-12 04:13:53,005 - Getting hits from kofam
+2025-12-12 04:26:37,436 - No KEGG source provided so distillation will be of limited use.
+2025-12-12 04:26:37,443 - Getting forward best hits from peptidase
+2025-12-12 04:26:43,621 - Getting reverse best hits from peptidase
+2025-12-12 04:26:45,758 - Getting descriptions of hits from peptidase
+2025-12-12 04:26:45,768 - Getting hits from pfam
+2025-12-12 04:27:08,618 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+2025-12-12 04:27:19,045 - Merging ORF annotations
+2025-12-12 04:27:29,618 - Annotating NNF_AD15_mmlongv091.bin.2.29
+2025-12-12 04:27:52,646 - Turning genes from prodigal to mmseqs2 db
+2025-12-12 04:27:55,118 - Getting hits from kofam
+2025-12-12 04:40:11,844 - No KEGG source provided so distillation will be of limited use.
+2025-12-12 04:40:11,889 - Getting forward best hits from peptidase
+2025-12-12 04:40:18,026 - Getting reverse best hits from peptidase
+2025-12-12 04:40:20,030 - Getting descriptions of hits from peptidase
+2025-12-12 04:40:20,038 - Getting hits from pfam
+2025-12-12 04:40:44,426 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glyco_tranf_2_3 look like an id from dbcan_description
+  warnings.warn(
+2025-12-12 04:40:54,092 - Merging ORF annotations
+2025-12-12 04:41:20,219 - Annotating NNF_AD15_mmlongv091.bin.3.32
+2025-12-12 04:41:28,906 - Turning genes from prodigal to mmseqs2 db
+2025-12-12 04:41:31,649 - Getting hits from kofam
+2025-12-12 04:49:32,629 - No KEGG source provided so distillation will be of limited use.
+2025-12-12 04:49:32,715 - Getting forward best hits from peptidase
+2025-12-12 04:49:37,546 - Getting reverse best hits from peptidase
+2025-12-12 04:49:39,586 - Getting descriptions of hits from peptidase
+2025-12-12 04:49:39,594 - Getting hits from pfam
+2025-12-12 04:50:01,627 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+2025-12-12 04:50:09,465 - Merging ORF annotations
+2025-12-12 04:50:27,055 - Annotating NNF_AD15_mmlongv091.bin.2.31
+2025-12-12 04:50:39,377 - Turning genes from prodigal to mmseqs2 db
+2025-12-12 04:50:41,874 - Getting hits from kofam
+2025-12-12 05:02:29,848 - No KEGG source provided so distillation will be of limited use.
+2025-12-12 05:02:29,855 - Getting forward best hits from peptidase
+2025-12-12 05:02:36,348 - Getting reverse best hits from peptidase
+2025-12-12 05:02:38,311 - Getting descriptions of hits from peptidase
+2025-12-12 05:02:38,321 - Getting hits from pfam
+2025-12-12 05:03:02,096 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+2025-12-12 05:03:14,063 - Merging ORF annotations
+2025-12-12 05:03:26,790 - Annotating NNF_AD15_mmlongv091.bin.1.93
+2025-12-12 05:03:37,253 - Turning genes from prodigal to mmseqs2 db
+2025-12-12 05:03:39,631 - Getting hits from kofam
+2025-12-12 05:16:37,481 - No KEGG source provided so distillation will be of limited use.
+2025-12-12 05:16:37,489 - Getting forward best hits from peptidase
+2025-12-12 05:16:43,165 - Getting reverse best hits from peptidase
+2025-12-12 05:16:45,056 - Getting descriptions of hits from peptidase
+2025-12-12 05:16:45,063 - Getting hits from pfam
+2025-12-12 05:17:07,508 - Getting hits from dbCAN
+2025-12-12 05:17:16,928 - Merging ORF annotations
+2025-12-12 05:17:33,863 - Annotating NNF_AD15_mmlongv091.bin.1.17
+2025-12-12 05:17:57,475 - Turning genes from prodigal to mmseqs2 db
+2025-12-12 05:18:00,002 - Getting hits from kofam
+2025-12-12 05:29:29,094 - No KEGG source provided so distillation will be of limited use.
+2025-12-12 05:29:29,355 - Getting forward best hits from peptidase
+2025-12-12 05:29:35,024 - Getting reverse best hits from peptidase
+2025-12-12 05:29:36,761 - Getting descriptions of hits from peptidase
+2025-12-12 05:29:36,769 - Getting hits from pfam
+2025-12-12 05:30:01,520 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+2025-12-12 05:30:10,364 - Merging ORF annotations
+2025-12-12 05:30:18,802 - Annotating NNF_AD15_mmlongv091.bin.1.110
+2025-12-12 05:30:28,064 - Turning genes from prodigal to mmseqs2 db
+2025-12-12 05:30:30,592 - Getting hits from kofam
+2025-12-12 05:44:06,511 - No KEGG source provided so distillation will be of limited use.
+2025-12-12 05:44:06,519 - Getting forward best hits from peptidase
+2025-12-12 05:44:12,201 - Getting reverse best hits from peptidase
+2025-12-12 05:44:13,956 - Getting descriptions of hits from peptidase
+2025-12-12 05:44:13,964 - Getting hits from pfam
+2025-12-12 05:44:36,706 - Getting hits from dbCAN
+2025-12-12 05:44:48,106 - Merging ORF annotations
+2025-12-12 05:45:10,896 - Annotating NNF_AD15_mmlongv091.bin.2.34
+2025-12-12 05:45:30,223 - Turning genes from prodigal to mmseqs2 db
+2025-12-12 05:45:32,665 - Getting hits from kofam
+2025-12-12 05:58:21,770 - No KEGG source provided so distillation will be of limited use.
+2025-12-12 05:58:21,779 - Getting forward best hits from peptidase
+2025-12-12 05:58:28,232 - Getting reverse best hits from peptidase
+2025-12-12 05:58:30,071 - Getting descriptions of hits from peptidase
+2025-12-12 05:58:30,080 - Getting hits from pfam
+2025-12-12 05:58:53,493 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glyco_tranf_2_3 look like an id from dbcan_description
+  warnings.warn(
+2025-12-12 05:59:02,622 - Merging ORF annotations
+2025-12-12 05:59:23,091 - Annotating NNF_AD15_mmlongv091.bin.2.43
+2025-12-12 05:59:32,995 - Turning genes from prodigal to mmseqs2 db
+2025-12-12 05:59:35,784 - Getting hits from kofam
+2025-12-12 06:10:57,502 - No KEGG source provided so distillation will be of limited use.
+2025-12-12 06:10:57,509 - Getting forward best hits from peptidase
+2025-12-12 06:11:03,928 - Getting reverse best hits from peptidase
+2025-12-12 06:11:05,888 - Getting descriptions of hits from peptidase
+2025-12-12 06:11:05,898 - Getting hits from pfam
+2025-12-12 06:11:28,981 - Getting hits from dbCAN
+2025-12-12 06:11:37,572 - Merging ORF annotations
+2025-12-12 06:12:02,828 - Annotating NNF_AD15_mmlongv091.bin.1.35
+2025-12-12 06:12:13,829 - Turning genes from prodigal to mmseqs2 db
+2025-12-12 06:12:16,639 - Getting hits from kofam
+2025-12-12 06:24:37,268 - No KEGG source provided so distillation will be of limited use.
+2025-12-12 06:24:37,337 - Getting forward best hits from peptidase
+2025-12-12 06:24:43,410 - Getting reverse best hits from peptidase
+2025-12-12 06:24:45,627 - Getting descriptions of hits from peptidase
+2025-12-12 06:24:45,636 - Getting hits from pfam
+2025-12-12 06:25:09,116 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+2025-12-12 06:25:20,138 - Merging ORF annotations
+2025-12-12 06:25:31,324 - Annotating NNF_AD15_mmlongv091.bin.1.141
+2025-12-12 06:25:36,126 - Turning genes from prodigal to mmseqs2 db
+2025-12-12 06:25:39,427 - Getting hits from kofam
+2025-12-12 06:38:06,712 - No KEGG source provided so distillation will be of limited use.
+2025-12-12 06:38:06,826 - Getting forward best hits from peptidase
+2025-12-12 06:38:12,919 - Getting reverse best hits from peptidase
+2025-12-12 06:38:15,142 - Getting descriptions of hits from peptidase
+2025-12-12 06:38:15,152 - Getting hits from pfam
+2025-12-12 06:38:38,500 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+2025-12-12 06:38:50,834 - Merging ORF annotations
+2025-12-12 06:39:11,537 - Annotating NNF_AD15_mmlongv091.bin.1.27
+2025-12-12 06:39:24,828 - Turning genes from prodigal to mmseqs2 db
+2025-12-12 06:39:27,446 - Getting hits from kofam
+2025-12-12 06:51:09,397 - No KEGG source provided so distillation will be of limited use.
+2025-12-12 06:51:09,412 - Getting forward best hits from peptidase
+2025-12-12 06:51:16,212 - Getting reverse best hits from peptidase
+2025-12-12 06:51:19,587 - Getting descriptions of hits from peptidase
+2025-12-12 06:51:19,598 - Getting hits from pfam
+2025-12-12 06:51:43,123 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glyco_tranf_2_3 look like an id from dbcan_description
+  warnings.warn(
+2025-12-12 06:51:53,420 - Merging ORF annotations
+2025-12-12 06:52:12,915 - Annotating NNF_AD15_mmlongv091.bin.1.122
+2025-12-12 06:52:21,018 - Turning genes from prodigal to mmseqs2 db
+2025-12-12 06:52:24,008 - Getting hits from kofam
+2025-12-12 07:06:34,750 - No KEGG source provided so distillation will be of limited use.
+2025-12-12 07:06:34,759 - Getting forward best hits from peptidase
+2025-12-12 07:06:41,318 - Getting reverse best hits from peptidase
+2025-12-12 07:06:43,181 - Getting descriptions of hits from peptidase
+2025-12-12 07:06:43,189 - Getting hits from pfam
+2025-12-12 07:07:09,006 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+2025-12-12 07:07:20,533 - Merging ORF annotations
+2025-12-12 07:07:35,314 - Annotating NNF_AD15_mmlongv091.bin.3.41
+2025-12-12 07:07:44,015 - Turning genes from prodigal to mmseqs2 db
+2025-12-12 07:07:46,755 - Getting hits from kofam
+2025-12-12 07:19:16,950 - No KEGG source provided so distillation will be of limited use.
+2025-12-12 07:19:16,958 - Getting forward best hits from peptidase
+2025-12-12 07:19:22,491 - Getting reverse best hits from peptidase
+2025-12-12 07:19:24,325 - Getting descriptions of hits from peptidase
+2025-12-12 07:19:24,333 - Getting hits from pfam
+2025-12-12 07:19:46,609 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+2025-12-12 07:19:56,740 - Merging ORF annotations
+2025-12-12 07:20:06,029 - Annotating NNF_AD15_mmlongv091.bin.1.28
+2025-12-12 07:20:15,333 - Turning genes from prodigal to mmseqs2 db
+2025-12-12 07:20:17,937 - Getting hits from kofam
+2025-12-12 07:33:05,797 - No KEGG source provided so distillation will be of limited use.
+2025-12-12 07:33:05,816 - Getting forward best hits from peptidase
+2025-12-12 07:33:12,237 - Getting reverse best hits from peptidase
+2025-12-12 07:33:14,369 - Getting descriptions of hits from peptidase
+2025-12-12 07:33:14,378 - Getting hits from pfam
+2025-12-12 07:33:38,138 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glyco_tranf_2_3 look like an id from dbcan_description
+  warnings.warn(
+2025-12-12 07:33:50,179 - Merging ORF annotations
+2025-12-12 07:34:14,220 - Annotating NNF_AD15_mmlongv091.bin.2.58
+2025-12-12 07:34:22,379 - Turning genes from prodigal to mmseqs2 db
+2025-12-12 07:34:24,977 - Getting hits from kofam
+2025-12-12 07:44:08,520 - No KEGG source provided so distillation will be of limited use.
+2025-12-12 07:44:08,579 - Getting forward best hits from peptidase
+2025-12-12 07:44:15,633 - Getting reverse best hits from peptidase
+2025-12-12 07:44:19,168 - Getting descriptions of hits from peptidase
+2025-12-12 07:44:19,178 - Getting hits from pfam
+2025-12-12 07:44:48,171 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+2025-12-12 07:44:58,287 - Merging ORF annotations
+2025-12-12 07:45:29,688 - Annotating NNF_AD15_mmlongv091.bin.1.26
+2025-12-12 07:45:57,629 - Turning genes from prodigal to mmseqs2 db
+2025-12-12 07:46:00,279 - Getting hits from kofam
+2025-12-12 07:58:34,948 - No KEGG source provided so distillation will be of limited use.
+2025-12-12 07:58:35,154 - Getting forward best hits from peptidase
+2025-12-12 07:58:42,604 - Getting reverse best hits from peptidase
+2025-12-12 07:58:44,944 - Getting descriptions of hits from peptidase
+2025-12-12 07:58:44,953 - Getting hits from pfam
+2025-12-12 07:59:11,148 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+2025-12-12 07:59:22,068 - Merging ORF annotations
+2025-12-12 07:59:39,825 - Annotating NNF_AD15_mmlongv091.bin.1.46
+2025-12-12 07:59:47,561 - Turning genes from prodigal to mmseqs2 db
+2025-12-12 07:59:50,968 - Getting hits from kofam
+2025-12-12 08:10:32,201 - No KEGG source provided so distillation will be of limited use.
+2025-12-12 08:10:32,215 - Getting forward best hits from peptidase
+2025-12-12 08:10:38,589 - Getting reverse best hits from peptidase
+2025-12-12 08:10:41,336 - Getting descriptions of hits from peptidase
+2025-12-12 08:10:41,350 - Getting hits from pfam
+2025-12-12 08:11:09,064 - Getting hits from dbCAN
+2025-12-12 08:11:18,006 - Merging ORF annotations
+2025-12-12 08:11:43,027 - Annotating NNF_AD15_mmlongv091.bin.2.49
+2025-12-12 08:11:52,113 - Turning genes from prodigal to mmseqs2 db
+2025-12-12 08:11:55,358 - Getting hits from kofam
+2025-12-12 08:21:49,034 - No KEGG source provided so distillation will be of limited use.
+2025-12-12 08:21:49,092 - Getting forward best hits from peptidase
+2025-12-12 08:21:56,064 - Getting reverse best hits from peptidase
+2025-12-12 08:21:58,166 - Getting descriptions of hits from peptidase
+2025-12-12 08:21:58,175 - Getting hits from pfam
+2025-12-12 08:22:22,693 - Getting hits from dbCAN
+2025-12-12 08:22:31,451 - Merging ORF annotations
+2025-12-12 08:22:58,416 - Annotating NNF_AD15_mmlongv091.bin.2.42
+2025-12-12 08:23:17,727 - Turning genes from prodigal to mmseqs2 db
+2025-12-12 08:23:20,596 - Getting hits from kofam
+2025-12-12 08:36:26,211 - No KEGG source provided so distillation will be of limited use.
+2025-12-12 08:36:26,400 - Getting forward best hits from peptidase
+2025-12-12 08:36:32,021 - Getting reverse best hits from peptidase
+2025-12-12 08:36:33,893 - Getting descriptions of hits from peptidase
+2025-12-12 08:36:33,929 - Getting hits from pfam
+2025-12-12 08:36:58,771 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+2025-12-12 08:37:09,566 - Merging ORF annotations
+2025-12-12 08:37:37,384 - Annotating NNF_AD15_mmlongv091.bin.2.11
+2025-12-12 08:37:42,056 - Turning genes from prodigal to mmseqs2 db
+2025-12-12 08:37:45,205 - Getting hits from kofam
+2025-12-12 08:45:48,935 - No KEGG source provided so distillation will be of limited use.
+2025-12-12 08:45:48,945 - Getting forward best hits from peptidase
+2025-12-12 08:45:53,501 - Getting reverse best hits from peptidase
+2025-12-12 08:45:55,331 - Getting descriptions of hits from peptidase
+2025-12-12 08:45:55,336 - Getting hits from pfam
+2025-12-12 08:46:18,004 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+2025-12-12 08:46:25,064 - Merging ORF annotations
+2025-12-12 08:46:36,410 - Annotating NNF_AD15_mmlongv091.bin.3.123
+2025-12-12 08:46:48,128 - Turning genes from prodigal to mmseqs2 db
+2025-12-12 08:46:50,601 - Getting hits from kofam
+2025-12-12 08:57:02,134 - No KEGG source provided so distillation will be of limited use.
+2025-12-12 08:57:02,246 - Getting forward best hits from peptidase
+2025-12-12 08:57:08,638 - Getting reverse best hits from peptidase
+2025-12-12 08:57:10,553 - Getting descriptions of hits from peptidase
+2025-12-12 08:57:10,561 - Getting hits from pfam
+2025-12-12 08:57:34,173 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glyco_tranf_2_3 look like an id from dbcan_description
+  warnings.warn(
+2025-12-12 08:57:44,530 - Merging ORF annotations
+2025-12-12 08:58:06,153 - No rRNAs were detected, no rrnas.tsv file will be created.
+2025-12-12 08:58:07,871 - Annotating NNF_AD15_mmlongv091.bin.2.15
+2025-12-12 08:58:14,620 - Turning genes from prodigal to mmseqs2 db
+2025-12-12 08:58:17,684 - Getting hits from kofam
+2025-12-12 09:10:36,489 - No KEGG source provided so distillation will be of limited use.
+2025-12-12 09:10:36,499 - Getting forward best hits from peptidase
+2025-12-12 09:10:43,179 - Getting reverse best hits from peptidase
+2025-12-12 09:10:53,702 - Getting descriptions of hits from peptidase
+2025-12-12 09:10:53,712 - Getting hits from pfam
+2025-12-12 09:11:18,252 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this  look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this cohesin look like an id from dbcan_description
+  warnings.warn(
+2025-12-12 09:11:29,560 - Merging ORF annotations
+2025-12-12 09:11:41,600 - Annotating NNF_AD15_mmlongv091.bin.1.23
+2025-12-12 09:11:59,618 - Turning genes from prodigal to mmseqs2 db
+2025-12-12 09:12:02,073 - Getting hits from kofam
+2025-12-12 09:22:37,746 - No KEGG source provided so distillation will be of limited use.
+2025-12-12 09:22:37,753 - Getting forward best hits from peptidase
+2025-12-12 09:22:43,420 - Getting reverse best hits from peptidase
+2025-12-12 09:22:45,207 - Getting descriptions of hits from peptidase
+2025-12-12 09:22:45,216 - Getting hits from pfam
+2025-12-12 09:23:07,337 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+2025-12-12 09:23:15,276 - Merging ORF annotations
+2025-12-12 09:23:33,642 - Annotating NNF_AD15_mmlongv091.bin.2.16
+2025-12-12 09:23:42,490 - Turning genes from prodigal to mmseqs2 db
+2025-12-12 09:23:45,062 - Getting hits from kofam
+2025-12-12 09:31:35,061 - No KEGG source provided so distillation will be of limited use.
+2025-12-12 09:31:35,069 - Getting forward best hits from peptidase
+2025-12-12 09:31:39,776 - Getting reverse best hits from peptidase
+2025-12-12 09:31:41,807 - Getting descriptions of hits from peptidase
+2025-12-12 09:31:41,816 - Getting hits from pfam
+2025-12-12 09:32:03,963 - Getting hits from dbCAN
+2025-12-12 09:32:10,895 - Merging ORF annotations
+2025-12-12 09:32:31,405 - Annotating NNF_AD15_mmlongv091.bin.1.90
+2025-12-12 09:32:58,080 - Turning genes from prodigal to mmseqs2 db
+2025-12-12 09:33:00,507 - Getting hits from kofam
+2025-12-12 09:46:07,066 - No KEGG source provided so distillation will be of limited use.
+2025-12-12 09:46:07,073 - Getting forward best hits from peptidase
+2025-12-12 09:46:13,341 - Getting reverse best hits from peptidase
+2025-12-12 09:46:15,317 - Getting descriptions of hits from peptidase
+2025-12-12 09:46:15,325 - Getting hits from pfam
+2025-12-12 09:46:39,039 - Getting hits from dbCAN
+2025-12-12 09:46:50,100 - Merging ORF annotations
+2025-12-12 09:47:20,393 - Annotating NNF_AD15_mmlongv091.bin.1.5
+2025-12-12 09:47:29,665 - Turning genes from prodigal to mmseqs2 db
+2025-12-12 09:47:32,375 - Getting hits from kofam
+2025-12-12 09:58:19,923 - No KEGG source provided so distillation will be of limited use.
+2025-12-12 09:58:19,938 - Getting forward best hits from peptidase
+2025-12-12 09:58:25,688 - Getting reverse best hits from peptidase
+2025-12-12 09:58:27,924 - Getting descriptions of hits from peptidase
+2025-12-12 09:58:27,935 - Getting hits from pfam
+2025-12-12 09:58:53,103 - Getting hits from dbCAN
+2025-12-12 09:59:01,704 - Merging ORF annotations
+2025-12-12 09:59:24,632 - Annotating NNF_AD15_mmlongv091.bin.2.26
+2025-12-12 09:59:30,454 - Turning genes from prodigal to mmseqs2 db
+2025-12-12 09:59:33,935 - Getting hits from kofam
+2025-12-12 10:10:32,794 - No KEGG source provided so distillation will be of limited use.
+2025-12-12 10:10:32,826 - Getting forward best hits from peptidase
+2025-12-12 10:10:39,013 - Getting reverse best hits from peptidase
+2025-12-12 10:10:41,295 - Getting descriptions of hits from peptidase
+2025-12-12 10:10:41,303 - Getting hits from pfam
+2025-12-12 10:11:05,714 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+2025-12-12 10:11:16,597 - Merging ORF annotations
+2025-12-12 10:11:36,859 - Annotating NNF_AD15_mmlongv091.bin.2.52
+2025-12-12 10:11:52,126 - Turning genes from prodigal to mmseqs2 db
+2025-12-12 10:11:55,307 - Getting hits from kofam
+2025-12-12 10:20:46,283 - No KEGG source provided so distillation will be of limited use.
+2025-12-12 10:20:46,290 - Getting forward best hits from peptidase
+2025-12-12 10:20:51,830 - Getting reverse best hits from peptidase
+2025-12-12 10:20:53,883 - Getting descriptions of hits from peptidase
+2025-12-12 10:20:53,891 - Getting hits from pfam
+2025-12-12 10:21:18,420 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+2025-12-12 10:21:25,909 - Merging ORF annotations
+2025-12-12 10:21:51,021 - Annotating NNF_AD15_mmlongv091.bin.1.32
+2025-12-12 10:22:01,936 - Turning genes from prodigal to mmseqs2 db
+2025-12-12 10:22:04,994 - Getting hits from kofam
+2025-12-12 10:38:37,335 - No KEGG source provided so distillation will be of limited use.
+2025-12-12 10:38:37,358 - Getting forward best hits from peptidase
+2025-12-12 10:38:44,572 - Getting reverse best hits from peptidase
+2025-12-12 10:38:46,534 - Getting descriptions of hits from peptidase
+2025-12-12 10:38:46,543 - Getting hits from pfam
+2025-12-12 10:39:11,386 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glyco_tranf_2_3 look like an id from dbcan_description
+  warnings.warn(
+2025-12-12 10:39:26,103 - Merging ORF annotations
+2025-12-12 10:39:48,535 - Annotating NNF_AD15_mmlongv091.bin.2.55
+2025-12-12 10:40:04,692 - Turning genes from prodigal to mmseqs2 db
+2025-12-12 10:40:07,617 - Getting hits from kofam
+2025-12-12 10:53:58,155 - No KEGG source provided so distillation will be of limited use.
+2025-12-12 10:53:58,165 - Getting forward best hits from peptidase
+2025-12-12 10:54:04,925 - Getting reverse best hits from peptidase
+2025-12-12 10:54:06,716 - Getting descriptions of hits from peptidase
+2025-12-12 10:54:06,727 - Getting hits from pfam
+2025-12-12 10:54:31,562 - Getting hits from dbCAN
+2025-12-12 10:54:44,813 - Merging ORF annotations
+2025-12-12 10:55:08,209 - Annotating NNF_AD15_mmlongv091.bin.1.92
+2025-12-12 10:55:22,712 - Turning genes from prodigal to mmseqs2 db
+2025-12-12 10:55:25,502 - Getting hits from kofam
+2025-12-12 11:08:49,903 - No KEGG source provided so distillation will be of limited use.
+2025-12-12 11:08:49,913 - Getting forward best hits from peptidase
+2025-12-12 11:08:55,362 - Getting reverse best hits from peptidase
+2025-12-12 11:08:57,220 - Getting descriptions of hits from peptidase
+2025-12-12 11:08:57,228 - Getting hits from pfam
+2025-12-12 11:09:20,360 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+2025-12-12 11:09:29,968 - Merging ORF annotations
+2025-12-12 11:09:51,867 - Annotating NNF_AD15_mmlongv091.bin.1.137
+2025-12-12 11:10:15,746 - Turning genes from prodigal to mmseqs2 db
+2025-12-12 11:10:18,548 - Getting hits from kofam
+2025-12-12 11:21:59,959 - No KEGG source provided so distillation will be of limited use.
+2025-12-12 11:21:59,965 - Getting forward best hits from peptidase
+2025-12-12 11:22:06,278 - Getting reverse best hits from peptidase
+2025-12-12 11:22:08,158 - Getting descriptions of hits from peptidase
+2025-12-12 11:22:08,169 - Getting hits from pfam
+2025-12-12 11:22:31,555 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+2025-12-12 11:22:40,719 - Merging ORF annotations
+2025-12-12 11:23:02,301 - Annotating NNF_AD15_mmlongv091.bin.1.104
+2025-12-12 11:23:14,459 - Turning genes from prodigal to mmseqs2 db
+2025-12-12 11:23:17,000 - Getting hits from kofam
+2025-12-12 11:37:23,493 - No KEGG source provided so distillation will be of limited use.
+2025-12-12 11:37:23,500 - Getting forward best hits from peptidase
+2025-12-12 11:37:30,416 - Getting reverse best hits from peptidase
+2025-12-12 11:37:32,338 - Getting descriptions of hits from peptidase
+2025-12-12 11:37:32,347 - Getting hits from pfam
+2025-12-12 11:37:57,165 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glyco_tranf_2_3 look like an id from dbcan_description
+  warnings.warn(
+2025-12-12 11:38:09,138 - Merging ORF annotations
+2025-12-12 11:38:33,021 - Annotating NNF_AD15_mmlongv091.bin.2.46
+2025-12-12 11:38:43,949 - Turning genes from prodigal to mmseqs2 db
+2025-12-12 11:38:46,722 - Getting hits from kofam
+2025-12-12 11:51:46,927 - No KEGG source provided so distillation will be of limited use.
+2025-12-12 11:51:47,187 - Getting forward best hits from peptidase
+2025-12-12 11:51:54,121 - Getting reverse best hits from peptidase
+2025-12-12 11:51:56,320 - Getting descriptions of hits from peptidase
+2025-12-12 11:51:56,330 - Getting hits from pfam
+2025-12-12 11:52:21,169 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glyco_tranf_2_3 look like an id from dbcan_description
+  warnings.warn(
+2025-12-12 11:52:33,085 - Merging ORF annotations
+2025-12-12 11:52:53,106 - Annotating NNF_AD15_mmlongv091.bin.2.50
+2025-12-12 11:53:04,333 - Turning genes from prodigal to mmseqs2 db
+2025-12-12 11:53:07,824 - Getting hits from kofam
+2025-12-12 12:04:20,105 - No KEGG source provided so distillation will be of limited use.
+2025-12-12 12:04:20,203 - Getting forward best hits from peptidase
+2025-12-12 12:04:25,406 - Getting reverse best hits from peptidase
+2025-12-12 12:04:27,298 - Getting descriptions of hits from peptidase
+2025-12-12 12:04:27,305 - Getting hits from pfam
+2025-12-12 12:04:49,930 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+2025-12-12 12:04:57,724 - Merging ORF annotations
+2025-12-12 12:05:09,564 - No rRNAs were detected, no rrnas.tsv file will be created.
+2025-12-12 12:05:11,733 - Annotating NNF_AD15_mmlongv091.bin.2.6
+2025-12-12 12:05:20,566 - Turning genes from prodigal to mmseqs2 db
+2025-12-12 12:05:25,717 - Getting hits from kofam
+2025-12-12 12:15:02,888 - No KEGG source provided so distillation will be of limited use.
+2025-12-12 12:15:02,898 - Getting forward best hits from peptidase
+2025-12-12 12:15:07,602 - Getting reverse best hits from peptidase
+2025-12-12 12:15:09,413 - Getting descriptions of hits from peptidase
+2025-12-12 12:15:09,421 - Getting hits from pfam
+2025-12-12 12:15:32,940 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glyco_tranf_2_3 look like an id from dbcan_description
+  warnings.warn(
+2025-12-12 12:15:40,551 - Merging ORF annotations
+2025-12-12 12:16:00,887 - Annotating NNF_AD15_mmlongv091.bin.2.7
+2025-12-12 12:16:15,673 - Turning genes from prodigal to mmseqs2 db
+2025-12-12 12:16:18,111 - Getting hits from kofam
+2025-12-12 12:29:34,052 - No KEGG source provided so distillation will be of limited use.
+2025-12-12 12:29:34,052 - Getting forward best hits from peptidase
+2025-12-12 12:29:39,842 - Getting reverse best hits from peptidase
+2025-12-12 12:29:42,049 - Getting descriptions of hits from peptidase
+2025-12-12 12:29:42,058 - Getting hits from pfam
+2025-12-12 12:30:05,939 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+2025-12-12 12:30:15,139 - Merging ORF annotations
+2025-12-12 12:30:38,782 - Annotating NNF_AD15_mmlongv091.bin.1.106
+2025-12-12 12:30:47,127 - Turning genes from prodigal to mmseqs2 db
+2025-12-12 12:30:50,029 - Getting hits from kofam
+2025-12-12 12:44:32,033 - No KEGG source provided so distillation will be of limited use.
+2025-12-12 12:44:32,201 - Getting forward best hits from peptidase
+2025-12-12 12:44:38,644 - Getting reverse best hits from peptidase
+2025-12-12 12:44:40,567 - Getting descriptions of hits from peptidase
+2025-12-12 12:44:40,575 - Getting hits from pfam
+2025-12-12 12:45:05,429 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+2025-12-12 12:45:16,107 - Merging ORF annotations
+2025-12-12 12:45:42,745 - Annotating NNF_AD15_mmlongv091.bin.1.25
+2025-12-12 12:45:58,200 - Turning genes from prodigal to mmseqs2 db
+2025-12-12 12:46:01,558 - Getting hits from kofam
+2025-12-12 12:59:12,809 - No KEGG source provided so distillation will be of limited use.
+2025-12-12 12:59:12,851 - Getting forward best hits from peptidase
+2025-12-12 12:59:18,533 - Getting reverse best hits from peptidase
+2025-12-12 12:59:20,448 - Getting descriptions of hits from peptidase
+2025-12-12 12:59:20,456 - Getting hits from pfam
+2025-12-12 12:59:45,108 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+2025-12-12 12:59:54,436 - Merging ORF annotations
+2025-12-12 13:00:20,803 - Annotating NNF_AD15_mmlongv091.bin.1.145
+2025-12-12 13:00:41,108 - Turning genes from prodigal to mmseqs2 db
+2025-12-12 13:00:43,940 - Getting hits from kofam
+2025-12-12 13:12:02,412 - No KEGG source provided so distillation will be of limited use.
+2025-12-12 13:12:02,868 - Getting forward best hits from peptidase
+2025-12-12 13:12:08,958 - Getting reverse best hits from peptidase
+2025-12-12 13:12:10,971 - Getting descriptions of hits from peptidase
+2025-12-12 13:12:10,981 - Getting hits from pfam
+2025-12-12 13:12:34,793 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this SLH look like an id from dbcan_description
+  warnings.warn(
+2025-12-12 13:12:46,194 - Merging ORF annotations
+2025-12-12 13:13:12,639 - Annotating NNF_AD15_mmlongv091.bin.2.69
+2025-12-12 13:13:22,027 - Turning genes from prodigal to mmseqs2 db
+2025-12-12 13:13:25,609 - Getting hits from kofam
+2025-12-12 13:20:32,287 - No KEGG source provided so distillation will be of limited use.
+2025-12-12 13:20:32,477 - Getting forward best hits from peptidase
+2025-12-12 13:20:37,566 - Getting reverse best hits from peptidase
+2025-12-12 13:20:40,538 - Getting descriptions of hits from peptidase
+2025-12-12 13:20:40,546 - Getting hits from pfam
+2025-12-12 13:21:04,058 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+2025-12-12 13:21:10,987 - Merging ORF annotations
+2025-12-12 13:21:27,928 - Annotating NNF_AD15_mmlongv091.bin.1.133
+2025-12-12 13:21:44,561 - Turning genes from prodigal to mmseqs2 db
+2025-12-12 13:21:48,363 - Getting hits from kofam
+2025-12-12 13:35:44,255 - No KEGG source provided so distillation will be of limited use.
+2025-12-12 13:35:44,263 - Getting forward best hits from peptidase
+2025-12-12 13:35:50,640 - Getting reverse best hits from peptidase
+2025-12-12 13:35:52,564 - Getting descriptions of hits from peptidase
+2025-12-12 13:35:52,574 - Getting hits from pfam
+2025-12-12 13:36:16,396 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+2025-12-12 13:36:26,876 - Merging ORF annotations
+2025-12-12 13:36:50,606 - Annotating NNF_AD15_mmlongv091.bin.2.14
+2025-12-12 13:37:48,916 - Turning genes from prodigal to mmseqs2 db
+2025-12-12 13:37:51,359 - Getting hits from kofam
+2025-12-12 13:52:44,732 - No KEGG source provided so distillation will be of limited use.
+2025-12-12 13:52:44,739 - Getting forward best hits from peptidase
+2025-12-12 13:52:52,934 - Getting reverse best hits from peptidase
+2025-12-12 13:52:54,933 - Getting descriptions of hits from peptidase
+2025-12-12 13:52:54,944 - Getting hits from pfam
+2025-12-12 13:53:22,594 - Getting hits from dbCAN
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:218: UserWarning: No descriptions were found for your id's. Does this GT2_Glycos_transf_2 look like an id from dbcan_description
+  warnings.warn(
+2025-12-12 13:53:38,240 - Merging ORF annotations
+2025-12-12 13:53:50,743 - Annotations complete, processing annotations
+2025-12-12 13:55:26,132 - Completed annotations
++ DRAM.py distill -i /home/student.aau.dk/yr42on/Thesis/data/DRAM_test_koeng_23_2/annotate/annotations.tsv -o /home/student.aau.dk/yr42on/Thesis/data/DRAM_test_koeng_23_2/distill --trna_path /home/student.aau.dk/yr42on/Thesis/data/DRAM_test_koeng_23_2/annotate/trnas.tsv --rrna_path /home/student.aau.dk/yr42on/Thesis/data/DRAM_test_koeng_23_2/annotate/rrnas.tsv
+/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/database_handler.py:2: UserWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html. The pkg_resources package is slated for removal as early as 2025-11-30. Refrain from using this package or pin to Setuptools<81.
+  from pkg_resources import resource_filename
+2025-12-12 13:56:27,817 - The log file is created at /home/student.aau.dk/yr42on/Thesis/data/DRAM_test_koeng_23_2/distill/distill.log
+2025-12-12 13:56:56,796 - Note: the fallowing id fields were not in the annotations file and are not being used: ['kegg_genes_id', 'kegg_id', 'camper_id', 'fegenie_id', 'sulfur_id', 'methyl_id'], but these are ['ko_id', 'kegg_hit', 'peptidase_family', 'cazy_best_hit', 'pfam_hits']
+Traceback (most recent call last):
+  File "/home/student.aau.dk/yr42on/.conda/envs/DRAM2/bin/DRAM.py", line 211, in <module>
+    args.func(**args_dict)
+  File "/home/student.aau.dk/yr42on/.conda/envs/DRAM2/lib/python3.11/site-packages/mag_annotator/summarize_genomes.py", line 656, in summarize_genomes
+    if 'genome_summary_form' not in database_handler.config["dram_sheets"]:
+                                    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+KeyError: 'dram_sheets'

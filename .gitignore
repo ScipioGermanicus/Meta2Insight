@@ -232,3 +232,5 @@ code/module_coverage/enrichm/*
 R/rstudio-server/*
 R/wd/module_completeness.tsv
 code/database_midas/*
+R/rstudio-server/*
+R/wd/*.tsv

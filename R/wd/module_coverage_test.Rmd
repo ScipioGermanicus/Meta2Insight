@@ -8,12 +8,15 @@ output: html_document
 ```{r setup, message=FALSE, warning=FALSE}
 
 # wd
-setwd("~/R/wd")
+setwd("~/Thesis/R/wd")
 
+install.packages("ComplexHeatmap")
+install.packages("colorRamp2")
 
 # Libraries
 library(tidyverse)
 library(ComplexHeatmap)
+library(colorRamp2)
 
 # Data
 df <- read.csv("module_completeness.tsv", sep="\t")
@@ -25,9 +28,178 @@ df$Percent_steps_found <- as.numeric(df$Percent_steps_found)
 
 ```
 
+```{r}
+library(dplyr)
+library(readr)
+library(stringr)
+library(purrr)
+library(tidyr)
+
+# -----------------------------
+# 1) INPUTS
+# -----------------------------
+annotations_path <- "annotations.tsv"
+module_file_path <- "module.txt"
+
+genome_col <- "scaffold"   # use "scaffold" as genome ID
+ko_col     <- "ko_id"
+
+# -----------------------------
+# 2) READ DRAM ANNOTATIONS
+# -----------------------------
+ann <- read_tsv(
+  annotations_path,
+  show_col_types = FALSE,
+  progress = FALSE
+)
+
+# Keep only valid KO assignments (K#####)
+ann_kos <- ann %>%
+  transmute(
+    genome = .data[[genome_col]],
+    ko     = .data[[ko_col]]
+  ) %>%
+  filter(!is.na(ko), ko != "", str_detect(ko, "^K\\d{5}$")) %>%
+  distinct()
+
+# Build a KO set per genome
+genome_to_kos <- ann_kos %>%
+  group_by(genome) %>%
+  summarise(kos = list(unique(ko)), .groups = "drop")
+
+# -----------------------------
+# 3) PARSE module.txt
+#    Your format: <ModuleName>\t<expression>
+#    Expression grammar (supported here):
+#      - Outer blocks separated by commas at top level = OR between alternative complete solutions
+#      - Within a block, '+' = AND (all required)
+#      - Within parentheses, commas = OR (alternative KOs for a step)
+#    Example:
+#      (K12368+(K12369,K16200)+K12372)  means:
+#      need K12368 AND (K12369 OR K16200) AND K12372
+# -----------------------------
+
+# split by delimiter but only at top level (not inside parentheses)
+split_top_level <- function(x, delim = ",") {
+  chars <- strsplit(x, "", fixed = TRUE)[[1]]
+  depth <- 0L
+  out <- character()
+  cur <- character()
+  for (ch in chars) {
+    if (ch == "(") depth <- depth + 1L
+    if (ch == ")") depth <- depth - 1L
+    if (ch == delim && depth == 0L) {
+      out <- c(out, paste0(cur, collapse = ""))
+      cur <- character()
+    } else {
+      cur <- c(cur, ch)
+    }
+  }
+  out <- c(out, paste0(cur, collapse = ""))
+  str_trim(out)
+}
+
+strip_outer_parens <- function(s) {
+  s <- str_trim(s)
+  if (str_starts(s, "\\(") && str_ends(s, "\\)")) {
+    inner <- str_sub(s, 2, -2)
+    # only strip if those are truly outer parens (balanced inside)
+    # (simple heuristic: we accept it here)
+    return(str_trim(inner))
+  }
+  s
+}
+
+# Parse one module expression into list of "blocks"
+# Each block = list of "terms"
+# Each term = character vector of alternative KOs (OR)
+parse_module_expr <- function(expr) {
+  expr <- str_trim(expr)
+
+  # Top-level blocks separated by commas (OR between blocks)
+  blocks <- split_top_level(expr, delim = ",")
+
+  parse_block <- function(b) {
+    b <- strip_outer_parens(b)
+    # Split by '+' at top level (AND between terms)
+    terms <- split_top_level(b, delim = "+")
+    parse_term <- function(t) {
+      t <- str_trim(t)
+      t <- strip_outer_parens(t)
+
+      # If term still has top-level commas, treat as OR alternatives
+      alts <- split_top_level(t, delim = ",")
+      # Extract KO IDs from each alternative (supports clean "K#####")
+      alts <- unlist(lapply(alts, function(a) str_extract_all(a, "K\\d{5}")[[1]]))
+      unique(alts)
+    }
+    lapply(terms, parse_term)
+  }
+
+  lapply(blocks, parse_block)
+}
+
+# Evaluate one parsed module against one KO set
+module_present <- function(parsed_module, ko_set) {
+  ko_set <- unique(ko_set)
+
+  block_satisfies <- function(block) {
+    # block is list of terms; each term is vector of alternative KOs
+    all(vapply(block, function(term_alts) {
+      any(term_alts %in% ko_set)
+    }, logical(1)))
+  }
+
+  any(vapply(parsed_module, block_satisfies, logical(1)))
+}
+
+# Read module.txt lines, parse
+module_lines <- readLines(module_file_path)
+module_lines <- module_lines[module_lines != ""]
+module_lines <- module_lines[!str_starts(str_trim(module_lines), "#")]
+
+modules_df <- tibble(raw = module_lines) %>%
+  separate(raw, into = c("module_name", "expr"), sep = "\t", extra = "merge", fill = "right") %>%
+  mutate(
+    module_name = str_trim(module_name),
+    expr = str_trim(expr)
+  ) %>%
+  filter(!is.na(expr), expr != "") %>%
+  mutate(parsed = map(expr, parse_module_expr))
+
+# -----------------------------
+# 4) COMPUTE per-genome module presence
+# -----------------------------
+module_presence <- genome_to_kos %>%
+  mutate(results = map(kos, function(kos_one_genome) {
+    tibble(
+      module_name = modules_df$module_name,
+      present = vapply(modules_df$parsed, module_present, logical(1), ko_set = kos_one_genome)
+    )
+  })) %>%
+  select(genome, results) %>%
+  unnest(results) %>%
+  mutate(present = as.integer(present))
+
+# -----------------------------
+# 5) OPTIONAL: wide matrix (genome x module)
+# -----------------------------
+presence_matrix <- module_presence %>%
+  pivot_wider(
+    names_from = module_name,
+    values_from = present,
+    values_fill = 0
+  )
+
+# Inspect outputs
+print(module_presence)
+print(presence_matrix)
+
+```
+
 
 ```{r}
-## Add arbitrary abundance and filter data
+## Add arbitrary abundance and introduce cutoffs
 
 # Add abundance values
 set.seed(123)
@@ -42,29 +214,33 @@ df <- df %>%
 df$Abundance <- as.numeric(df$Abundance)
 
 
-# Filter data (100% and 75% cutoffs)
+# Introduce cutoffs (i.e. 100 = present, 100 < absent)
 df_100 <- df %>%
-  filter(Percent_steps_found == 100)
+  mutate(
+    present_100 = if_else(Percent_steps_found == 100, 1L, 0L)
+  )
 
 df_75 <- df %>%
-  filter(Percent_steps_found >= 75)
+  mutate(
+    present_75 = if_else(Percent_steps_found >= 75, 1L, 0L)
+  )
 
 ```
 
 
 ```{r}
-## Build presence/absence matrix and abundance matrix
+## Build presence/absence matrix and abundance matrix for cutoff at 100%
 
 # Presence/absence matrix (genomes x modules)
-matrix_presence_absence <- df_100 %>%
-  mutate(present = 1L) %>%
-  select(Genome_name, Module_id, present) %>%
+presence_mat <- df_100 %>%
+  select(Genome_name, Module_id, present_100) %>%
   distinct() %>%
-  pivot_wider(
-    names_from = Module_id,
-    values_from = present,
-    values_fill = list(present = 0L)
+  tidyr::pivot_wider(
+    names_from  = Module_id,
+    values_from = present_100,
+    values_fill = list(present_100 = 0L)
   )
+
 
 
 # Store row names, then drop Genome_name column
@@ -96,16 +272,98 @@ abun_mat <- matrix(
 
 
 ```{r}
-
-
 # Colour gradient for abundance
+abun_col_fun <- colorRamp2(
+  c(min(abun_vec, na.rm = TRUE),
+    max(abun_vec, na.rm = TRUE)),
+  c("white", "steelblue")
+)
 
+
+# restore_matrix
+restore_matrix <- function(j, i, x, y) {
+  # order by y (top to bottom) then x (left to right)
+  o <- order(y, x)
+  i2 <- i[o]
+  j2 <- j[o]
+  uniq_i <- unique(i2)
+  uniq_j <- unique(j2)
+  nr <- length(uniq_i)
+  nc <- length(uniq_j)
+  mat <- matrix(NA_integer_, nrow = nr, ncol = nc)
+  mat[cbind(match(i2, uniq_i), match(j2, uniq_j))] <- o
+  mat
+}
 
 
 ```
 
 
 ```{r}
+# Abundance-heatmap with vectors for module presence/absence
+hm <- Heatmap(
+  row_names_gp = gpar(fontsize = 0), 
+  column_names_gp = gpar(fontsize = 0),
+  abun_mat,
+  name = "abundance",
+  col = abun_col_fun,
+  cluster_rows   = FALSE,   # you can turn these on if you like
+  cluster_columns = FALSE,
+  layer_fun = function(j, i, x, y, w, h, fill) {
+    # get index matrix for this slice
+    ind_mat = restore_matrix(j, i, x, y)
+
+    # loop over rows in current slice
+    for (ir in seq_len(nrow(ind_mat))) {
+      # start from second column (we connect neighbours)
+      for (ic in seq_len(ncol(ind_mat))[-1]) {
+        ind1 = ind_mat[ir, ic - 1]  # previous column index in vectors j/i/x/y
+        ind2 = ind_mat[ir, ic]      # current column index
+
+        # corresponding row/col in full matrix
+        row1 = i[ind1]
+        col1 = j[ind1]
+        row2 = i[ind2]
+        col2 = j[ind2]
+
+        v1 = presence_mat[row1, col1]
+        v2 = presence_mat[row2, col2]
+
+        # draw segments and points only if BOTH positions are present (1)
+        if (v1 == 1 && v2 == 1) {
+          grid.segments(x[ind1], y[ind1], x[ind2], y[ind2],
+                        gp = gpar(col = "darkred", lwd = 0.5))
+        }
+
+        # draw points where presence == 1 (current position)
+        if (v2 == 1) {
+          grid.points(
+            x[ind2], y[ind2],
+            pch = 16,
+            size = unit(0.5, "mm"),
+            gp = gpar(col = "darkred")
+          )
+        }
+      }
+
+      # also handle the first column’s dot (since loop above starts at 2)
+      ind_first = ind_mat[ir, 1]
+      row_first = i[ind_first]
+      col_first = j[ind_first]
+      v_first   = presence_mat[row_first, col_first]
+      if (v_first == 1) {
+        grid.points(
+          x[ind_first], y[ind_first],
+          pch = 16,
+          size = unit(0.5, "mm"),
+          gp = gpar(col = "darkred")
+        )
+      }
+    }
+  }
+)
+
+draw(hm)
 
 ```
 
