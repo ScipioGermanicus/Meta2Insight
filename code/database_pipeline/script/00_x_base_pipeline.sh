@@ -146,7 +146,7 @@ python script/18_convert_phylip_to_fasta.py
     # remember archaea later
 
 # 22_filter_16S_copies_bac.py
-
+    # remember archaea later
 
 # 23_annotation.sh
     # remember archaea later
