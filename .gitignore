@@ -236,3 +236,8 @@ R/rstudio-server/*
 R/wd/*.tsv
 *.out
 *.err
+ec_level4_to_metacyc_rxn.tsv
+metacyc_path2rxn_struc_filt_pro.txt
+micromamba
+enrichm.yml
+environment.yaml
