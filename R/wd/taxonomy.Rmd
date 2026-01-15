@@ -1,0 +1,462 @@
+---
+title: "taxonomy"
+author: "Lasse Steffensen"
+date: "2025-12-17"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+
+# wd
+setwd("C:/Users/lasse/Desktop/wd/25/taxonomy")
+
+
+# Libraries
+library(tidyverse)
+library(colorRamp2)
+library(forcats)
+library(stringr)
+
+
+# Data frames
+BC13_bins <- read.csv("C:/Users/lasse/Desktop/wd/25/df/BC13_bins.tsv", sep="\t")
+BC14_bins <- read.csv("C:/Users/lasse/Desktop/wd/25/df/BC14_bins.tsv", sep="\t")
+ar53.summary_BC13 <- read.csv("C:/Users/lasse/Desktop/wd/25/df/gtdbtk.ar53.summary_BC13.tsv", sep="\t") %>%
+  select(user_genome, classification) %>%
+  mutate(sample = "Meso")
+ar53.summary_BC14 <- read.csv("C:/Users/lasse/Desktop/wd/25/df/gtdbtk.ar53.summary_BC14.tsv", sep="\t") %>%
+  select(user_genome, classification) %>%
+  mutate(sample = "Thermo")
+bac120.summary_BC13 <- read.csv("C:/Users/lasse/Desktop/wd/25/df/gtdbtk.bac120.summary_BC13.tsv", sep="\t") %>%
+  select(user_genome, classification) %>%
+  mutate(sample = "Meso")
+bac120.summary_BC14 <- read.csv("C:/Users/lasse/Desktop/wd/25/df/gtdbtk.bac120.summary_BC14.tsv", sep="\t") %>%
+  select(user_genome, classification) %>%
+  mutate(sample = "Thermo")
+
+BC13_summary <- bind_rows(ar53.summary_BC13, bac120.summary_BC13)
+BC14_summary <- bind_rows(ar53.summary_BC14, bac120.summary_BC14)
+summary <- bind_rows(BC13_summary, BC14_summary)
+
+
+```
+
+
+
+```{r}
+
+# Transform bin data frames
+
+BC13_sel <- BC13_bins %>%
+  select(bin, genome_size, cov) %>%
+  mutate(sample = "Meso")
+
+BC14_sel <- BC14_bins %>%
+  select(bin, genome_size, cov) %>%
+  mutate(sample = "Thermo")
+
+bins_combined <- bind_rows(BC13_sel, BC14_sel)
+
+
+```
+
+```{r}
+
+# Calculate relative abundance for each sample
+
+bins_combined <- bins_combined %>%
+  mutate(mapped_bases = cov * genome_size) %>%
+  group_by(sample) %>%
+  mutate(rel_abun = mapped_bases / sum(mapped_bases, na.rm = TRUE)) %>%
+  ungroup()
+
+
+# Join taxonomy with bins
+
+bins_tax <- bins_combined %>%
+  left_join(summary, by = c("sample" = "sample", "bin" = "user_genome"))
+
+
+# Parse taxonomy ranks
+
+bins_tax2 <- bins_tax %>%
+  mutate(classification = replace_na(classification, "d_Unclassified")) %>%
+  separate(classification,
+           into = c("domain","phylum","class","order","family","genus","species"),
+           sep=";", fill="right") %>%
+  mutate(
+    phylum  = str_remove(phylum,  "^p__"),
+    class   = str_remove(class,   "^c__"),
+    order   = str_remove(order,   "^o__"),
+    family  = str_remove(family,  "^f__"),
+    genus   = str_remove(genus,   "^g__"),
+    species = str_remove(species, "^s__"),
+    phylum  = if_else(is.na(phylum) | phylum == "", "Unclassified", phylum)
+  )
+
+
+# Phyla stacked bar plot data frame
+
+phylum_comp <- bins_tax2 %>%
+  group_by(sample, phylum) %>%
+  summarise(rel_abun = sum(rel_abun, na.rm = TRUE), .groups = "drop")
+
+phylum_comp_plot <- phylum_comp %>%
+  mutate(phylum_plot = if_else(rel_abun < 0.000001, "Other", phylum)) %>%
+  group_by(sample, phylum_plot) %>%
+  summarise(rel_abun = sum(rel_abun), .groups = "drop")
+
+
+
+
+
+```
+
+```{r}
+
+# Stacked bar plot figure
+
+ggplot(phylum_comp_plot, aes(x = sample, y = rel_abun, fill = phylum_plot)) +
+  geom_col(width = 0.8) +
+  labs(x = NULL, y = "Relative abundance (mapped-to-bins)", fill = "Phylum") +
+  theme_bw()
+
+
+
+```
+
+```{r}
+
+# Phylum ordering
+phylum_order <- phylum_comp_plot %>%
+  group_by(phylum_plot) %>%
+  summarise(total = sum(rel_abun), .groups = "drop") %>%
+  arrange(desc(total)) %>%
+  pull(phylum_plot)
+
+phylum_comp_plot <- phylum_comp_plot %>%
+  mutate(phylum_plot = factor(phylum_plot, levels = phylum_order))
+
+library(RColorBrewer)
+
+n_phyla <- length(levels(phylum_comp_plot$phylum_plot))
+
+# Brewer max is 12–20 depending on palette; Set3 is good for taxonomy
+base_cols <- brewer.pal(min(n_phyla, 12), "Set3")
+
+# Expand if needed
+cols <- colorRampPalette(base_cols)(n_phyla)
+
+names(cols) <- levels(phylum_comp_plot$phylum_plot)
+
+# Force neutral colours
+if ("Other" %in% names(cols)) {
+  cols["Other"] <- "grey80"
+}
+if ("Unclassified" %in% names(cols)) {
+  cols["Unclassified"] <- "grey60"
+}
+
+ggplot(phylum_comp_plot,
+       aes(x = sample, y = rel_abun, fill = phylum_plot)) +
+  geom_col(width = 0.8, colour = "black", linewidth = 0.2) +
+  scale_fill_manual(values = cols) +
+  labs(
+    x = NULL,
+    y = "Relative abundance",
+    fill = "Phylum (no rel. abun. threshold)"
+  ) +
+  theme_bw() +
+  theme(
+    legend.key.height = unit(0.4, "cm"),
+    legend.text = element_text(size = 9),
+    legend.title = element_text(size = 10)
+  )
+
+
+```
+
+Missing: 
+Thermotogae
+
+
+Present:
+Fibrobacterota
+Pseudomonadota (Proteobacteria)
+Bacteroidota (Bacteroidetes)
+Bacillota (Firmicutes)
+
+
+Renamed:
+Proteobacteria -> Pseudomonadota
+Bacteroidetes -> Bacteroidota
+Firmicutes -> Bacillota
+
+
+Not found in literature:
+Atribacterota
+Halobacteriota
+Patescibacteriota
+
+
+
+```{r}
+
+# Resolved/unresolved genomes stacked bar chart
+
+ranks <- c(
+  domain  = "d__",
+  phylum  = "p__",
+  class   = "c__",
+  order   = "o__",
+  family  = "f__",
+  genus   = "g__",
+  species = "s__"
+)
+
+level_status <- imap_dfr(ranks, \(prefix, rank_name) {
+  summary %>%
+    mutate(
+      rank = rank_name,
+      token = str_extract(classification, paste0(prefix, "[^;]*")),
+      status = case_when(
+        is.na(token) ~ "Unresolved",
+        token == prefix ~ "Unresolved",
+        token == paste0(prefix, "") ~ "Unresolved",
+        TRUE ~ "Resolved"
+      )
+    ) %>%
+    count(sample, rank, status)
+}) %>%
+  group_by(sample, rank) %>%
+  mutate(prop = n / sum(n)) %>%
+  ungroup() %>%
+  mutate(
+    status = factor(status, levels = c("Resolved", "Unresolved")),
+    rank = factor(rank, levels = names(ranks))
+  )
+
+ggplot(level_status, aes(x = sample, y = prop, fill = status)) +
+  geom_col(width = 0.75) +
+  facet_wrap(~ rank, nrow = 1) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+  scale_fill_manual(values = c(Resolved = "lightblue", Unresolved = "darkblue")) +
+  labs(x = NULL, y = "Fraction of genomes", fill = "Assignment") +
+  theme_bw() +
+  theme(strip.text = element_text(size = 9))
+
+
+```
+
+```{r}
+
+
+#  Ensure mapped bases + per-sample relative abundance
+bins_combined <- bins_combined %>%
+  mutate(
+    mapped_bases = cov * genome_size
+  ) %>%
+  group_by(sample) %>%
+  mutate(
+    rel_abun = mapped_bases / sum(mapped_bases, na.rm = TRUE)
+  ) %>%
+  ungroup()
+
+#  join taxonomy 
+bins_tax <- bins_combined %>%
+  left_join(summary, by = c("sample" = "sample", "bin" = "user_genome"))
+
+# parse phylum
+bins_tax2 <- bins_tax %>%
+  mutate(
+    classification = replace_na(classification, "d__Unclassified;p__Unclassified")
+  ) %>%
+  separate(
+    classification,
+    into = c("domain","phylum","class","order","family","genus","species"),
+    sep = ";",
+    fill = "right",
+    remove = FALSE
+  ) %>%
+  mutate(
+    phylum = str_remove(phylum, "^p__"),
+    phylum = if_else(is.na(phylum) | phylum == "" | phylum == "Unclassified", "Unclassified", phylum)
+  )
+
+#  Phylum composition per sample 
+phylum_comp <- bins_tax2 %>%
+  group_by(sample, phylum) %>%
+  summarise(rel_abun = sum(rel_abun, na.rm = TRUE), .groups = "drop") %>%
+  group_by(sample) %>%
+  mutate(rel_abun = rel_abun / sum(rel_abun, na.rm = TRUE)) %>%  # re-normalise for safety
+  ungroup()
+
+
+# Handle low relative abundance phyla as 'other'
+
+phylum_comp_plot <- phylum_comp %>%
+  group_by(sample) %>%
+  mutate(
+    phylum = fct_lump_n(phylum, n = 12, w = rel_abun, other_level = "Other")
+  ) %>%
+  group_by(sample, phylum) %>%
+  summarise(rel_abun = sum(rel_abun), .groups = "drop") %>%
+  group_by(sample) %>%
+  mutate(rel_abun = rel_abun / sum(rel_abun)) %>%
+  ungroup()
+
+
+phylum_comp_labs <- phylum_comp_plot %>%
+  group_by(sample) %>%
+  arrange(desc(phylum)) %>%
+  mutate(
+    frac = rel_abun,
+    ypos = cumsum(frac) - 0.5 * frac,
+    label = if_else(frac >= 0.05, scales::percent(frac, accuracy = 1), "")
+  ) %>%
+  ungroup()
+
+ggplot(phylum_comp_labs, aes(x = 2, y = rel_abun, fill = phylum)) +
+  geom_col(width = 1, colour = "white", linewidth = 0.2) +
+  geom_text(aes(y = ypos, label = label), size = 3) +
+  coord_polar(theta = "y") +
+  xlim(0.5, 2.5) +
+  facet_wrap(~ sample) +
+  theme_void() +
+  theme(
+    strip.text = element_text(face = "bold"),
+    legend.position = "right"
+  )
+
+
+```
+
+```{r}
+
+# ---- Recompute per-sample relative abundance (as you already do) ----
+bins_combined <- bins_combined %>%
+  mutate(mapped_bases = cov * genome_size) %>%
+  group_by(sample) %>%
+  mutate(rel_abun = mapped_bases / sum(mapped_bases, na.rm = TRUE)) %>%
+  ungroup()
+
+# ---- Join taxonomy ----
+bins_tax <- bins_combined %>%
+  left_join(summary, by = c("sample" = "sample", "bin" = "user_genome"))
+
+# ---- Parse phylum ----
+bins_tax2 <- bins_tax %>%
+  mutate(classification = replace_na(classification, "d__Unclassified;p__Unclassified")) %>%
+  separate(
+    classification,
+    into = c("domain","phylum","class","order","family","genus","species"),
+    sep = ";",
+    fill = "right",
+    remove = FALSE
+  ) %>%
+  mutate(
+    phylum = str_remove(phylum, "^p__"),
+    phylum = if_else(is.na(phylum) | phylum == "" | phylum == "Unclassified", "Unclassified", phylum)
+  )
+
+# ---- Phylum composition per sample ----
+phylum_comp <- bins_tax2 %>%
+  group_by(sample, phylum) %>%
+  summarise(rel_abun = sum(rel_abun, na.rm = TRUE), .groups = "drop") %>%
+  group_by(sample) %>%
+  mutate(rel_abun = rel_abun / sum(rel_abun, na.rm = TRUE)) %>%
+  ungroup()
+
+# ---- (Recommended) Lump small phyla to keep the plot readable ----
+# Choose either:
+#   A) lump within each sample (may create different "Other" composition per sample)
+#   B) lump globally based on mean abundance across samples (keeps categories aligned)
+#
+# I recommend B for nested doughnuts.
+
+# B) Global lumping by mean abundance across samples
+keep_phyla <- phylum_comp %>%
+  group_by(phylum) %>%
+  summarise(mean_abun = mean(rel_abun), .groups = "drop") %>%
+  arrange(desc(mean_abun)) %>%
+  slice_head(n = 12) %>%                 # keep top N phyla
+  pull(phylum)
+
+phylum_comp_plot <- phylum_comp %>%
+  mutate(phylum = if_else(phylum %in% keep_phyla, phylum, "Other")) %>%
+  group_by(sample, phylum) %>%
+  summarise(rel_abun = sum(rel_abun), .groups = "drop") %>%
+  group_by(sample) %>%
+  mutate(rel_abun = rel_abun / sum(rel_abun)) %>%
+  ungroup()
+
+# ---- Ensure identical phylum factor levels across rings (critical for consistent fills) ----
+phylum_levels <- phylum_comp_plot %>%
+  group_by(phylum) %>%
+  summarise(total = sum(rel_abun), .groups = "drop") %>%
+  arrange(desc(total)) %>%
+  pull(phylum)
+
+phylum_comp_plot <- phylum_comp_plot %>%
+  mutate(
+    phylum = factor(phylum, levels = phylum_levels),
+    ring  = factor(sample, levels = c("Meso", "Thermo"))  # inner, outer order
+  )
+
+phylum_comp_plot <- phylum_comp_plot %>%
+  mutate(
+    ring = if_else(sample == "Meso", 1, 2)  # numeric radius
+  )
+
+
+
+ggplot(phylum_comp_plot, aes(x = ring, y = rel_abun, fill = phylum)) +
+  geom_col(width = 0.95, colour = "white", linewidth = 0.2) +
+  coord_polar(theta = "y") +
+  xlim(0.4, 2.6) +
+  annotate("text", x = 1, y = 0, label = "Meso", fontface = "bold", vjust = 0.5) +
+  annotate("text", x = 2, y = 0, label = "Thermo", fontface = "bold", vjust = 0.5) +
+  theme_void() +
+  theme(legend.position = "right")
+
+
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
