@@ -772,7 +772,7 @@ ggsave(filename = "higher_level/complete_module.png", plot = c,
 
 
 
-
+One consideration: To what degree to we capture hydrolysis-related species when filtering for the top 20 most abundant species having at least 50% Percent_steps_found for at least one module in e.g. acetogenesis? That could be a bias. Maybe introduce a filter, e.g. all species must have at least one module where Percent_steps_found is 100%?
 
 
 #####################################################################################
@@ -1080,10 +1080,10 @@ ggsave(filename = "lower_level/hydrolysis_species.png", plot = hp,
 Acidogenesis
 ```{r}
 
-# Filter for hydrolysis and 50% threshold, normalise taxonomy (due to missing species names)
-h <- completeness_tax %>%
+# Filter for acidogenesis and 50% threshold, normalise taxonomy (due to missing species names)
+ac <- completeness_tax %>%
   filter(
-    phase == "Hydrolysis",
+    phase == "Acidogenesis",
     Percent_steps_found >= 50
   ) %>%
   mutate(
@@ -1102,7 +1102,7 @@ h <- completeness_tax %>%
   )
 
 # Stable Steps_needed and module label, include number of steps needed
-module_steps <- h %>%
+module_steps <- ac %>%
   group_by(Module_id) %>%
   summarise(
     Steps_needed = max(Steps_needed, na.rm = TRUE),
@@ -1113,7 +1113,7 @@ module_steps <- h %>%
   )
 
 # Avoid redundant genome counting, aggregate non-redundant rel abun
-species_key_all <- h %>%
+species_key_all <- ac %>%
   distinct(sample, Genome_name, genus_clean, species_clean, r_abund) %>%
   group_by(sample, genus_clean, species_clean) %>%
   summarise(
@@ -1123,7 +1123,7 @@ species_key_all <- h %>%
 # Filter for top 20 most abundant species in both samples 
   group_by(sample) %>%
   arrange(desc(species_r_abund), genus_clean, species_clean) %>%
-  slice_head(n = 20) %>%                 # <-- TOP 20 most abundant species PER SAMPLE
+  slice_head(n = 20) %>%
   ungroup() %>%
   group_by(sample, genus_clean) %>%
 # Create unique y-axis key to prevent sp. collapsing
@@ -1140,14 +1140,14 @@ species_key_all <- h %>%
   mutate(abun_lab = sprintf("%.1f%%", species_r_abund))
 
 # Filter the full module data frame for those modules from top 20 most abun species
-h_top <- h %>%
+ac_top <- ac %>%
   semi_join(
     species_key_all %>% select(sample, genus_clean, species_clean),
     by = c("sample", "genus_clean", "species_clean")
   )
 
 # Collapse per species x module into single tile value
-h_species <- h_top %>%
+ac_species <- ac_top %>%
   left_join(
     species_key_all %>% select(sample, genus_clean, species_clean, y_id),
     by = c("sample", "genus_clean", "species_clean")
@@ -1170,10 +1170,10 @@ y_breaks <- species_key_all %>%
   unique()
 
 # plot tiles with genome counts and abundance labels
-hp <- ggplot(h_species, aes(x = Module_label, y = y_id)) +
+acp <- ggplot(ac_species, aes(x = Module_label, y = y_id)) +
   geom_tile(
     aes(alpha = Percent_steps_found),
-    fill = "navyblue",
+    fill = "palegreen4",
     color = NA,
     width = 0.9,
     height = 0.9
@@ -1196,7 +1196,7 @@ hp <- ggplot(h_species, aes(x = Module_label, y = y_id)) +
     range  = c(0.15, 1),
     oob    = squish
   ) +
-  guides(alpha = guide_legend(override.aes = list(fill = "navyblue"))) +
+  guides(alpha = guide_legend(override.aes = list(fill = "palegreen4"))) +
 # Translate y_id values into readable axis labels
   scale_y_discrete(
     breaks = y_breaks,
@@ -1227,13 +1227,169 @@ hp <- ggplot(h_species, aes(x = Module_label, y = y_id)) +
   ) +
   facet_wrap(~ sample, nrow = 1, scales = "fixed")
 
-hp
+acp
 
-ggsave(filename = "lower_level/hydrolysis_species.png", plot = hp,
-       width = 20, height = 6, dpi = 300)
+ggsave(filename = "lower_level/acidogenesis_species.png", plot = acp,
+       width = 7, height = 6, dpi = 300)
 ```
 
+Acetogenesis
 ```{r}
+
+
+# Filter for acetogenesis and 50% threshold, normalise taxonomy (due to missing species names)
+act <- completeness_tax %>%
+  filter(
+    phase == "Acetogenesis",
+    Percent_steps_found >= 50
+  ) %>%
+  mutate(
+    genus_clean = case_when(
+      is.na(genus) ~ "GenusUnknown",
+      trimws(genus) == "" ~ "GenusUnknown",
+      genus == "NA" ~ "GenusUnknown",
+      TRUE ~ genus
+    ),
+    species_clean = case_when(
+      is.na(species) ~ "sp.",
+      trimws(species) == "" ~ "sp.",
+      species == "NA" ~ "sp.",
+      TRUE ~ species
+    )
+  )
+
+# Stable Steps_needed and module label, include number of steps needed
+module_steps <- act %>%
+  group_by(Module_id) %>%
+  summarise(
+    Steps_needed = max(Steps_needed, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  mutate(
+    Module_label = sprintf("%s (n=%d)", Module_id, Steps_needed)
+  )
+
+# Avoid redundant genome counting, aggregate non-redundant rel abun
+species_key_all <- act %>%
+  distinct(sample, Genome_name, genus_clean, species_clean, r_abund) %>%
+  group_by(sample, genus_clean, species_clean) %>%
+  summarise(
+    species_r_abund = sum(r_abund, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+# Filter for top 20 most abundant species in both samples 
+  group_by(sample) %>%
+  arrange(desc(species_r_abund), genus_clean, species_clean) %>%
+  slice_head(n = 20) %>%
+  ungroup() %>%
+  group_by(sample, genus_clean) %>%
+# Create unique y-axis key to prevent sp. collapsing
+  mutate(
+    sp_idx = if_else(species_clean == "sp.", row_number(), NA_integer_),
+    y_id = if_else(
+      species_clean == "sp.",
+      paste0(genus_clean, "__sp.__", sp_idx),
+      paste0(genus_clean, "__", species_clean)
+    )
+  ) %>%
+  ungroup() %>%
+# Format abundance into a string for plotting
+  mutate(abun_lab = sprintf("%.1f%%", species_r_abund))
+
+# Filter the full module data frame for those modules from top 20 most abun species
+act_top <- act %>%
+  semi_join(
+    species_key_all %>% select(sample, genus_clean, species_clean),
+    by = c("sample", "genus_clean", "species_clean")
+  )
+
+# Collapse per species x module into single tile value
+act_species <- act_top %>%
+  left_join(
+    species_key_all %>% select(sample, genus_clean, species_clean, y_id),
+    by = c("sample", "genus_clean", "species_clean")
+  ) %>%
+  group_by(sample, y_id, Module_id) %>%
+  summarise(
+    Percent_steps_found = max(Percent_steps_found, na.rm = TRUE),
+    n_genomes = n_distinct(Genome_name),
+    .groups = "drop"
+  ) %>%
+  left_join(module_steps, by = "Module_id") %>%
+  mutate(
+    Module_label = factor(Module_label, levels = unique(module_steps$Module_label))
+  )
+
+# Ensure breaks/labels correspond to plotted rows
+y_breaks <- species_key_all %>%
+  arrange(sample, desc(species_r_abund), y_id) %>%
+  pull(y_id) %>%
+  unique()
+
+# plot tiles with genome counts and abundance labels
+act <- ggplot(act_species, aes(x = Module_label, y = y_id)) +
+  geom_tile(
+    aes(alpha = Percent_steps_found),
+    fill = "palevioletred4",
+    color = NA,
+    width = 0.9,
+    height = 0.9
+  ) +
+  geom_text(aes(label = n_genomes), colour = "white", size = 2) +
+  geom_text(
+    data = species_key_all,
+    aes(x = 0, y = y_id, label = abun_lab),
+    inherit.aes = FALSE,
+    hjust = 0.75,
+    size = 1.5,
+    colour = "black"
+  ) +
+# Alpha scale from 50% to 100%
+  scale_alpha(
+    name   = "Module completeness\n(% steps found)",
+    limits = c(50, 100),
+    breaks = c(50, 60, 70, 80, 90, 100),
+    labels = function(x) sprintf("%d%%", x),
+    range  = c(0.15, 1),
+    oob    = squish
+  ) +
+  guides(alpha = guide_legend(override.aes = list(fill = "palevioletred4"))) +
+# Translate y_id values into readable axis labels
+  scale_y_discrete(
+    breaks = y_breaks,
+    drop = FALSE,
+    labels = function(x) {
+      genus_part   <- sub("__.*$", "", x)
+      species_part <- sub("^.*__", "", x)
+
+      ifelse(
+        grepl("__sp\\.__\\d+$", x),
+        paste(genus_part, "sp."),
+        species_part
+      )
+    }
+  ) +
+  coord_cartesian(clip = "off") +
+  theme_void() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 5),
+    axis.text.y = element_text(size = 5, hjust = 0, margin = margin(r = 8)),
+    axis.ticks  = element_line(color = "black"),
+    axis.title  = element_blank(),
+    legend.position = "right",
+    panel.spacing.x = unit(2, "lines"),
+    panel.background = element_rect(fill = "white", color = NA),
+    plot.background  = element_rect(fill = "white", color = NA),
+    plot.margin = margin(t = 0, r = 20, b = 0, l = 30)
+  ) +
+  facet_wrap(~ sample, nrow = 1, scales = "fixed")
+
+act
+
+ggsave(filename = "lower_level/acetogenesis_species.png", plot = act,
+       width = 7, height = 6, dpi = 300)
+
+
 
 ```
 
