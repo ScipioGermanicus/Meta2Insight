@@ -1,0 +1,1255 @@
+---
+title: "Module completeness"
+author: "Lasse Steffensen"
+date: "2026-01-09"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+setwd("C:/Users/lasse/Desktop/wd/25/module_completeness")
+library(tidyverse)
+library(reshape2)
+library(colorspace)
+library(ggtext)
+library(ggalluvial)
+library(scales)
+library(ggh4x)
+library(tibble)
+
+module_sheet <- read.csv("C:/Users/lasse/Desktop/wd/25/df/module_classifications.txt", sep="\t", header=TRUE) #%>%
+#  mutate(across(c(module_alt, phase, group, module), ~ stringr::str_squish(as.character(.x))))
+
+
+module_completeness_meso <- read.csv("C:/Users/lasse/Desktop/wd/25/df/module_completeness_meso.tsv", sep="\t", header=TRUE)
+module_completeness_thermo <- read.csv("C:/Users/lasse/Desktop/wd/25/df/module_completeness_thermo.tsv", sep="\t", header=TRUE)
+
+BC13_bins <- read.csv("C:/Users/lasse/Desktop/wd/25/df/BC13_bins.tsv", sep="\t")
+BC14_bins <- read.csv("C:/Users/lasse/Desktop/wd/25/df/BC14_bins.tsv", sep="\t")
+
+ar53.summary_BC13 <- read.csv("C:/Users/lasse/Desktop/wd/25/df/gtdbtk.ar53.summary_BC13.tsv", sep="\t") %>%
+  select(user_genome, classification) %>%
+  mutate(sample = "Meso")
+ar53.summary_BC14 <- read.csv("C:/Users/lasse/Desktop/wd/25/df/gtdbtk.ar53.summary_BC14.tsv", sep="\t") %>%
+  select(user_genome, classification) %>%
+  mutate(sample = "Thermo")
+bac120.summary_BC13 <- read.csv("C:/Users/lasse/Desktop/wd/25/df/gtdbtk.bac120.summary_BC13.tsv", sep="\t") %>%
+  select(user_genome, classification) %>%
+  mutate(sample = "Meso")
+bac120.summary_BC14 <- read.csv("C:/Users/lasse/Desktop/wd/25/df/gtdbtk.bac120.summary_BC14.tsv", sep="\t") %>%
+  select(user_genome, classification) %>%
+  mutate(sample = "Thermo")
+
+
+# module_sheet is the file containing classifications of modules into different categories. This helps construct more focused and condensed analysis
+# module_completeness is the file containing the percentages of steps present in a given module for all genomes. 
+# The _bins files contain the raw metadata that is returned from mmlong2
+# The .summary files are also mmlong2 output, and more specifically, output from GTDB-Tk, and contain taxonomic information
+# Note: BC13 is the mesophilic sample, BC14 is the thermophilic sample
+```
+
+```{r}
+
+### Obtain one big file with module completeness, modules, and taxonomy
+
+
+
+# Concatenating meso and thermo files
+module_completeness_meso <- module_completeness_meso %>%
+  mutate(sample = "Meso")
+
+module_completeness_thermo <- module_completeness_thermo %>%
+  mutate(sample = "Thermo")
+
+module_completeness <- bind_rows(module_completeness_meso, module_completeness_thermo)
+
+module_completeness <- module_completeness %>%
+  mutate(
+    Genome_name = as.character(Genome_name),
+    Module_id   = as.character(Module_id),
+    sample   = as.character(sample),
+    Percent_steps_found = as.numeric(Percent_steps_found)
+  )
+
+BC13_summary <- bind_rows(ar53.summary_BC13, bac120.summary_BC13)
+BC14_summary <- bind_rows(ar53.summary_BC14, bac120.summary_BC14)
+summary <- bind_rows(BC13_summary, BC14_summary)
+
+
+# Transform bin data frames
+BC13_sel <- BC13_bins %>%
+  select(bin, genome_size, cov, r_abund) %>%
+  mutate(sample = "Meso")
+
+BC14_sel <- BC14_bins %>%
+  select(bin, genome_size, cov, r_abund) %>%
+  mutate(sample = "Thermo")
+
+bins_combined <- bind_rows(BC13_sel, BC14_sel)
+
+#### "Old" way of calculating relative abundance
+# Calculate relative abundance for each sample
+#bins_combined <- bins_combined %>%
+#  mutate(mapped_bases = cov * genome_size) %>%
+#  group_by(sample) %>%
+#  mutate(rel_abun = mapped_bases / sum(mapped_bases, na.rm = TRUE)) %>%
+#  ungroup()
+
+
+# Join taxonomy with bins
+bins_tax <- bins_combined %>%
+  left_join(summary, by = c("sample" = "sample", "bin" = "user_genome"))
+
+
+# Parse taxonomy ranks
+bins_tax2 <- bins_tax %>%
+  separate(classification,
+           into = c("domain","phylum","class","order","family","genus","species"),
+           sep=";", fill="right") %>%
+  mutate(
+    phylum  = str_remove(phylum,  "^p__"),
+    class   = str_remove(class,   "^c__"),
+    order   = str_remove(order,   "^o__"),
+    family  = str_remove(family,  "^f__"),
+    genus   = str_remove(genus,   "^g__"),
+    species = str_remove(species, "^s__"),
+    phylum  = if_else(is.na(phylum) | phylum == "", "Unclassified", phylum)
+  )
+
+
+# Relative abundance on different taxonomic levels
+genus_abun <- bins_tax2 %>%
+  group_by(sample, genus) %>%
+  summarise(genus_r_abund = sum(r_abund, na.rm = TRUE), .groups = "drop")
+
+order_abun <- bins_tax2 %>%
+  group_by(sample, order) %>%
+  summarise(order_r_abund = sum(r_abund, na.rm = TRUE), .groups = "drop")
+
+phylum_abun <- bins_tax2 %>%
+  group_by(sample, phylum) %>%
+  summarise(phylum_r_abund = sum(r_abund, na.rm = TRUE), .groups = "drop")
+
+
+# Left join module_completeness with taxonomy and modules
+modules_tax <- module_completeness %>%
+  left_join(bins_tax2, by = c("Genome_name" = "bin", "sample" = "sample"))
+
+completeness_tax <- modules_tax %>%
+  left_join(module_sheet, by = c("Module_id" = "module_alt"))
+
+
+
+# Essentially, completeness_tax is a concatenated file containing all the information from all other files. 
+# genus_abun, order_abun, etc. contain relative abundance collapsed to different taxonomic levels.
+
+```
+
+
+
+
+#####################################################################################
+
+
+
+
+
+
+
+                         Lower taxonomic level analysis
+                             (mostly phylum-level)
+
+
+
+
+
+
+
+
+#####################################################################################
+
+
+
+
+Methanogenesis
+```{r}
+
+### Methanogenesis 
+
+
+# Filter for phase/group/entry and cutoff
+m <- completeness_tax %>%
+  filter((phase == "Methanogenesis"), (Percent_steps_found >= 100))
+
+
+# Count number of methanogenesis modules
+n_meth_modules <- m %>%
+  distinct(Module_id) %>%
+  nrow()
+
+
+# Collapse to genus-level and calculate alpha values (the alpha gradient)
+m_genus <- m %>%
+  group_by(sample, genus, Module_id) %>%
+  summarise(
+    Percent_steps_found = max(Percent_steps_found, na.rm = TRUE),
+    n_genomes = n_distinct(Genome_name),
+    .groups = "drop"
+  ) %>%
+  group_by(sample, genus) %>%
+  mutate(
+    n_modules_present = n_distinct(Module_id),
+    alpha = n_modules_present / n_meth_modules
+  ) %>%
+  ungroup()
+
+
+# Add genus-level abundance
+m_genus <- m_genus %>%
+  left_join(genus_abun, by = c("sample", "genus"))
+
+
+# Labels for abundance
+genus_labels <- genus_abun %>%
+  mutate(abun_lab = sprintf("%.1f%%", genus_r_abund)) %>%
+  semi_join(m_genus %>% distinct(sample, genus), by = c("sample", "genus"))
+
+
+
+# Manual colour gradient
+#subgroup_colors <- c(
+#  "Methanogenesis I, acetate => methane"      = "mediumpurple4",
+#  "Methanogenesis II, CO2 => methane"         = "mediumpurple4",
+#  "Methanogenesis III, methanol => methane"   = "mediumpurple4",
+#  "Methanogenesis IV, methylamine => methane" = "mediumpurple4",
+#  "Methanogenesis V, methanethiol => methane" = "mediumpurple4"
+#)
+
+
+# Plot genome completeness (presence/absence matrix) using the highest value from each genus
+p <- ggplot(m_genus, aes(x = Module_id, y = genus)) +
+  geom_tile(aes(alpha = alpha), fill = "mediumpurple4", color = NA, width = 0.9, height = 0.9) +
+# scale_fill_viridis_d(option = "mako") +
+  scale_alpha(
+    name   = "Methanogenesis\nmodules present",
+    limits = c(0, 1),
+    breaks = c(0.25, 0.50, 0.75, 1.00),
+    labels = scales::percent,
+    range  = c(0.15, 1)) +
+  guides(
+  alpha = guide_legend(
+    override.aes = list(fill = "mediumpurple4"))) +
+  geom_text(
+    data = genus_labels,
+    aes(x = -Inf, y = genus, label = abun_lab),
+    inherit.aes = FALSE,
+    hjust = 1,
+    size = 3,
+    colour = "black"
+  ) +
+  geom_text(aes(label = n_genomes), colour = "white", size = 3) +
+  coord_cartesian(clip = "off") +
+  theme_void() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 10),
+    axis.text.y = element_text(size = 10, hjust = -0.35),
+    axis.ticks  = element_line(color = "black"),
+    axis.title  = element_blank(),
+    legend.position = "right",
+    panel.spacing.x = unit(2, "lines"),
+    panel.background = element_rect(fill = "white", color = NA),
+    plot.background  = element_rect(fill = "white", color = NA),
+    plot.margin = margin(t = 0, r = 20, b = 0, l = 60)  # extra left space for %
+  ) +
+  facet_wrap(~ sample, nrow = 1)
+
+p
+
+ggsave(filename = "higher_level/methanogenesis_genus.png", plot = p,
+       width = 11, height = 6, dpi = 300)
+
+
+
+# First, the "master document", i.e. completeness_tax is filtered for only those modules assigned to the group "Methanogenesis", as well as the defined cutoff for Percent_steps_found.
+# Now, the total amount of modules is saved as n_meth_modules, which is later used for the alpha gradient
+# Then, the highest value of Percent_steps_found is selected for each module, per genus, per sample. Also, the amount of genomes in each genus is counted, so that we can later display how many genomes in each genus have met the threshold. Additionally, the amount of modules per genus, per sample is saved as n_modules_present. The latter is used for calculation of alpha gradient, which also happens in this piece of code
+# Then, the earlier calculated genus_abun is added, and abundance labels are created which are used for the plot later
+# The resulting plot is a presence matrix, containing modules on the x-axis and genera on the y-axis. Tiles are shown if the threshold is met by at least one genomes of that genus.Numbers on tiles indicate the amount of genomes that have met the threshold for that module in that. Alpha gradient, i.e. opacity reflects the fraction of modules out of all the modules from methanogenesis encoded by any of the genomes from that genus. That also means that if all tiles are coloured with the darkest shade, then a genome encodes all underlying modules.
+
+
+```
+
+Hydrolysis
+```{r}
+
+### Hydrolysis
+
+
+# Filter for phase/group/entry and cutoff
+h <- completeness_tax %>%
+  filter((phase == "Hydrolysis"), (Percent_steps_found >= 100))
+
+
+# Count number of hydrolysis modules
+n_hydro_modules <- h %>%
+  distinct(Module_id) %>%
+  nrow()
+
+
+# Collapse to phylum-level and calculate alpha values (the alpha gradient)
+h_phylum <- h %>%
+  group_by(sample, phylum, Module_id) %>%
+  summarise(
+    Percent_steps_found = max(Percent_steps_found, na.rm = TRUE),
+    n_genomes = n_distinct(Genome_name),
+    .groups = "drop"
+  ) %>%
+  group_by(sample, phylum) %>%
+  mutate(
+    n_modules_present = n_distinct(Module_id),
+    alpha = n_modules_present / n_hydro_modules
+  ) %>%
+  ungroup()
+
+
+# Add phylum-level abundance
+h_phylum <- h_phylum %>%
+  left_join(phylum_abun, by = c("sample", "phylum"))
+
+
+# Labels for abundance
+phylum_labels <- phylum_abun %>%
+  mutate(abun_lab = sprintf("%.1f%%", phylum_r_abund)) %>%
+  semi_join(h_phylum %>% distinct(sample, phylum), by = c("sample", "phylum"))
+
+
+# Plot genome completeness (presence/absence matrix) using the highest value from each phylum
+p_hydro <- ggplot(h_phylum, aes(x = Module_id, y = phylum)) +
+  geom_tile(aes(alpha = alpha), fill = "navyblue", color = NA, width = 0.9, height = 0.9) +
+  scale_alpha(
+    name   = "Hydrolysis\nmodules present",
+    limits = c(0, 1),
+    breaks = c(0.25, 0.50, 0.75, 1.00),
+    labels = scales::percent,
+    range  = c(0.15, 1)) +
+  guides(
+    alpha = guide_legend(
+      override.aes = list(fill = "navyblue"))) +
+  scale_x_discrete(
+  expand = expansion(add = c(3.5, 0))) +
+  geom_text(
+    data = phylum_labels,
+    aes(x = -Inf, y = phylum, label = abun_lab),
+    inherit.aes = FALSE,
+    hjust = -0.1,
+    size = 2.5,
+    colour = "azure4"
+  ) +
+  geom_text(aes(label = n_genomes), colour = "antiquewhite4", size = 2) +
+  coord_cartesian(clip = "off") +
+  theme_void() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 5),
+    axis.text.y = element_text(size = 5),
+    axis.ticks  = element_line(color = "black"),
+    axis.title  = element_blank(),
+    legend.position = "right",
+    panel.background = element_rect(fill = "white", color = NA),
+    plot.background  = element_rect(fill = "white", color = NA),
+    plot.margin = margin(t = 0, r = 20, b = 0, l = 20)
+  ) +
+  facet_wrap(~ sample, nrow = 1)
+
+
+p_hydro
+
+
+ggsave(filename = "higher_level/hydrolysis_phylum.png", plot = p_hydro,
+       width = 16, height = 6, dpi = 300)
+
+
+
+# First, all modules with phase == Hydrolysis are selected from the "master doc", and a simple list of all unique groups is created. The number of modules that is present in each group is saved in group_totals.
+# The threshold for Percent_steps_found is applied on the dataframe that was filtered for hydrolysis modules. From this, the number of genomes per group (under the defined threshold) is calculated, i.e. the amount of genomes that meet the threshold for at least one of the modules from each group. 
+# A new matrix is built using tidyr::complete, using the list of all modules in acidogenesis. Modules that are otherwise not present in a_phylum_mod are filled with zeroes. This helps create a presence/absence matrix, instead of a plain presence matrix. Also, alpha is calculated, based on the number of modules present and the total amount of modules.
+# Abundance is added to the dataframe and labels are created for it. 
+# Finally, the presence/absence matrix is plotted, where numbers indicate the amount of genomes within that phylum that have met the threshold for that module. The alpha gradient is based on the fraction of modules that have met the threshold within any genomes from that phylum, i.e. the fraction of modules that is encoded by the phylum, taken into account the threshold. 
+
+```
+
+Acidogenesis
+```{r}
+
+### Acidogenesis
+
+
+# Select unique acidogenesis modules
+acid_modules <- completeness_tax %>%
+  filter(phase == "Acidogenesis") %>%
+  distinct(Module_id)
+
+
+# Number of acidogenesis modules
+n_acid_modules <- nrow(acid_modules) 
+
+
+# Introduce threshold
+a <- completeness_tax %>%
+  filter(phase == "Acidogenesis", Percent_steps_found >= 100)
+
+
+# Calculate number of genomes per module, per phylum, per sample
+a_phylum_mod <- a %>%
+  group_by(sample, phylum, Module_id) %>%
+  summarise(n_phylum = n_distinct(Genome_name), .groups = "drop")
+
+
+# Build a "new" matrix, inserting the complete list of modules and filling missing modules with 0
+a_phylum <- a_phylum_mod %>%
+  tidyr::complete(sample, phylum, Module_id = acid_modules$Module_id, fill = list(n_phylum = 0L)) %>%
+  group_by(sample, phylum) %>%
+  mutate(n_modules_present = sum(n_phylum > 0), alpha = n_modules_present / n_acid_modules) %>%
+  ungroup()
+
+
+# Add abundance
+a_phylum <- a_phylum %>%
+  left_join(phylum_abun, by = c("sample", "phylum"))
+
+
+# Abundance labels
+phylum_labels <- phylum_abun %>%
+  mutate(abun_lab = sprintf("%.1f%%", phylum_r_abund)) %>%
+  semi_join(a_phylum %>% distinct(sample, phylum), by = c("sample", "phylum"))
+
+
+# plot
+ac <- ggplot(a_phylum, aes(x = Module_id, y = phylum)) +
+  geom_tile(aes(alpha = alpha), fill = "palegreen4", color = NA, width = 0.9, height = 0.9) +
+  scale_alpha(
+    name   = "Acidogenesis\nmodules present",
+    limits = c(0, 1),
+    breaks = c(0.25, 0.50, 0.75, 1.00),
+    labels = scales::percent,
+    range  = c(0.15, 1)
+  ) +
+  guides(alpha = guide_legend(override.aes = list(fill = "palegreen4"))) +
+  geom_text(
+    data = phylum_labels,
+    aes(x = -Inf, y = phylum, label = abun_lab),
+    inherit.aes = FALSE,
+    hjust = 1,
+    size = 3,
+    colour = "black"
+  ) +
+  geom_text(aes(label = n_phylum), colour = "white", size = 3) +
+  coord_cartesian(clip = "off") +
+  theme_void() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 8),
+    axis.text.y = element_text(size = 10, hjust = -0.35),
+    axis.ticks  = element_line(color = "black"),
+    axis.title  = element_blank(),
+    legend.position = "right",
+    panel.spacing.x = unit(2, "lines"),
+    panel.background = element_rect(fill = "white", color = NA),
+    plot.background  = element_rect(fill = "white", color = NA),
+    plot.margin = margin(t = 0, r = 20, b = 0, l = 60)
+  ) +
+  facet_wrap(~ sample, nrow = 1)
+
+
+ac
+
+
+ggsave(filename = "higher_level/acidogenesis_phylum.png", plot = ac,
+       width = 11, height = 6, dpi = 300)
+
+
+
+# First, all modules with phase == Acidogenesis are selected from the "master doc", and a simple list of all unique modules is created. The amount of modules is counted and saved as n_acid_modules.
+# The "master doc" is then filtered for two key parameters: The acidogenesis phase and a define threshold for Percent_steps_found. From this, the number of genomes per module (under the defined threshold) is calculated.
+# A new matrix is built using tidyr::complete, using the list of all modules in acidogenesis. Modules that are otherwise not present in a_phylum_mod are filled with zeroes. This helps create a presence/absence matrix, instead of a plain presence matrix. Also, alpha is calculated, based on the number of modules present and the total amount of modules.
+# Abundance is added to the dataframe and labels are created for it. 
+# Finally, the presence/absence matrix is plotted, where numbers indicate the amount of genomes within that phylum that have met the threshold for that module. The alpha gradient is based on the fraction of modules that have met the threshold within any genomes from that phylum, i.e. the fraction of modules that is encoded by the phylum, taken into account the threshold. 
+
+```
+
+Acetogenesis
+```{r}
+
+### Acetogenesis
+
+
+# Simple list of module in acetogenesis
+ag_modules <- completeness_tax %>%
+  filter(phase == "Acetogenesis") %>%
+  distinct(Module_id)
+
+
+# Number of modules in acetogenesis
+n_ag_modules <- nrow(ag_modules)
+
+
+# Introduce threshold
+ag <- completeness_tax %>%
+  filter(phase == "Acetogenesis", Percent_steps_found >= 100)
+
+
+# Add number of modules present as column 
+ag_phylum_mod <- ag %>%
+  group_by(sample, phylum, Module_id) %>%
+  summarise(
+    n_genomes = n_distinct(Genome_name),
+    .groups = "drop"
+  )
+
+
+# Build a "new" matrix, inserting the complete list of modules and filling missing modules with 0
+ag_phylum <- ag_phylum_mod %>%
+  tidyr::complete(
+    sample,
+    phylum,
+    Module_id = ag_modules$Module_id,
+    fill = list(n_genomes = 0L)
+  ) %>%
+  group_by(sample, phylum) %>%
+  mutate(
+    n_modules_present = sum(n_genomes > 0),
+    alpha = n_modules_present / n_ag_modules
+  ) %>%
+  ungroup()
+
+
+# Add phylum-level abundance
+ag_phylum <- ag_phylum %>%
+  left_join(phylum_abun, by = c("sample", "phylum"))
+
+
+# Labels for abundance
+phylum_labels <- phylum_abun %>%
+  mutate(abun_lab = sprintf("%.1f%%", phylum_r_abund)) %>%
+  semi_join(ag_phylum %>% distinct(sample, phylum), by = c("sample", "phylum"))
+
+
+# plot
+ag <- ggplot(ag_phylum, aes(x = Module_id, y = phylum)) +
+  geom_tile(aes(alpha = alpha), fill = "palevioletred4", color = NA, width = 0.9, height = 0.9) +
+  scale_alpha(
+    name   = "Acetogenesis\nmodules present",
+    limits = c(0, 1),
+    breaks = c(0.25, 0.50, 0.75, 1.00),
+    labels = scales::percent,
+    range  = c(0.15, 1)
+  ) +
+  guides(alpha = guide_legend(override.aes = list(fill = "palevioletred4"))) +
+  geom_text(
+    data = phylum_labels,
+    aes(x = -Inf, y = phylum, label = abun_lab),
+    inherit.aes = FALSE,
+    hjust = 1,
+    size = 3,
+    colour = "black"
+  ) +
+  geom_text(aes(label = n_genomes), colour = "white", size = 3) +
+  coord_cartesian(clip = "off") +
+  theme_void() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 10),
+    axis.text.y = element_text(size = 10, hjust = -0.35),
+    axis.ticks  = element_line(color = "black"),
+    axis.title  = element_blank(),
+    legend.position = "right",
+    panel.spacing.x = unit(2, "lines"),
+    panel.background = element_rect(fill = "white", color = NA),
+    plot.background  = element_rect(fill = "white", color = NA),
+    plot.margin = margin(t = 0, r = 20, b = 0, l = 60)
+  ) +
+  facet_wrap(~ sample, nrow = 1)
+
+
+ag
+
+
+ggsave(filename = "higher_level/acetogenesis_genus.png", plot = ag,
+       width = 11, height = 6, dpi = 300)
+
+
+
+```
+
+Complete pathway (module-level)
+```{r}
+
+### All phases with new classification system
+
+# Manual colour gradient
+subgroup_colors <- c(
+  "Hydrolysis"      = "navyblue",
+  "Acidogenesis"    = "palegreen4",
+  "Acetogenesis"    = "palevioletred4",
+  "Methanogenesis"  = "mediumpurple4",
+  "Other"           = "lightcyan4"
+)
+
+# Define phases of interest
+phases_keep <- c(
+  "Hydrolysis",
+  "Acidogenesis",
+  "Acetogenesis",
+  "Methanogenesis",
+  "Other"
+)
+
+# Correct order for plotting
+phase_order <- c(
+  "Hydrolysis",
+  "Acidogenesis",
+  "Other",
+  "Acetogenesis",
+  "Methanogenesis"
+)
+
+# Filter for phases of interest
+all <- completeness_tax %>%
+  filter(phase %in% phases_keep)
+
+# Total number of modules for each group
+module_totals <- all %>%
+  distinct(phase, group, module, Module_id) %>%
+  count(phase, group, module, name = "n_modulealt_total")
+
+# List of phases and underlying groups
+phase_modules <- all %>%
+  distinct(phase, group, module) %>%
+  mutate(phase = factor(phase, levels = phase_order)) %>%
+  arrange(phase, group, module)
+
+# Convert phase into an ordered factor and generate unique keys per phase x group x module combination
+phase_modules <- phase_modules %>%
+  mutate(
+    phase = factor(phase, levels = phase_order),
+    module_key = paste(phase, group, module, sep = "||")
+  ) %>%
+  arrange(phase, group, module)
+
+module_key_levels <- phase_modules$module_key
+
+# Introduce threshold
+hits <- all %>%
+  filter(Percent_steps_found >= 100)
+
+# Calculate number of modules present per module and number of genomes in each module
+hits_sum <- hits %>%
+  group_by(sample, phylum, phase, group, module) %>%
+  summarise(
+    n_modulealt_present = n_distinct(Module_id),
+    n_genomes = n_distinct(Genome_name),
+    .groups = "drop"
+  )
+
+# Build presence/absence matrix: ensure all combinations exist
+mat <- hits_sum %>%
+  tidyr::complete(
+    sample = unique(phylum_abun$sample),
+    phylum = unique(phylum_abun$phylum),
+    phase  = phases_keep,
+    group  = phase_modules$group,
+    module = phase_modules$module,
+    fill   = list(
+      n_modulealt_present = 0L,
+      n_genomes = 0L
+    )
+  ) %>%
+  # remove impossible combinations (modules that do not exist within a given phase/group)
+  semi_join(phase_modules, by = c("phase", "group", "module")) %>%
+  left_join(module_totals, by = c("phase", "group", "module")) %>%
+  mutate(
+    n_modulealt_total = replace_na(n_modulealt_total, 0L),
+    alpha = dplyr::if_else(
+      n_modulealt_total > 0,
+      n_modulealt_present / n_modulealt_total,
+      0
+    )
+  ) %>%
+  # enforce phase order and order modules by phase (and group) on x-axis
+  mutate(
+    phase = factor(phase, levels = phase_order),
+    module_key = factor(
+      paste(phase, group, module, sep = "||"),
+      levels = module_key_levels
+    )
+  )
+
+# Add phylum-level abundance
+mat <- mat %>%
+  left_join(phylum_abun, by = c("sample", "phylum"))
+
+# Add abundance label
+phylum_labels <- phylum_abun %>%
+  mutate(abun_lab = sprintf("%.1f%%", phylum_r_abund))
+
+# plot
+c <- ggplot(mat, aes(x = module_key, y = phylum)) +
+  geom_tile(
+    aes(fill = phase, alpha = alpha),
+    color = NA,
+    width = 0.9,
+    height = 0.9
+  ) +
+  scale_fill_manual(
+    values = subgroup_colors,
+    name = "Phase"
+  ) +
+  scale_alpha(
+    name = "Modules present\nwithin module",
+    limits = c(0, 1),
+    breaks = c(0.25, 0.50, 0.75, 1.00),
+    labels = scales::percent,
+    range = c(0.15, 1)
+  ) +
+  scale_x_discrete(
+    labels = function(x) sub("^.*\\|\\|.*\\|\\|", "", x),  # keep only module (3rd field)
+    expand = expansion(add = c(1.2, 0))
+  ) +
+  geom_text(
+    data = phylum_labels,
+    aes(x = -Inf, y = phylum, label = abun_lab),
+    inherit.aes = FALSE,
+    hjust = 1,
+    size = 3,
+    colour = "black"
+  ) +
+  geom_text(
+    aes(label = n_genomes),
+    colour = "white",
+    size = 2
+  ) +
+  coord_cartesian(clip = "off") +
+  theme_void() +
+  theme(
+    axis.text.x = element_text(
+      angle = 45,
+      hjust = 1,
+      vjust = 1,
+      size = 7
+    ),
+    axis.text.y = element_text(
+      size = 10,
+      hjust = -0.35
+    ),
+    axis.ticks = element_line(color = "black"),
+    axis.title = element_blank(),
+    legend.position = "right",
+    panel.spacing.x = unit(2, "lines"),
+    panel.background = element_rect(fill = "white", color = NA),
+    plot.background = element_rect(fill = "white", color = NA),
+    plot.margin = margin(t = 0, r = 20, b = 0, l = 60)
+  ) +
+  facet_wrap(~ sample, nrow = 1)
+
+c
+
+ggsave(filename = "higher_level/complete_module.png", plot = c,
+       width = 20, height = 6, dpi = 300)
+
+
+
+
+```
+
+
+#####################################################################################
+
+
+
+
+
+
+
+                          Species-level analysis
+
+
+
+
+
+
+
+
+#####################################################################################
+
+Methanogenesis
+```{r}
+
+
+m <- completeness_tax %>%
+  filter(
+    phase == "Methanogenesis",
+    Percent_steps_found >= 50
+  ) %>%
+  mutate(
+    genus_clean = case_when(
+      is.na(genus) ~ "GenusUnknown",
+      trimws(genus) == "" ~ "GenusUnknown",
+      genus == "NA" ~ "GenusUnknown",
+      TRUE ~ genus
+    ),
+    species_clean = case_when(
+      is.na(species) ~ "sp.",
+      trimws(species) == "" ~ "sp.",
+      species == "NA" ~ "sp.",
+      TRUE ~ species
+    )
+  )
+
+# Stable Steps_needed and module label
+module_steps <- m %>%
+  group_by(Module_id) %>%
+  summarise(
+    Steps_needed = max(Steps_needed, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  mutate(
+    Module_label = sprintf("%s (n=%d)", Module_id, Steps_needed)
+  )
+
+# ---- Build a UNIQUE y id that cannot collapse "sp." rows ----
+# Make unnamed species unique within each sample + genus.
+# Printed label will still be "sp."
+species_key <- m %>%
+  distinct(sample, Genome_name, genus_clean, species_clean, r_abund) %>%
+  group_by(sample, genus_clean, species_clean) %>%
+  summarise(
+    species_r_abund = sum(r_abund, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  group_by(sample, genus_clean) %>%
+  mutate(
+    sp_idx = if_else(species_clean == "sp.", row_number(), NA_integer_),
+    y_id = if_else(
+      species_clean == "sp.",
+      paste0(genus_clean, "__sp.__", sp_idx),          # unique internal ids for sp.
+      paste0(genus_clean, "__", species_clean)         # normal species internal id
+    )
+  ) %>%
+  ungroup() %>%
+  mutate(abun_lab = sprintf("%.1f%%", species_r_abund))
+
+# ---- Species-level summarisation for tiles, keyed by y_id ----
+m_species <- m %>%
+  left_join(
+    species_key %>% select(sample, genus_clean, species_clean, y_id),
+    by = c("sample", "genus_clean", "species_clean")
+  ) %>%
+  group_by(sample, y_id, Module_id) %>%
+  summarise(
+    Percent_steps_found = max(Percent_steps_found, na.rm = TRUE),
+    n_genomes = n_distinct(Genome_name),
+    .groups = "drop"
+  ) %>%
+  left_join(module_steps, by = "Module_id") %>%
+  mutate(
+    Module_label = factor(Module_label, levels = unique(module_steps$Module_label))
+  )
+
+# Ensure breaks and labels are aligned with what is actually plotted
+y_breaks <- unique(m_species$y_id)
+
+p <- ggplot(m_species, aes(x = Module_label, y = y_id)) +
+  geom_tile(
+    aes(alpha = Percent_steps_found),
+    fill = "mediumpurple4",
+    color = NA,
+    width = 0.9,
+    height = 0.9
+  ) +
+  geom_text(aes(label = n_genomes), colour = "white", size = 3) +
+  geom_text(
+    data = species_key,
+    aes(x = 0, y = y_id, label = abun_lab),
+    inherit.aes = FALSE,
+    hjust = 0.1,
+    size = 3,
+    colour = "black")+
+  scale_alpha(
+    name   = "Module completeness\n(% steps found)",
+    limits = c(50, 100),
+    breaks = c(50, 60, 70, 80, 90, 100),
+    labels = function(x) sprintf("%d%%", x),
+    range  = c(0.15, 1),
+    oob    = squish
+  ) +
+  guides(alpha = guide_legend(override.aes = list(fill = "mediumpurple4"))) +
+  scale_y_discrete(
+  drop = FALSE,
+  labels = function(x) {
+    genus_part   <- sub("__.*$", "", x)         # text before first "__"
+    species_part <- sub("^.*__", "", x)         # text after last "__"
+
+    # If this is an unnamed species row (the synthetic key ends with __<idx>)
+    ifelse(
+      grepl("__sp\\.__\\d+$", x),
+      paste(genus_part, "sp."),
+      species_part
+    )
+  }
+) +
+  coord_cartesian(clip = "off") +
+  theme_void() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 10),
+    axis.text.y = element_text(size = 10, hjust = 0, margin = margin(r = 8)),   # <-- keep species labels in their own lane
+    axis.ticks  = element_line(color = "black"),
+    axis.title  = element_blank(),
+    legend.position = "right",
+    panel.spacing.x = unit(2, "lines"),
+    panel.background = element_rect(fill = "white", color = NA),
+    plot.background  = element_rect(fill = "white", color = NA),
+    plot.margin = margin(t = 0, r = 20, b = 0, l = 30) # <-- more room for both text columns
+  ) +
+  facet_wrap(~ sample, nrow = 1, scales = "fixed")
+
+
+p
+
+
+
+ggsave(filename = "lower_level/mc_methanogenesis_species.png", plot = p,
+       width = 11, height = 6, dpi = 300)
+
+
+```
+
+Hydrolysis
+```{r}
+
+# Filter for hydrolysis and 50% threshold, normalise taxonomy (due to missing species names)
+h <- completeness_tax %>%
+  filter(
+    phase == "Hydrolysis",
+    Percent_steps_found >= 50
+  ) %>%
+  mutate(
+    genus_clean = case_when(
+      is.na(genus) ~ "GenusUnknown",
+      trimws(genus) == "" ~ "GenusUnknown",
+      genus == "NA" ~ "GenusUnknown",
+      TRUE ~ genus
+    ),
+    species_clean = case_when(
+      is.na(species) ~ "sp.",
+      trimws(species) == "" ~ "sp.",
+      species == "NA" ~ "sp.",
+      TRUE ~ species
+    )
+  )
+
+# Stable Steps_needed and module label, include number of steps needed
+module_steps <- h %>%
+  group_by(Module_id) %>%
+  summarise(
+    Steps_needed = max(Steps_needed, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  mutate(
+    Module_label = sprintf("%s (n=%d)", Module_id, Steps_needed)
+  )
+
+# Avoid redundant genome counting, aggregate non-redundant rel abun
+species_key_all <- h %>%
+  distinct(sample, Genome_name, genus_clean, species_clean, r_abund) %>%
+  group_by(sample, genus_clean, species_clean) %>%
+  summarise(
+    species_r_abund = sum(r_abund, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+# Filter for top 20 most abundant species in both samples 
+  group_by(sample) %>%
+  arrange(desc(species_r_abund), genus_clean, species_clean) %>%
+  slice_head(n = 20) %>%                 # <-- TOP 20 most abundant species PER SAMPLE
+  ungroup() %>%
+  group_by(sample, genus_clean) %>%
+# Create unique y-axis key to prevent sp. collapsing
+  mutate(
+    sp_idx = if_else(species_clean == "sp.", row_number(), NA_integer_),
+    y_id = if_else(
+      species_clean == "sp.",
+      paste0(genus_clean, "__sp.__", sp_idx),
+      paste0(genus_clean, "__", species_clean)
+    )
+  ) %>%
+  ungroup() %>%
+# Format abundance into a string for plotting
+  mutate(abun_lab = sprintf("%.1f%%", species_r_abund))
+
+# Filter the full module data frame for those modules from top 20 most abun species
+h_top <- h %>%
+  semi_join(
+    species_key_all %>% select(sample, genus_clean, species_clean),
+    by = c("sample", "genus_clean", "species_clean")
+  )
+
+# Collapse per species x module into single tile value
+h_species <- h_top %>%
+  left_join(
+    species_key_all %>% select(sample, genus_clean, species_clean, y_id),
+    by = c("sample", "genus_clean", "species_clean")
+  ) %>%
+  group_by(sample, y_id, Module_id) %>%
+  summarise(
+    Percent_steps_found = max(Percent_steps_found, na.rm = TRUE),
+    n_genomes = n_distinct(Genome_name),
+    .groups = "drop"
+  ) %>%
+  left_join(module_steps, by = "Module_id") %>%
+  mutate(
+    Module_label = factor(Module_label, levels = unique(module_steps$Module_label))
+  )
+
+# Ensure breaks/labels correspond to plotted rows
+y_breaks <- species_key_all %>%
+  arrange(sample, desc(species_r_abund), y_id) %>%
+  pull(y_id) %>%
+  unique()
+
+# plot tiles with genome counts and abundance labels
+hp <- ggplot(h_species, aes(x = Module_label, y = y_id)) +
+  geom_tile(
+    aes(alpha = Percent_steps_found),
+    fill = "navyblue",
+    color = NA,
+    width = 0.9,
+    height = 0.9
+  ) +
+  geom_text(aes(label = n_genomes), colour = "white", size = 2) +
+  geom_text(
+    data = species_key_all,
+    aes(x = 0, y = y_id, label = abun_lab),
+    inherit.aes = FALSE,
+    hjust = 0.75,
+    size = 1.5,
+    colour = "black"
+  ) +
+# Alpha scale from 50% to 100%
+  scale_alpha(
+    name   = "Module completeness\n(% steps found)",
+    limits = c(50, 100),
+    breaks = c(50, 60, 70, 80, 90, 100),
+    labels = function(x) sprintf("%d%%", x),
+    range  = c(0.15, 1),
+    oob    = squish
+  ) +
+  guides(alpha = guide_legend(override.aes = list(fill = "navyblue"))) +
+# Translate y_id values into readable axis labels
+  scale_y_discrete(
+    breaks = y_breaks,
+    drop = FALSE,
+    labels = function(x) {
+      genus_part   <- sub("__.*$", "", x)
+      species_part <- sub("^.*__", "", x)
+
+      ifelse(
+        grepl("__sp\\.__\\d+$", x),
+        paste(genus_part, "sp."),
+        species_part
+      )
+    }
+  ) +
+  coord_cartesian(clip = "off") +
+  theme_void() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 5),
+    axis.text.y = element_text(size = 5, hjust = 0, margin = margin(r = 8)),
+    axis.ticks  = element_line(color = "black"),
+    axis.title  = element_blank(),
+    legend.position = "right",
+    panel.spacing.x = unit(2, "lines"),
+    panel.background = element_rect(fill = "white", color = NA),
+    plot.background  = element_rect(fill = "white", color = NA),
+    plot.margin = margin(t = 0, r = 20, b = 0, l = 30)
+  ) +
+  facet_wrap(~ sample, nrow = 1, scales = "fixed")
+
+hp
+
+ggsave(filename = "lower_level/hydrolysis_species.png", plot = hp,
+       width = 20, height = 6, dpi = 300)
+
+
+```
+
+Acidogenesis
+```{r}
+
+# Filter for hydrolysis and 50% threshold, normalise taxonomy (due to missing species names)
+h <- completeness_tax %>%
+  filter(
+    phase == "Hydrolysis",
+    Percent_steps_found >= 50
+  ) %>%
+  mutate(
+    genus_clean = case_when(
+      is.na(genus) ~ "GenusUnknown",
+      trimws(genus) == "" ~ "GenusUnknown",
+      genus == "NA" ~ "GenusUnknown",
+      TRUE ~ genus
+    ),
+    species_clean = case_when(
+      is.na(species) ~ "sp.",
+      trimws(species) == "" ~ "sp.",
+      species == "NA" ~ "sp.",
+      TRUE ~ species
+    )
+  )
+
+# Stable Steps_needed and module label, include number of steps needed
+module_steps <- h %>%
+  group_by(Module_id) %>%
+  summarise(
+    Steps_needed = max(Steps_needed, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  mutate(
+    Module_label = sprintf("%s (n=%d)", Module_id, Steps_needed)
+  )
+
+# Avoid redundant genome counting, aggregate non-redundant rel abun
+species_key_all <- h %>%
+  distinct(sample, Genome_name, genus_clean, species_clean, r_abund) %>%
+  group_by(sample, genus_clean, species_clean) %>%
+  summarise(
+    species_r_abund = sum(r_abund, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+# Filter for top 20 most abundant species in both samples 
+  group_by(sample) %>%
+  arrange(desc(species_r_abund), genus_clean, species_clean) %>%
+  slice_head(n = 20) %>%                 # <-- TOP 20 most abundant species PER SAMPLE
+  ungroup() %>%
+  group_by(sample, genus_clean) %>%
+# Create unique y-axis key to prevent sp. collapsing
+  mutate(
+    sp_idx = if_else(species_clean == "sp.", row_number(), NA_integer_),
+    y_id = if_else(
+      species_clean == "sp.",
+      paste0(genus_clean, "__sp.__", sp_idx),
+      paste0(genus_clean, "__", species_clean)
+    )
+  ) %>%
+  ungroup() %>%
+# Format abundance into a string for plotting
+  mutate(abun_lab = sprintf("%.1f%%", species_r_abund))
+
+# Filter the full module data frame for those modules from top 20 most abun species
+h_top <- h %>%
+  semi_join(
+    species_key_all %>% select(sample, genus_clean, species_clean),
+    by = c("sample", "genus_clean", "species_clean")
+  )
+
+# Collapse per species x module into single tile value
+h_species <- h_top %>%
+  left_join(
+    species_key_all %>% select(sample, genus_clean, species_clean, y_id),
+    by = c("sample", "genus_clean", "species_clean")
+  ) %>%
+  group_by(sample, y_id, Module_id) %>%
+  summarise(
+    Percent_steps_found = max(Percent_steps_found, na.rm = TRUE),
+    n_genomes = n_distinct(Genome_name),
+    .groups = "drop"
+  ) %>%
+  left_join(module_steps, by = "Module_id") %>%
+  mutate(
+    Module_label = factor(Module_label, levels = unique(module_steps$Module_label))
+  )
+
+# Ensure breaks/labels correspond to plotted rows
+y_breaks <- species_key_all %>%
+  arrange(sample, desc(species_r_abund), y_id) %>%
+  pull(y_id) %>%
+  unique()
+
+# plot tiles with genome counts and abundance labels
+hp <- ggplot(h_species, aes(x = Module_label, y = y_id)) +
+  geom_tile(
+    aes(alpha = Percent_steps_found),
+    fill = "navyblue",
+    color = NA,
+    width = 0.9,
+    height = 0.9
+  ) +
+  geom_text(aes(label = n_genomes), colour = "white", size = 2) +
+  geom_text(
+    data = species_key_all,
+    aes(x = 0, y = y_id, label = abun_lab),
+    inherit.aes = FALSE,
+    hjust = 0.75,
+    size = 1.5,
+    colour = "black"
+  ) +
+# Alpha scale from 50% to 100%
+  scale_alpha(
+    name   = "Module completeness\n(% steps found)",
+    limits = c(50, 100),
+    breaks = c(50, 60, 70, 80, 90, 100),
+    labels = function(x) sprintf("%d%%", x),
+    range  = c(0.15, 1),
+    oob    = squish
+  ) +
+  guides(alpha = guide_legend(override.aes = list(fill = "navyblue"))) +
+# Translate y_id values into readable axis labels
+  scale_y_discrete(
+    breaks = y_breaks,
+    drop = FALSE,
+    labels = function(x) {
+      genus_part   <- sub("__.*$", "", x)
+      species_part <- sub("^.*__", "", x)
+
+      ifelse(
+        grepl("__sp\\.__\\d+$", x),
+        paste(genus_part, "sp."),
+        species_part
+      )
+    }
+  ) +
+  coord_cartesian(clip = "off") +
+  theme_void() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 5),
+    axis.text.y = element_text(size = 5, hjust = 0, margin = margin(r = 8)),
+    axis.ticks  = element_line(color = "black"),
+    axis.title  = element_blank(),
+    legend.position = "right",
+    panel.spacing.x = unit(2, "lines"),
+    panel.background = element_rect(fill = "white", color = NA),
+    plot.background  = element_rect(fill = "white", color = NA),
+    plot.margin = margin(t = 0, r = 20, b = 0, l = 30)
+  ) +
+  facet_wrap(~ sample, nrow = 1, scales = "fixed")
+
+hp
+
+ggsave(filename = "lower_level/hydrolysis_species.png", plot = hp,
+       width = 20, height = 6, dpi = 300)
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
