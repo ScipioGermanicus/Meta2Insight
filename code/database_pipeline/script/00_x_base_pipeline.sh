@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 cd ~/Thesis/code/database_pipeline/
 
+## Note: This is very much a work in progress script
 
 # 00_base_pipeline.sh
     # Calls scripts in correct order
