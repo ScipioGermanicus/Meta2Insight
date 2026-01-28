@@ -1,0 +1,430 @@
+---
+title: "dRep analysis"
+author: "Lasse Steffensen"
+date: "2026-01-26"
+output: html_document
+---
+
+```{r}
+# ------------------------------------------------------------
+# MESOPHILIC SAMPLE (BC13)
+# dRep post-processing: restrict representatives to clusters that contain YOUR MAGs
+# ------------------------------------------------------------
+
+# Working directory (optional; keeps relative paths tidy)
+setwd("C:/Users/lasse/Desktop/wd/25/dRep_analysis")
+
+# Libraries
+library(tidyverse)
+
+# -----------------------------
+# Paths
+# -----------------------------
+path_genomeInfo <- "C:/Users/lasse/Desktop/wd/25/df/genomeInfo_meso.csv"
+path_Cdb        <- "C:/Users/lasse/Desktop/wd/25/df/Cdb_meso.csv"
+
+dir_reps  <- "C:/Users/lasse/Desktop/wd/25/df/reps/dereplicated_genomes_meso"  # dRep representative FASTAs
+dir_mine  <- "C:/Users/lasse/Desktop/wd/25/df/bins_meso"                       # your original MAGs (261)
+
+# -----------------------------
+# Load dRep tables
+# -----------------------------
+genomeInfo <- read.csv(path_genomeInfo, stringsAsFactors = FALSE)
+Cdb        <- read.csv(path_Cdb,        stringsAsFactors = FALSE)
+
+# -----------------------------
+# Build key vectors
+# -----------------------------
+# Representative genomes (ground truth = dereplicated FASTA directory)
+reps <- list.files(dir_reps, pattern = "\\.fa$", full.names = FALSE)
+
+# Your original MAGs (used to reliably label "mine" vs "external")
+mine <- list.files(dir_mine, pattern = "\\.fa$", full.names = FALSE)
+
+# -----------------------------
+# Normalise IDs (basename-based)
+# -----------------------------
+# dRep tables sometimes contain paths; normalise both to basenames for robust joining
+genomeInfo2 <- genomeInfo %>%
+  mutate(genome_base = basename(genome))
+
+Cdb2 <- Cdb %>%
+  mutate(genome_base = basename(genome))
+
+# -----------------------------
+# Label genome origin
+# -----------------------------
+# "mine" is defined by membership in your original MAG set
+genomeInfo2 <- genomeInfo2 %>%
+  mutate(origin = if_else(genome_base %in% mine, "mine", "external"))
+
+# Attach origin labels to cluster table
+Cdb2 <- Cdb2 %>%
+  left_join(genomeInfo2 %>% select(genome_base, origin), by = "genome_base")
+
+# -----------------------------
+# Map representatives to clusters
+# -----------------------------
+# One representative genome per secondary_cluster (if reps list is correct)
+rep_clusters <- Cdb2 %>%
+  filter(genome_base %in% reps) %>%
+  distinct(secondary_cluster, genome_base, origin)
+
+# ============================================================
+# Method A: keep ONLY clusters that contain at least one of YOUR MAGs
+# ============================================================
+
+# -----------------------------
+# CONFIG: thresholds for HQ/MQ/LQ classification
+# (MIMAG-like defaults; adjust if you use a different scheme)
+# -----------------------------
+HQ_comp  <- 90
+HQ_cont  <- 5
+
+MQ_comp  <- 50
+MQ_cont  <- 10
+
+# -----------------------------
+# Helper: quality class
+# -----------------------------
+quality_class <- function(completeness, contamination,
+                          HQ_comp = 90, HQ_cont = 5,
+                          MQ_comp = 50, MQ_cont = 10) {
+  dplyr::case_when(
+    is.na(completeness) | is.na(contamination) ~ NA_character_,
+    completeness >= HQ_comp & contamination <= HQ_cont ~ "HQ",
+    completeness >= MQ_comp & contamination <= MQ_cont ~ "MQ",
+    TRUE ~ "LQ"
+  )
+}
+
+# -----------------------------
+# Sanity check: expected columns
+# -----------------------------
+stopifnot(all(c("genome_base", "origin") %in% names(genomeInfo2)))
+stopifnot(all(c("completeness", "contamination") %in% names(genomeInfo2)))
+
+# -----------------------------
+# BEFORE: your 261 original MAGs
+# -----------------------------
+before_mine <- genomeInfo2 %>%
+  filter(genome_base %in% mine) %>%
+  mutate(
+    stage   = "before_mine",
+    quality = quality_class(completeness, contamination, HQ_comp, HQ_cont, MQ_comp, MQ_cont)
+  )
+
+# -----------------------------
+# Identify clusters that contain at least one of your MAGs
+# -----------------------------
+mine_clusters <- Cdb2 %>%
+  filter(origin == "mine") %>%
+  distinct(secondary_cluster)
+
+# -----------------------------
+# AFTER (Method A): representatives only for those clusters
+# -----------------------------
+after_reps_mine_clusters <- rep_clusters %>%
+  semi_join(mine_clusters, by = "secondary_cluster") %>%
+  left_join(genomeInfo2 %>% select(genome_base, completeness, contamination), by = "genome_base") %>%
+  mutate(
+    stage   = "after_reps_mine_clusters",
+    quality = quality_class(completeness, contamination, HQ_comp, HQ_cont, MQ_comp, MQ_cont)
+  )
+
+# -----------------------------
+# Core comparisons requested
+# -----------------------------
+
+# Sizes
+n_before <- n_distinct(before_mine$genome_base)
+n_after  <- n_distinct(after_reps_mine_clusters$genome_base)
+
+message("Before (mine MAGs): ", n_before)
+message("After  (unique reps for mine-containing clusters): ", n_after)
+
+# HQ/MQ/LQ counts (overall)
+counts_overall <- bind_rows(before_mine, after_reps_mine_clusters) %>%
+  count(stage, quality, name = "n") %>%
+  tidyr::complete(stage, quality = c("HQ", "MQ", "LQ"), fill = list(n = 0)) %>%
+  arrange(stage, quality)
+
+print(counts_overall)
+
+# HQ/MQ/LQ counts split by origin (note: BEFORE is all "mine")
+counts_by_origin <- bind_rows(before_mine, after_reps_mine_clusters) %>%
+  count(stage, origin, quality, name = "n") %>%
+  tidyr::complete(stage, origin, quality = c("HQ", "MQ", "LQ"), fill = list(n = 0)) %>%
+  arrange(stage, origin, quality)
+
+print(counts_by_origin)
+
+# Summary stats for completeness/contamination (before vs after)
+comp_cont_summary <- bind_rows(before_mine, after_reps_mine_clusters) %>%
+  group_by(stage) %>%
+  summarise(
+    n = n(),
+    completeness_mean   = mean(completeness, na.rm = TRUE),
+    completeness_median = median(completeness, na.rm = TRUE),
+    completeness_IQR    = IQR(completeness, na.rm = TRUE),
+    contamination_mean   = mean(contamination, na.rm = TRUE),
+    contamination_median = median(contamination, na.rm = TRUE),
+    contamination_IQR    = IQR(contamination, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+print(comp_cont_summary)
+
+# How many mine-containing clusters have an EXTERNAL representative (i.e., replaced)
+cluster_origin_summary <- after_reps_mine_clusters %>%
+  summarise(
+    n_clusters_mine = n(),
+    n_rep_is_mine = sum(origin == "mine", na.rm = TRUE),
+    n_rep_is_external = sum(origin == "external", na.rm = TRUE),
+    frac_external_rep = mean(origin == "external", na.rm = TRUE)
+  )
+
+print(cluster_origin_summary)
+
+# -----------------------------
+# OPTIONAL: plots (boxplots)
+# -----------------------------
+library(ggplot2)
+
+p_comp <- bind_rows(before_mine, after_reps_mine_clusters) %>%
+  ggplot(aes(x = stage, y = completeness)) +
+  geom_boxplot(outlier.alpha = 0.2) +
+  geom_jitter(width = 0.15, alpha = 0.15) +
+  labs(x = NULL, y = "Completeness (%)")
+
+p_cont <- bind_rows(before_mine, after_reps_mine_clusters) %>%
+  ggplot(aes(x = stage, y = contamination)) +
+  geom_boxplot(outlier.alpha = 0.2) +
+  geom_jitter(width = 0.15, alpha = 0.15) +
+  labs(x = NULL, y = "Contamination (%)")
+
+print(p_comp)
+print(p_cont)
+
+# -----------------------------
+# OPTIONAL: export outputs
+# -----------------------------
+write.csv(counts_overall, "meso/derep_counts_before_vs_after_methodA.csv", row.names = FALSE)
+write.csv(counts_by_origin, "meso/derep_counts_by_origin_before_vs_after_methodA.csv", row.names = FALSE)
+write.csv(comp_cont_summary, "meso/derep_comp_cont_summary_before_vs_after_methodA.csv", row.names = FALSE)
+write.csv(after_reps_mine_clusters, "meso/derep_representatives_mine_clusters_methodA.csv", row.names = FALSE)
+
+
+```
+
+```{r}
+# ------------------------------------------------------------
+# THERMOPHILIC SAMPLE (BC14)
+# dRep post-processing: restrict representatives to clusters that contain YOUR MAGs
+# ------------------------------------------------------------
+
+# Working directory (optional; keeps relative paths tidy)
+setwd("C:/Users/lasse/Desktop/wd/25/dRep_analysis")
+
+# Libraries
+library(tidyverse)
+
+# -----------------------------
+# Paths
+# -----------------------------
+path_genomeInfo <- "C:/Users/lasse/Desktop/wd/25/df/genomeInfo_thermo.csv"
+path_Cdb        <- "C:/Users/lasse/Desktop/wd/25/df/Cdb_thermo.csv"
+
+dir_reps  <- "C:/Users/lasse/Desktop/wd/25/df/reps/dereplicated_genomes_thermo"  # dRep representative FASTAs
+dir_mine  <- "C:/Users/lasse/Desktop/wd/25/df/bins_thermo"                       # your original MAGs (261)
+
+# -----------------------------
+# Load dRep tables
+# -----------------------------
+genomeInfo <- read.csv(path_genomeInfo, stringsAsFactors = FALSE)
+Cdb        <- read.csv(path_Cdb,        stringsAsFactors = FALSE)
+
+# -----------------------------
+# Build key vectors
+# -----------------------------
+# Representative genomes (ground truth = dereplicated FASTA directory)
+reps <- list.files(dir_reps, pattern = "\\.fa$", full.names = FALSE)
+
+# Your original MAGs (used to reliably label "mine" vs "external")
+mine <- list.files(dir_mine, pattern = "\\.fa$", full.names = FALSE)
+
+# -----------------------------
+# Normalise IDs (basename-based)
+# -----------------------------
+# dRep tables sometimes contain paths; normalise both to basenames for robust joining
+genomeInfo2 <- genomeInfo %>%
+  mutate(genome_base = basename(genome))
+
+Cdb2 <- Cdb %>%
+  mutate(genome_base = basename(genome))
+
+# -----------------------------
+# Label genome origin
+# -----------------------------
+# "mine" is defined by membership in your original MAG set
+genomeInfo2 <- genomeInfo2 %>%
+  mutate(origin = if_else(genome_base %in% mine, "mine", "external"))
+
+# Attach origin labels to cluster table
+Cdb2 <- Cdb2 %>%
+  left_join(genomeInfo2 %>% select(genome_base, origin), by = "genome_base")
+
+# -----------------------------
+# Map representatives to clusters
+# -----------------------------
+# One representative genome per secondary_cluster (if reps list is correct)
+rep_clusters <- Cdb2 %>%
+  filter(genome_base %in% reps) %>%
+  distinct(secondary_cluster, genome_base, origin)
+
+# ============================================================
+# Method A: keep ONLY clusters that contain at least one of YOUR MAGs
+# ============================================================
+
+# -----------------------------
+# CONFIG: thresholds for HQ/MQ/LQ classification
+# (MIMAG-like defaults; adjust if you use a different scheme)
+# -----------------------------
+HQ_comp  <- 90
+HQ_cont  <- 5
+
+MQ_comp  <- 50
+MQ_cont  <- 10
+
+# -----------------------------
+# Helper: quality class
+# -----------------------------
+quality_class <- function(completeness, contamination,
+                          HQ_comp = 90, HQ_cont = 5,
+                          MQ_comp = 50, MQ_cont = 10) {
+  dplyr::case_when(
+    is.na(completeness) | is.na(contamination) ~ NA_character_,
+    completeness >= HQ_comp & contamination <= HQ_cont ~ "HQ",
+    completeness >= MQ_comp & contamination <= MQ_cont ~ "MQ",
+    TRUE ~ "LQ"
+  )
+}
+
+# -----------------------------
+# Sanity check: expected columns
+# -----------------------------
+stopifnot(all(c("genome_base", "origin") %in% names(genomeInfo2)))
+stopifnot(all(c("completeness", "contamination") %in% names(genomeInfo2)))
+
+# -----------------------------
+# BEFORE: your 261 original MAGs
+# -----------------------------
+before_mine <- genomeInfo2 %>%
+  filter(genome_base %in% mine) %>%
+  mutate(
+    stage   = "before_mine",
+    quality = quality_class(completeness, contamination, HQ_comp, HQ_cont, MQ_comp, MQ_cont)
+  )
+
+# -----------------------------
+# Identify clusters that contain at least one of your MAGs
+# -----------------------------
+mine_clusters <- Cdb2 %>%
+  filter(origin == "mine") %>%
+  distinct(secondary_cluster)
+
+# -----------------------------
+# AFTER (Method A): representatives only for those clusters
+# -----------------------------
+after_reps_mine_clusters <- rep_clusters %>%
+  semi_join(mine_clusters, by = "secondary_cluster") %>%
+  left_join(genomeInfo2 %>% select(genome_base, completeness, contamination), by = "genome_base") %>%
+  mutate(
+    stage   = "after_reps_mine_clusters",
+    quality = quality_class(completeness, contamination, HQ_comp, HQ_cont, MQ_comp, MQ_cont)
+  )
+
+# -----------------------------
+# Core comparisons requested
+# -----------------------------
+
+# Sizes
+n_before <- n_distinct(before_mine$genome_base)
+n_after  <- n_distinct(after_reps_mine_clusters$genome_base)
+
+message("Before (mine MAGs): ", n_before)
+message("After  (unique reps for mine-containing clusters): ", n_after)
+
+# HQ/MQ/LQ counts (overall)
+counts_overall <- bind_rows(before_mine, after_reps_mine_clusters) %>%
+  count(stage, quality, name = "n") %>%
+  tidyr::complete(stage, quality = c("HQ", "MQ", "LQ"), fill = list(n = 0)) %>%
+  arrange(stage, quality)
+
+print(counts_overall)
+
+# HQ/MQ/LQ counts split by origin (note: BEFORE is all "mine")
+counts_by_origin <- bind_rows(before_mine, after_reps_mine_clusters) %>%
+  count(stage, origin, quality, name = "n") %>%
+  tidyr::complete(stage, origin, quality = c("HQ", "MQ", "LQ"), fill = list(n = 0)) %>%
+  arrange(stage, origin, quality)
+
+print(counts_by_origin)
+
+# Summary stats for completeness/contamination (before vs after)
+comp_cont_summary <- bind_rows(before_mine, after_reps_mine_clusters) %>%
+  group_by(stage) %>%
+  summarise(
+    n = n(),
+    completeness_mean   = mean(completeness, na.rm = TRUE),
+    completeness_median = median(completeness, na.rm = TRUE),
+    completeness_IQR    = IQR(completeness, na.rm = TRUE),
+    contamination_mean   = mean(contamination, na.rm = TRUE),
+    contamination_median = median(contamination, na.rm = TRUE),
+    contamination_IQR    = IQR(contamination, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+print(comp_cont_summary)
+
+# How many mine-containing clusters have an EXTERNAL representative (i.e., replaced)
+cluster_origin_summary <- after_reps_mine_clusters %>%
+  summarise(
+    n_clusters_mine = n(),
+    n_rep_is_mine = sum(origin == "mine", na.rm = TRUE),
+    n_rep_is_external = sum(origin == "external", na.rm = TRUE),
+    frac_external_rep = mean(origin == "external", na.rm = TRUE)
+  )
+
+print(cluster_origin_summary)
+
+# -----------------------------
+# OPTIONAL: plots (boxplots)
+# -----------------------------
+library(ggplot2)
+
+p_comp <- bind_rows(before_mine, after_reps_mine_clusters) %>%
+  ggplot(aes(x = stage, y = completeness)) +
+  geom_boxplot(outlier.alpha = 0.2) +
+  geom_jitter(width = 0.15, alpha = 0.15) +
+  labs(x = NULL, y = "Completeness (%)")
+
+p_cont <- bind_rows(before_mine, after_reps_mine_clusters) %>%
+  ggplot(aes(x = stage, y = contamination)) +
+  geom_boxplot(outlier.alpha = 0.2) +
+  geom_jitter(width = 0.15, alpha = 0.15) +
+  labs(x = NULL, y = "Contamination (%)")
+
+print(p_comp)
+print(p_cont)
+
+# -----------------------------
+# OPTIONAL: export outputs
+# -----------------------------
+write.csv(counts_overall, "thermo/derep_counts_before_vs_after_methodA.csv", row.names = FALSE)
+write.csv(counts_by_origin, "thermo/derep_counts_by_origin_before_vs_after_methodA.csv", row.names = FALSE)
+write.csv(comp_cont_summary, "thermo/derep_comp_cont_summary_before_vs_after_methodA.csv", row.names = FALSE)
+write.csv(after_reps_mine_clusters, "thermo/derep_representatives_mine_clusters_methodA.csv", row.names = FALSE)
+
+
+```
