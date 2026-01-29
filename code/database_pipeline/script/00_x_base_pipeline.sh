@@ -5,6 +5,7 @@ cd ~/Thesis/code/database_pipeline/
 
 # 00_base_pipeline.sh
     # Calls scripts in correct order
+    # work in progress
 
 
 # 01_formating.sh
