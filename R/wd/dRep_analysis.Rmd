@@ -5,6 +5,8 @@ date: "2026-01-26"
 output: html_document
 ---
 
+
+
 ```{r}
 # ------------------------------------------------------------
 # MESOPHILIC SAMPLE (BC13)
@@ -213,6 +215,9 @@ write.csv(counts_overall, "meso/derep_counts_before_vs_after_methodA.csv", row.n
 write.csv(counts_by_origin, "meso/derep_counts_by_origin_before_vs_after_methodA.csv", row.names = FALSE)
 write.csv(comp_cont_summary, "meso/derep_comp_cont_summary_before_vs_after_methodA.csv", row.names = FALSE)
 write.csv(after_reps_mine_clusters, "meso/derep_representatives_mine_clusters_methodA.csv", row.names = FALSE)
+
+Cdb2_meso <- Cdb2
+genomeInfo2_meso <- genomeInfo2
 
 
 ```
@@ -425,6 +430,223 @@ write.csv(counts_overall, "thermo/derep_counts_before_vs_after_methodA.csv", row
 write.csv(counts_by_origin, "thermo/derep_counts_by_origin_before_vs_after_methodA.csv", row.names = FALSE)
 write.csv(comp_cont_summary, "thermo/derep_comp_cont_summary_before_vs_after_methodA.csv", row.names = FALSE)
 write.csv(after_reps_mine_clusters, "thermo/derep_representatives_mine_clusters_methodA.csv", row.names = FALSE)
+
+
+Cdb2_thermo <- Cdb2
+genomeInfo2_thermo <- genomeInfo2
+
+```
+
+```{r}
+
+# MESO
+
+# ============================================================
+# dRep: species present in YOUR MAGs but NOT represented by external MAGs
+# + annotate with GTDB genus/species
+# Fix: strip ".fa" before joining taxonomy
+# Assumes you already created: Cdb2 (with genome_base, secondary_cluster, origin)
+# and that origin is "mine" / "external"
+# ============================================================
+
+library(dplyr)
+library(tidyr)
+library(stringr)
+
+# -----------------------------
+# 1) Build GTDB-Tk taxonomy lookup (genome -> genus/species)
+# -----------------------------
+summary <- bind_rows(
+  read.csv("C:/Users/lasse/Desktop/wd/25/df/gtdbtk.ar53.summary_BC13.tsv",  sep = "\t") %>% select(user_genome, classification),
+  read.csv("C:/Users/lasse/Desktop/wd/25/df/gtdbtk.bac120.summary_BC13.tsv", sep = "\t") %>% select(user_genome, classification),
+  read.csv("C:/Users/lasse/Desktop/wd/25/df/gtdbtk.ar53.summary_BC14.tsv",  sep = "\t") %>% select(user_genome, classification),
+  read.csv("C:/Users/lasse/Desktop/wd/25/df/gtdbtk.bac120.summary_BC14.tsv", sep = "\t") %>% select(user_genome, classification)
+) %>%
+  distinct(user_genome, .keep_all = TRUE)
+
+tax_lookup <- summary %>%
+  transmute(
+    # GTDB user_genome typically has no ".fa" extension; ensure consistent basename
+    genome_key = basename(user_genome),
+    classification = replace_na(classification, "d__Unclassified")
+  ) %>%
+  separate(
+    classification,
+    into = c("domain","phylum","class","order","family","genus","species"),
+    sep = ";",
+    fill = "right"
+  ) %>%
+  mutate(
+    genus   = str_remove(genus,   "^g__"),
+    species = str_remove(species, "^s__"),
+
+    genus   = if_else(is.na(genus)   | genus   == "" | genus   == "Unclassified", "GenusUnknown", genus),
+    species = if_else(is.na(species) | species == "" | species == "Unclassified", "sp.", species),
+
+    species_label = case_when(
+      genus == "GenusUnknown" ~ "Unclassified",
+      TRUE ~ paste(genus, species)
+    )
+  ) %>%
+  distinct(genome_key, .keep_all = TRUE)
+
+# -----------------------------
+# 2) Identify "missing species" clusters:
+# clusters with >=1 of your MAGs and 0 external MAGs
+# -----------------------------
+stopifnot(all(c("genome_base", "secondary_cluster", "origin") %in% names(Cdb2_meso)))
+
+missing_species <- Cdb2_meso %>%
+  group_by(secondary_cluster) %>%
+  summarise(
+    n_mine     = sum(origin == "mine", na.rm = TRUE),
+    n_external = sum(origin == "external", na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  filter(n_mine > 0 & n_external == 0)
+
+# -----------------------------
+# 3) Expand to genome-level list (your MAGs in those clusters)
+# -----------------------------
+missing_species_genomes <- Cdb2_meso %>%
+  semi_join(missing_species, by = "secondary_cluster") %>%
+  filter(origin == "mine") %>%
+  select(secondary_cluster, genome_base) %>%
+  distinct() %>%
+  arrange(secondary_cluster, genome_base)
+
+# -----------------------------
+# 4) Annotate with taxonomy
+# FIX: strip ".fa" from dRep genome names before joining
+# -----------------------------
+missing_species_annotated_meso <- missing_species_genomes %>%
+  mutate(
+    genome_id  = genome_base,                       # keep original filename
+    genome_key = str_remove(genome_base, "\\.fa$")   # join key without .fa
+  ) %>%
+  left_join(
+    tax_lookup %>% select(genome_key, genus, species, species_label),
+    by = "genome_key"
+  ) %>%
+  select(-genome_key) %>%
+  relocate(genome_id, genus, species, species_label, .after = genome_base)
+
+# -----------------------------
+# 5) Optional sanity checks
+# -----------------------------
+message("Missing species clusters (count): ", nrow(missing_species))
+message("Missing genomes (count): ", nrow(missing_species_annotated))
+message("Taxonomy NAs (species_label): ", sum(is.na(missing_species_annotated$species_label)))
+
+# missing_species_annotated is your final table
+
+
+
+```
+
+```{r}
+
+# THERMO
+
+# ============================================================
+# dRep: species present in YOUR MAGs but NOT represented by external MAGs
+# + annotate with GTDB genus/species
+# Fix: strip ".fa" before joining taxonomy
+# Assumes you already created: Cdb2 (with genome_base, secondary_cluster, origin)
+# and that origin is "mine" / "external"
+# ============================================================
+
+library(dplyr)
+library(tidyr)
+library(stringr)
+
+# -----------------------------
+# 1) Build GTDB-Tk taxonomy lookup (genome -> genus/species)
+# -----------------------------
+summary <- bind_rows(
+  read.csv("C:/Users/lasse/Desktop/wd/25/df/gtdbtk.ar53.summary_BC13.tsv",  sep = "\t") %>% select(user_genome, classification),
+  read.csv("C:/Users/lasse/Desktop/wd/25/df/gtdbtk.bac120.summary_BC13.tsv", sep = "\t") %>% select(user_genome, classification),
+  read.csv("C:/Users/lasse/Desktop/wd/25/df/gtdbtk.ar53.summary_BC14.tsv",  sep = "\t") %>% select(user_genome, classification),
+  read.csv("C:/Users/lasse/Desktop/wd/25/df/gtdbtk.bac120.summary_BC14.tsv", sep = "\t") %>% select(user_genome, classification)
+) %>%
+  distinct(user_genome, .keep_all = TRUE)
+
+tax_lookup <- summary %>%
+  transmute(
+    # GTDB user_genome typically has no ".fa" extension; ensure consistent basename
+    genome_key = basename(user_genome),
+    classification = replace_na(classification, "d__Unclassified")
+  ) %>%
+  separate(
+    classification,
+    into = c("domain","phylum","class","order","family","genus","species"),
+    sep = ";",
+    fill = "right"
+  ) %>%
+  mutate(
+    genus   = str_remove(genus,   "^g__"),
+    species = str_remove(species, "^s__"),
+
+    genus   = if_else(is.na(genus)   | genus   == "" | genus   == "Unclassified", "GenusUnknown", genus),
+    species = if_else(is.na(species) | species == "" | species == "Unclassified", "sp.", species),
+
+    species_label = case_when(
+      genus == "GenusUnknown" ~ "Unclassified",
+      TRUE ~ paste(genus, species)
+    )
+  ) %>%
+  distinct(genome_key, .keep_all = TRUE)
+
+# -----------------------------
+# 2) Identify "missing species" clusters:
+# clusters with >=1 of your MAGs and 0 external MAGs
+# -----------------------------
+stopifnot(all(c("genome_base", "secondary_cluster", "origin") %in% names(Cdb2_thermo)))
+
+missing_species <- Cdb2_thermo %>%
+  group_by(secondary_cluster) %>%
+  summarise(
+    n_mine     = sum(origin == "mine", na.rm = TRUE),
+    n_external = sum(origin == "external", na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  filter(n_mine > 0 & n_external == 0)
+
+# -----------------------------
+# 3) Expand to genome-level list (your MAGs in those clusters)
+# -----------------------------
+missing_species_genomes <- Cdb2_thermo %>%
+  semi_join(missing_species, by = "secondary_cluster") %>%
+  filter(origin == "mine") %>%
+  select(secondary_cluster, genome_base) %>%
+  distinct() %>%
+  arrange(secondary_cluster, genome_base)
+
+# -----------------------------
+# 4) Annotate with taxonomy
+# FIX: strip ".fa" from dRep genome names before joining
+# -----------------------------
+missing_species_annotated_thermo <- missing_species_genomes %>%
+  mutate(
+    genome_id  = genome_base,                       # keep original filename
+    genome_key = str_remove(genome_base, "\\.fa$")   # join key without .fa
+  ) %>%
+  left_join(
+    tax_lookup %>% select(genome_key, genus, species, species_label),
+    by = "genome_key"
+  ) %>%
+  select(-genome_key) %>%
+  relocate(genome_id, genus, species, species_label, .after = genome_base)
+
+# -----------------------------
+# 5) Optional sanity checks
+# -----------------------------
+message("Missing species clusters (count): ", nrow(missing_species))
+message("Missing genomes (count): ", nrow(missing_species_annotated))
+message("Taxonomy NAs (species_label): ", sum(is.na(missing_species_annotated$species_label)))
+
+# missing_species_annotated is your final table
+
 
 
 ```
