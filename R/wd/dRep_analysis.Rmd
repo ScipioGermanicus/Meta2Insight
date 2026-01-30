@@ -440,21 +440,35 @@ genomeInfo2_thermo <- genomeInfo2
 ```{r}
 
 # MESO
-
 # ============================================================
 # dRep: species present in YOUR MAGs but NOT represented by external MAGs
-# + annotate with GTDB genus/species
+# + annotate with full GTDB taxonomy (domain -> species)
 # Fix: strip ".fa" before joining taxonomy
-# Assumes you already created: Cdb2 (with genome_base, secondary_cluster, origin)
-# and that origin is "mine" / "external"
+# Assumes you already created: Cdb2_meso (with genome_base, secondary_cluster, origin)
 # ============================================================
 
 library(dplyr)
 library(tidyr)
 library(stringr)
 
+# HQ/MQ thresholds (same as earlier)
+HQ_comp <- 90; HQ_cont <- 5
+MQ_comp <- 50; MQ_cont <- 10
+
+quality_class <- function(completeness, contamination,
+                          HQ_comp = 90, HQ_cont = 5,
+                          MQ_comp = 50, MQ_cont = 10) {
+  dplyr::case_when(
+    is.na(completeness) | is.na(contamination) ~ NA_character_,
+    completeness >= HQ_comp & contamination <= HQ_cont ~ "HQ",
+    completeness >= MQ_comp & contamination <= MQ_cont ~ "MQ",
+    TRUE ~ "LQ"
+  )
+}
+
+
 # -----------------------------
-# 1) Build GTDB-Tk taxonomy lookup (genome -> genus/species)
+# 1) Build GTDB-Tk taxonomy lookup (genome -> full taxonomy)
 # -----------------------------
 summary <- bind_rows(
   read.csv("C:/Users/lasse/Desktop/wd/25/df/gtdbtk.ar53.summary_BC13.tsv",  sep = "\t") %>% select(user_genome, classification),
@@ -466,7 +480,7 @@ summary <- bind_rows(
 
 tax_lookup <- summary %>%
   transmute(
-    # GTDB user_genome typically has no ".fa" extension; ensure consistent basename
+    # GTDB user_genome typically has no ".fa" extension; keep basename for consistency
     genome_key = basename(user_genome),
     classification = replace_na(classification, "d__Unclassified")
   ) %>%
@@ -477,16 +491,30 @@ tax_lookup <- summary %>%
     fill = "right"
   ) %>%
   mutate(
+    # strip GTDB prefixes
+    domain  = str_remove(domain,  "^d__"),
+    phylum  = str_remove(phylum,  "^p__"),
+    class   = str_remove(class,   "^c__"),
+    order   = str_remove(order,   "^o__"),
+    family  = str_remove(family,  "^f__"),
     genus   = str_remove(genus,   "^g__"),
     species = str_remove(species, "^s__"),
 
-    genus   = if_else(is.na(genus)   | genus   == "" | genus   == "Unclassified", "GenusUnknown", genus),
-    species = if_else(is.na(species) | species == "" | species == "Unclassified", "sp.", species),
+    # fill empties
+    domain  = if_else(is.na(domain)  | domain  == "", "Unclassified", domain),
+    phylum  = if_else(is.na(phylum)  | phylum  == "", "Unclassified", phylum),
+    class   = if_else(is.na(class)   | class   == "", "Unclassified", class),
+    order   = if_else(is.na(order)   | order   == "", "Unclassified", order),
+    family  = if_else(is.na(family)  | family  == "", "Unclassified", family),
+    genus   = if_else(is.na(genus)   | genus   == "", "GenusUnknown", genus),
+    species = if_else(is.na(species) | species == "", "sp.", species),
 
+    # convenience labels
     species_label = case_when(
       genus == "GenusUnknown" ~ "Unclassified",
       TRUE ~ paste(genus, species)
-    )
+    ),
+    taxonomy_full = paste(domain, phylum, class, order, family, genus, species, sep = ";")
   ) %>%
   distinct(genome_key, .keep_all = TRUE)
 
@@ -496,7 +524,7 @@ tax_lookup <- summary %>%
 # -----------------------------
 stopifnot(all(c("genome_base", "secondary_cluster", "origin") %in% names(Cdb2_meso)))
 
-missing_species <- Cdb2_meso %>%
+missing_species_meso <- Cdb2_meso %>%
   group_by(secondary_cluster) %>%
   summarise(
     n_mine     = sum(origin == "mine", na.rm = TRUE),
@@ -508,37 +536,66 @@ missing_species <- Cdb2_meso %>%
 # -----------------------------
 # 3) Expand to genome-level list (your MAGs in those clusters)
 # -----------------------------
-missing_species_genomes <- Cdb2_meso %>%
-  semi_join(missing_species, by = "secondary_cluster") %>%
+missing_species_genomes_meso <- Cdb2_meso %>%
+  semi_join(missing_species_meso, by = "secondary_cluster") %>%
   filter(origin == "mine") %>%
   select(secondary_cluster, genome_base) %>%
   distinct() %>%
   arrange(secondary_cluster, genome_base)
 
 # -----------------------------
-# 4) Annotate with taxonomy
+# 4) Annotate with full taxonomy
 # FIX: strip ".fa" from dRep genome names before joining
 # -----------------------------
-missing_species_annotated_meso <- missing_species_genomes %>%
+missing_species_annotated_meso <- missing_species_genomes_meso %>%
   mutate(
-    genome_id  = genome_base,                       # keep original filename
+    genome_id  = genome_base,                       # keep original filename (with .fa)
     genome_key = str_remove(genome_base, "\\.fa$")   # join key without .fa
   ) %>%
   left_join(
-    tax_lookup %>% select(genome_key, genus, species, species_label),
+    tax_lookup %>%
+      select(genome_key, domain, phylum, class, order, family, genus, species, species_label, taxonomy_full),
     by = "genome_key"
   ) %>%
   select(-genome_key) %>%
-  relocate(genome_id, genus, species, species_label, .after = genome_base)
+  relocate(
+    genome_id, domain, phylum, class, order, family, genus, species, species_label, taxonomy_full,
+    .after = genome_base
+  )
+
+missing_species_annotated_meso <- missing_species_genomes_meso %>%
+  mutate(
+    genome_id  = genome_base,
+    genome_key = str_remove(genome_base, "\\.fa$")
+  ) %>%
+  left_join(
+    tax_lookup %>%
+      select(genome_key, domain, phylum, class, order, family, genus, species, species_label, taxonomy_full),
+    by = "genome_key"
+  ) %>%
+  # ADD THIS JOIN (quality inputs)
+  left_join(
+    genomeInfo2_meso %>% select(genome_base, completeness, contamination),
+    by = "genome_base"
+  ) %>%
+  # ADD THIS VARIABLE
+  mutate(
+    quality = quality_class(completeness, contamination, HQ_comp, HQ_cont, MQ_comp, MQ_cont)
+  ) %>%
+  select(-genome_key) %>%
+  relocate(
+    genome_id, quality, completeness, contamination,
+    domain, phylum, class, order, family, genus, species, species_label, taxonomy_full,
+    .after = genome_base
+  )
+
 
 # -----------------------------
-# 5) Optional sanity checks
+# 5) Sanity checks
 # -----------------------------
-message("Missing species clusters (count): ", nrow(missing_species))
-message("Missing genomes (count): ", nrow(missing_species_annotated))
-message("Taxonomy NAs (species_label): ", sum(is.na(missing_species_annotated$species_label)))
-
-# missing_species_annotated is your final table
+message("MESO missing species clusters (count): ", nrow(missing_species_meso))
+message("MESO missing genomes (count): ", nrow(missing_species_annotated_meso))
+message("MESO taxonomy NAs (species_label): ", sum(is.na(missing_species_annotated_meso$species_label)))
 
 
 
@@ -547,21 +604,35 @@ message("Taxonomy NAs (species_label): ", sum(is.na(missing_species_annotated$sp
 ```{r}
 
 # THERMO
-
 # ============================================================
 # dRep: species present in YOUR MAGs but NOT represented by external MAGs
-# + annotate with GTDB genus/species
+# + annotate with full GTDB taxonomy (domain -> species)
 # Fix: strip ".fa" before joining taxonomy
-# Assumes you already created: Cdb2 (with genome_base, secondary_cluster, origin)
-# and that origin is "mine" / "external"
+# Assumes you already created: Cdb2_thermo (with genome_base, secondary_cluster, origin)
 # ============================================================
 
 library(dplyr)
 library(tidyr)
 library(stringr)
 
+# HQ/MQ thresholds (same as earlier)
+HQ_comp <- 90; HQ_cont <- 5
+MQ_comp <- 50; MQ_cont <- 10
+
+quality_class <- function(completeness, contamination,
+                          HQ_comp = 90, HQ_cont = 5,
+                          MQ_comp = 50, MQ_cont = 10) {
+  dplyr::case_when(
+    is.na(completeness) | is.na(contamination) ~ NA_character_,
+    completeness >= HQ_comp & contamination <= HQ_cont ~ "HQ",
+    completeness >= MQ_comp & contamination <= MQ_cont ~ "MQ",
+    TRUE ~ "LQ"
+  )
+}
+
+
 # -----------------------------
-# 1) Build GTDB-Tk taxonomy lookup (genome -> genus/species)
+# 1) Build GTDB-Tk taxonomy lookup (genome -> full taxonomy)
 # -----------------------------
 summary <- bind_rows(
   read.csv("C:/Users/lasse/Desktop/wd/25/df/gtdbtk.ar53.summary_BC13.tsv",  sep = "\t") %>% select(user_genome, classification),
@@ -573,7 +644,7 @@ summary <- bind_rows(
 
 tax_lookup <- summary %>%
   transmute(
-    # GTDB user_genome typically has no ".fa" extension; ensure consistent basename
+    # GTDB user_genome typically has no ".fa" extension; keep basename for consistency
     genome_key = basename(user_genome),
     classification = replace_na(classification, "d__Unclassified")
   ) %>%
@@ -584,16 +655,30 @@ tax_lookup <- summary %>%
     fill = "right"
   ) %>%
   mutate(
+    # strip GTDB prefixes
+    domain  = str_remove(domain,  "^d__"),
+    phylum  = str_remove(phylum,  "^p__"),
+    class   = str_remove(class,   "^c__"),
+    order   = str_remove(order,   "^o__"),
+    family  = str_remove(family,  "^f__"),
     genus   = str_remove(genus,   "^g__"),
     species = str_remove(species, "^s__"),
 
-    genus   = if_else(is.na(genus)   | genus   == "" | genus   == "Unclassified", "GenusUnknown", genus),
-    species = if_else(is.na(species) | species == "" | species == "Unclassified", "sp.", species),
+    # fill empties
+    domain  = if_else(is.na(domain)  | domain  == "", "Unclassified", domain),
+    phylum  = if_else(is.na(phylum)  | phylum  == "", "Unclassified", phylum),
+    class   = if_else(is.na(class)   | class   == "", "Unclassified", class),
+    order   = if_else(is.na(order)   | order   == "", "Unclassified", order),
+    family  = if_else(is.na(family)  | family  == "", "Unclassified", family),
+    genus   = if_else(is.na(genus)   | genus   == "", "GenusUnknown", genus),
+    species = if_else(is.na(species) | species == "", "sp.", species),
 
+    # convenience labels
     species_label = case_when(
       genus == "GenusUnknown" ~ "Unclassified",
       TRUE ~ paste(genus, species)
-    )
+    ),
+    taxonomy_full = paste(domain, phylum, class, order, family, genus, species, sep = ";")
   ) %>%
   distinct(genome_key, .keep_all = TRUE)
 
@@ -603,7 +688,7 @@ tax_lookup <- summary %>%
 # -----------------------------
 stopifnot(all(c("genome_base", "secondary_cluster", "origin") %in% names(Cdb2_thermo)))
 
-missing_species <- Cdb2_thermo %>%
+missing_species_thermo <- Cdb2_thermo %>%
   group_by(secondary_cluster) %>%
   summarise(
     n_mine     = sum(origin == "mine", na.rm = TRUE),
@@ -615,38 +700,75 @@ missing_species <- Cdb2_thermo %>%
 # -----------------------------
 # 3) Expand to genome-level list (your MAGs in those clusters)
 # -----------------------------
-missing_species_genomes <- Cdb2_thermo %>%
-  semi_join(missing_species, by = "secondary_cluster") %>%
+missing_species_genomes_thermo <- Cdb2_thermo %>%
+  semi_join(missing_species_thermo, by = "secondary_cluster") %>%
   filter(origin == "mine") %>%
   select(secondary_cluster, genome_base) %>%
   distinct() %>%
   arrange(secondary_cluster, genome_base)
 
 # -----------------------------
-# 4) Annotate with taxonomy
+# 4) Annotate with full taxonomy
 # FIX: strip ".fa" from dRep genome names before joining
 # -----------------------------
-missing_species_annotated_thermo <- missing_species_genomes %>%
+missing_species_annotated_thermo <- missing_species_genomes_thermo %>%
   mutate(
-    genome_id  = genome_base,                       # keep original filename
+    genome_id  = genome_base,                       # keep original filename (with .fa)
     genome_key = str_remove(genome_base, "\\.fa$")   # join key without .fa
   ) %>%
   left_join(
-    tax_lookup %>% select(genome_key, genus, species, species_label),
+    tax_lookup %>%
+      select(genome_key, domain, phylum, class, order, family, genus, species, species_label, taxonomy_full),
     by = "genome_key"
   ) %>%
   select(-genome_key) %>%
-  relocate(genome_id, genus, species, species_label, .after = genome_base)
+  relocate(
+    genome_id, domain, phylum, class, order, family, genus, species, species_label, taxonomy_full,
+    .after = genome_base
+  )
+
+missing_species_annotated_thermo <- missing_species_genomes_thermo %>%
+  mutate(
+    genome_id  = genome_base,
+    genome_key = str_remove(genome_base, "\\.fa$")
+  ) %>%
+  left_join(
+    tax_lookup %>%
+      select(genome_key, domain, phylum, class, order, family, genus, species, species_label, taxonomy_full),
+    by = "genome_key"
+  ) %>%
+  # ADD THIS JOIN (quality inputs)
+  left_join(
+    genomeInfo2_thermo %>% select(genome_base, completeness, contamination),
+    by = "genome_base"
+  ) %>%
+  # ADD THIS VARIABLE
+  mutate(
+    quality = quality_class(completeness, contamination, HQ_comp, HQ_cont, MQ_comp, MQ_cont)
+  ) %>%
+  select(-genome_key) %>%
+  relocate(
+    genome_id, quality, completeness, contamination,
+    domain, phylum, class, order, family, genus, species, species_label, taxonomy_full,
+    .after = genome_base
+  )
+
 
 # -----------------------------
-# 5) Optional sanity checks
+# 5) Sanity checks
 # -----------------------------
-message("Missing species clusters (count): ", nrow(missing_species))
-message("Missing genomes (count): ", nrow(missing_species_annotated))
-message("Taxonomy NAs (species_label): ", sum(is.na(missing_species_annotated$species_label)))
-
-# missing_species_annotated is your final table
+message("THERMO missing species clusters (count): ", nrow(missing_species_thermo))
+message("THERMO missing genomes (count): ", nrow(missing_species_annotated_thermo))
+message("THERMO taxonomy NAs (species_label): ", sum(is.na(missing_species_annotated_thermo$species_label)))
 
 
+# Genome-level table with full taxonomy
+write.table(
+  missing_species_annotated_thermo,
+  file = "missing_species_annotated_thermo.tsv",
+  sep = "\t",
+  quote = FALSE,
+  row.names = FALSE
+)
 
 ```
