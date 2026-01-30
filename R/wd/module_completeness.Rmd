@@ -758,6 +758,9 @@ ggsave(filename = "higher_level/complete_module.png", plot = c,
 ```
 
 
+
+
+
 #####################################################################################
 
 
@@ -776,6 +779,9 @@ One consideration: To what degree to we capture hydrolysis-related species when 
 
 
 #####################################################################################
+
+
+
 
 Methanogenesis
 ```{r}
@@ -913,7 +919,7 @@ p
 
 
 
-ggsave(filename = "lower_level/mc_methanogenesis_species.png", plot = p,
+ggsave(filename = "lower_level/methanogenesis_species.png", plot = p,
        width = 11, height = 6, dpi = 300)
 
 
@@ -1393,13 +1399,9 @@ ggsave(filename = "lower_level/acetogenesis_species.png", plot = act,
 
 ```
 
-```{r}
 
-```
 
-```{r}
 
-```
 
 ```{r}
 
@@ -1408,4 +1410,35 @@ ggsave(filename = "lower_level/acetogenesis_species.png", plot = act,
 ```{r}
 
 ```
+
+```{r}
+
+```
+
+
+
+
+
+
+
+```{r}
+
+
+
+
+mag_per_species <- bins_tax2 %>%
+  count(sample, species, name = "n_mags")
+
+
+
+
+```
+
+
+
+
+
+
+
+
 
