@@ -1,0 +1,753 @@
+---
+title: "module_exploration"
+author: "Lasse Steffensen"
+date: "2026-02-02"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+
+setwd("C:/Users/lasse/Desktop/wd/25/module_completeness")
+library(tidyverse)
+library(reshape2)
+library(colorspace)
+library(ggtext)
+library(ggalluvial)
+library(scales)
+library(ggh4x)
+library(tibble)
+library(forcats)
+
+# Module list with phases
+modules <- read.csv("C:/Users/lasse/Desktop/wd/25/df/module_phase.tsv", sep="\t", header=TRUE)
+
+# Module completeness 
+module_completeness_BC13 <- read.csv("C:/Users/lasse/Desktop/wd/25/df/26/module_completeness_BC13.tsv", sep="\t", header=TRUE) %>%
+  rename(module = Module_id)
+module_completeness_BC14 <- read.csv("C:/Users/lasse/Desktop/wd/25/df/26/module_completeness_BC14.tsv", sep="\t", header=TRUE) %>%
+  rename(module = Module_id)
+module_completeness_BC13_NNF <- read.csv("C:/Users/lasse/Desktop/wd/25/df/26/module_completeness_BC13+NNF.tsv", sep="\t", header=TRUE) %>%
+  rename(module = Module_id)
+module_completeness_BC14_NNF <- read.csv("C:/Users/lasse/Desktop/wd/25/df/26/module_completeness_BC14+NNF.tsv", sep="\t", header=TRUE) %>%
+  rename(module = Module_id)
+
+module_completeness_BC13$Percent_steps_found <-
+  as.numeric(module_completeness_BC13$Percent_steps_found)
+module_completeness_BC14$Percent_steps_found <-
+  as.numeric(module_completeness_BC14$Percent_steps_found)
+module_completeness_BC13_NNF$Percent_steps_found <-
+  as.numeric(module_completeness_BC13_NNF$Percent_steps_found)
+module_completeness_BC14_NNF$Percent_steps_found <-
+  as.numeric(module_completeness_BC14_NNF$Percent_steps_found)
+
+
+BC13_bins <- read.csv("C:/Users/lasse/Desktop/wd/25/df/BC13_bins.tsv", sep="\t")
+BC14_bins <- read.csv("C:/Users/lasse/Desktop/wd/25/df/BC14_bins.tsv", sep="\t")
+
+# Taxonomy for my MAGs
+ar53.summary_BC13 <- read.csv("C:/Users/lasse/Desktop/wd/25/df/gtdbtk.ar53.summary_BC13.tsv", sep="\t") %>%
+  select(user_genome, classification) %>%
+  mutate(sample = "Meso")
+ar53.summary_BC14 <- read.csv("C:/Users/lasse/Desktop/wd/25/df/gtdbtk.ar53.summary_BC14.tsv", sep="\t") %>%
+  select(user_genome, classification) %>%
+  mutate(sample = "Thermo")
+bac120.summary_BC13 <- read.csv("C:/Users/lasse/Desktop/wd/25/df/gtdbtk.bac120.summary_BC13.tsv", sep="\t") %>%
+  select(user_genome, classification) %>%
+  mutate(sample = "Meso")
+bac120.summary_BC14 <- read.csv("C:/Users/lasse/Desktop/wd/25/df/gtdbtk.bac120.summary_BC14.tsv", sep="\t") %>%
+  select(user_genome, classification) %>%
+  mutate(sample = "Thermo")
+
+# Taxonomy for NNF MAGs
+gtdbtkr226.bac120.summary.2c <- read.csv("C:/Users/lasse/Desktop/wd/25/df/26/gtdbtkr226.bac120.summary.2c.tsv", sep="\t") %>%
+  mutate(sample = "NNF")
+gtdbtkr226.ar53.summary.2c <- read.csv("C:/Users/lasse/Desktop/wd/25/df/26/gtdbtkr226.ar53.summary.2c.tsv", sep="\t") %>%
+  mutate(sample = "NNF")
+
+
+```
+
+
+--------------------------------------------------------------------------------
+                            the four basic one's
+--------------------------------------------------------------------------------
+
+BC13  module_completeness_BC13
+```{r}
+
+phase_cols <- c(
+  Hydrolysis     = "navyblue",
+  Acidogenesis   = "palegreen4",
+  Acetogenesis   = "palevioletred4",
+  Methanogenesis = "mediumpurple4"
+)
+
+
+threshold <- 100
+
+# Clean BC13 dataframe and restrict to modules of interest
+df_bc13 <- module_completeness_BC13 %>%
+  mutate(
+    Genome_name = str_squish(Genome_name),
+    module      = str_squish(module),
+    Percent_steps_found = parse_number(as.character(Percent_steps_found))
+  ) %>%
+  semi_join(
+    modules %>% transmute(module = str_squish(module)),
+    by = "module"
+  )
+
+# Count unique MAGs meeting threshold per module
+hits_bc13 <- df_bc13 %>%
+  filter(Percent_steps_found >= threshold) %>%
+  distinct(Genome_name, module) %>%
+  count(module, name = "n_MAGs")
+
+# IMPORTANT: preserve the order as it appears in `modules`
+module_order <- modules %>%
+  transmute(module = str_squish(module)) %>%
+  pull(module)
+
+# Join phase information and prepare plotting dataframe
+plot_bc13 <- modules %>%
+  transmute(
+    module = str_squish(module),
+    phase  = str_squish(phase)
+  ) %>%
+  distinct() %>%
+  left_join(hits_bc13, by = "module") %>%
+  mutate(
+    n_MAGs = replace_na(n_MAGs, 0L),
+    phase  = fct_inorder(phase),
+    module = factor(module, levels = unique(module_order))  # <- preserve order
+  )
+  # NOTE: no arrange() here (and especially not desc(n_MAGs))
+
+# Plot
+p <- ggplot(plot_bc13, aes(x = module, y = n_MAGs, fill = phase)) +
+  geom_col() +
+  facet_grid(. ~ phase, scales = "free_x", space = "free_x") +
+  scale_fill_manual(values = phase_cols, drop = FALSE) +
+  labs(
+    x = "modules",
+    y = paste0("Number of MAGs"),
+    title = "Mesophilic MAGs (BC13, dereplicated)",
+    fill = "Phase"
+  ) +
+   geom_text(
+    aes(label = n_MAGs),
+    vjust = -0.3,
+    size = 2.5
+  ) +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 6),
+    panel.spacing.x = unit(0.8, "lines"),
+    legend.position = "none"  # optional, since phase is already faceted
+  )
+
+
+ggsave(filename = "BC/BC13.png", plot = p,
+       width = 17, height = 6, dpi = 300)
+
+
+
+```
+
+
+BC14  module_completeness_BC14
+```{r}
+
+phase_cols <- c(
+  Hydrolysis     = "navyblue",
+  Acidogenesis   = "palegreen4",
+  Acetogenesis   = "palevioletred4",
+  Methanogenesis = "mediumpurple4"
+)
+
+
+threshold <- 100
+
+# Clean BC13 dataframe and restrict to modules of interest
+df_bc14 <- module_completeness_BC14 %>%
+  mutate(
+    Genome_name = str_squish(Genome_name),
+    module      = str_squish(module),
+    Percent_steps_found = parse_number(as.character(Percent_steps_found))
+  ) %>%
+  semi_join(
+    modules %>% transmute(module = str_squish(module)),
+    by = "module"
+  )
+
+# Count unique MAGs meeting threshold per module
+hits_bc14 <- df_bc14 %>%
+  filter(Percent_steps_found >= threshold) %>%
+  distinct(Genome_name, module) %>%
+  count(module, name = "n_MAGs")
+
+# IMPORTANT: preserve the order as it appears in `modules`
+module_order <- modules %>%
+  transmute(module = str_squish(module)) %>%
+  pull(module)
+
+# Join phase information and prepare plotting dataframe
+plot_bc14 <- modules %>%
+  transmute(
+    module = str_squish(module),
+    phase  = str_squish(phase)
+  ) %>%
+  distinct() %>%
+  left_join(hits_bc14, by = "module") %>%
+  mutate(
+    n_MAGs = replace_na(n_MAGs, 0L),
+    phase  = fct_inorder(phase),
+    module = factor(module, levels = unique(module_order))  # <- preserve order
+  )
+  # NOTE: no arrange() here (and especially not desc(n_MAGs))
+
+# Plot
+p <- ggplot(plot_bc14, aes(x = module, y = n_MAGs, fill = phase)) +
+  geom_col() +
+  facet_grid(. ~ phase, scales = "free_x", space = "free_x") +
+  scale_fill_manual(values = phase_cols, drop = FALSE) +
+  labs(
+    x = "modules",
+    y = paste0("Number of MAGs"),
+    title = "Thermophilic MAGs (BC14 only, dereplicated)",
+    fill = "Phase"
+  ) +
+  theme_bw() +
+   geom_text(
+    aes(label = n_MAGs),
+    vjust = -0.3,
+    size = 2.5
+  ) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 6),
+    panel.spacing.x = unit(0.8, "lines"),
+    legend.position = "none"  # optional, since phase is already faceted
+  )
+
+
+ggsave(filename = "BC/BC14.png", plot = p,
+       width = 17, height = 6, dpi = 300)
+
+```
+
+
+BC13+NNF  module_completeness_BC13_NNF
+```{r}
+
+phase_cols <- c(
+  Hydrolysis     = "navyblue",
+  Acidogenesis   = "palegreen4",
+  Acetogenesis   = "palevioletred4",
+  Methanogenesis = "mediumpurple4"
+)
+
+
+threshold <- 100
+
+# Clean BC13 dataframe and restrict to modules of interest
+df_bc13_NNF <- module_completeness_BC13_NNF %>%
+  mutate(
+    Genome_name = str_squish(Genome_name),
+    module      = str_squish(module),
+    Percent_steps_found = parse_number(as.character(Percent_steps_found))
+  ) %>%
+  semi_join(
+    modules %>% transmute(module = str_squish(module)),
+    by = "module"
+  )
+
+# Count unique MAGs meeting threshold per module
+hits_bc13_NNF <- df_bc13_NNF %>%
+  filter(Percent_steps_found >= threshold) %>%
+  distinct(Genome_name, module) %>%
+  count(module, name = "n_MAGs")
+
+# IMPORTANT: preserve the order as it appears in `modules`
+module_order <- modules %>%
+  transmute(module = str_squish(module)) %>%
+  pull(module)
+
+# Join phase information and prepare plotting dataframe
+plot_bc13_NNF <- modules %>%
+  transmute(
+    module = str_squish(module),
+    phase  = str_squish(phase)
+  ) %>%
+  distinct() %>%
+  left_join(hits_bc13_NNF, by = "module") %>%
+  mutate(
+    n_MAGs = replace_na(n_MAGs, 0L),
+    phase  = fct_inorder(phase),
+    module = factor(module, levels = unique(module_order))  # <- preserve order
+  )
+  # NOTE: no arrange() here (and especially not desc(n_MAGs))
+
+# Plot
+p <- ggplot(plot_bc13_NNF, aes(x = module, y = n_MAGs, fill = phase)) +
+  geom_col() +
+  facet_grid(. ~ phase, scales = "free_x", space = "free_x") +
+  scale_fill_manual(values = phase_cols, drop = FALSE) +
+  labs(
+    x = "modules",
+    y = paste0("Number of MAGs"),
+    title = "Thermophilic MAGs (BC13+NNF, dereplicated)",
+    fill = "Phase"
+  ) +
+  theme_bw() +
+   geom_text(
+    aes(label = n_MAGs),
+    vjust = -0.3,
+    size = 2.5
+  ) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 6),
+    panel.spacing.x = unit(0.8, "lines"),
+    legend.position = "none"  # optional, since phase is already faceted
+  )
+
+
+ggsave(filename = "BC_NNF/BC13_NNF.png", plot = p,
+       width = 17, height = 6, dpi = 300)
+
+```
+
+
+BC14+NNF  module_completeness_BC14_NNF
+```{r}
+
+phase_cols <- c(
+  Hydrolysis     = "navyblue",
+  Acidogenesis   = "palegreen4",
+  Acetogenesis   = "palevioletred4",
+  Methanogenesis = "mediumpurple4"
+)
+
+
+threshold <- 100
+
+# Clean BC14_NNF dataframe and restrict to modules of interest
+df_bc14_NNF <- module_completeness_BC14_NNF %>%
+  mutate(
+    Genome_name = str_squish(Genome_name),
+    module      = str_squish(module),
+    Percent_steps_found = parse_number(as.character(Percent_steps_found))
+  ) %>%
+  semi_join(
+    modules %>% transmute(module = str_squish(module)),
+    by = "module"
+  )
+
+# Count unique MAGs meeting threshold per module
+hits_bc14_NNF <- df_bc14_NNF %>%
+  filter(Percent_steps_found >= threshold) %>%
+  distinct(Genome_name, module) %>%
+  count(module, name = "n_MAGs")
+
+# IMPORTANT: preserve the order as it appears in `modules`
+module_order <- modules %>%
+  transmute(module = str_squish(module)) %>%
+  pull(module)
+
+# Join phase information and prepare plotting dataframe
+plot_bc14_NNF <- modules %>%
+  transmute(
+    module = str_squish(module),
+    phase  = str_squish(phase)
+  ) %>%
+  distinct() %>%
+  left_join(hits_bc14_NNF, by = "module") %>%
+  mutate(
+    n_MAGs = replace_na(n_MAGs, 0L),
+    phase  = fct_inorder(phase),
+    module = factor(module, levels = unique(module_order))  # <- preserve order
+  )
+  # NOTE: no arrange() here (and especially not desc(n_MAGs))
+
+# Plot
+p <- ggplot(plot_bc14_NNF, aes(x = module, y = n_MAGs, fill = phase)) +
+  geom_col() +
+  facet_grid(. ~ phase, scales = "free_x", space = "free_x") +
+  scale_fill_manual(values = phase_cols, drop = FALSE) +
+  labs(
+    x = "modules",
+    y = paste0("Number of MAGs"),
+    title = "Thermophilic MAGs (BC14+NNF, dereplicated)",
+    fill = "Phase"
+  ) +
+   geom_text(
+    aes(label = n_MAGs),
+    vjust = -0.3,
+    size = 2.5
+  ) +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 6),
+    panel.spacing.x = unit(0.8, "lines"),
+    legend.position = "none"  # optional, since phase is already faceted
+  )
+
+
+ggsave(filename = "BC_NNF/BC14_NNF.png", plot = p,
+       width = 17, height = 6, dpi = 300)
+
+```
+
+
+--------------------------------------------------------------------------------
+                            BC13+BC14 specifically
+--------------------------------------------------------------------------------
+
+BC13 and BC14
+```{r}
+
+phase_cols <- c(
+  Hydrolysis     = "navyblue",
+  Acidogenesis   = "palegreen4",
+  Acetogenesis   = "palevioletred4",
+  Methanogenesis = "mediumpurple4"
+)
+
+threshold <- 100
+
+modules_plot <- modules %>%
+  transmute(module = str_squish(module),
+            phase  = str_squish(phase)) %>%
+  distinct() %>%
+  mutate(
+    phase  = fct_inorder(phase),
+    module = factor(module, levels = unique(module))  # preserves order in `modules`
+  )
+
+count_hits <- function(df, sample_name) {
+  df %>%
+    mutate(
+      Genome_name = str_squish(Genome_name),
+      module      = str_squish(module),
+      Percent_steps_found = parse_number(as.character(Percent_steps_found))
+    ) %>%
+    semi_join(modules_plot %>% distinct(module), by = "module") %>%
+    filter(Percent_steps_found >= threshold) %>%
+    distinct(Genome_name, module) %>%
+    count(module, name = "n_MAGs") %>%
+    mutate(sample = sample_name)
+}
+
+hits_nonNNF <- bind_rows(
+  count_hits(module_completeness_BC13, "BC13"),
+  count_hits(module_completeness_BC14, "BC14")
+)
+
+plot_nonNNF <- tidyr::expand_grid(
+  sample = factor(c("BC13", "BC14"), levels = c("BC13", "BC14")),
+  modules_plot
+) %>%
+  left_join(hits_nonNNF, by = c("sample", "module")) %>%
+  mutate(n_MAGs = replace_na(n_MAGs, 0L))
+
+p <- ggplot(plot_nonNNF, aes(x = module, y = n_MAGs, fill = phase)) +
+  geom_col() +
+  facet_grid(sample ~ phase, scales = "free_x", space = "free_x") +
+  scale_fill_manual(values = phase_cols, drop = FALSE) +
+  scale_y_continuous(limits = c(0, 180), expand = expansion(mult = c(0, 0.05))) +
+  labs(
+    x = "modules",
+    y = "Number of MAGs",
+    title = "BC13 (mesophilic) and BC14 (thermophilic)",
+    fill = "Phase"
+  ) +
+  theme_bw() +
+   geom_text(
+    aes(label = n_MAGs),
+    vjust = -0.3,
+    size = 2.5
+  ) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 6),
+    panel.spacing.x = unit(0.8, "lines"),
+    legend.position = "none"
+  )
+
+p
+
+
+ggsave(filename = "BC/BC13+BC14.png", plot = p,
+       width = 17, height = 6, dpi = 300)
+
+```
+
+
+BC13 and BC14, Methanogenesis and acetogensis only
+```{r}
+
+
+threshold <- 75
+target_phases <- c("Acetogenesis", "Methanogenesis")
+
+phase_cols <- c(
+  Acetogenesis   = "palevioletred4",
+  Methanogenesis = "mediumpurple4"
+)
+
+# Keep only target phases, preserving order as in `modules`
+mods_sub <- modules %>%
+  transmute(
+    module = str_squish(module),
+    phase  = str_squish(phase)
+  ) %>%
+  filter(phase %in% target_phases) %>%
+  distinct() %>%
+  mutate(
+    phase  = factor(phase, levels = target_phases),   # ensures Acetogenesis before Methanogenesis
+    module = factor(module, levels = unique(module))  # preserves module order as in `modules`
+  )
+
+count_hits <- function(df, sample_name) {
+  df %>%
+    mutate(
+      Genome_name = str_squish(Genome_name),
+      module      = str_squish(module),
+      Percent_steps_found = parse_number(as.character(Percent_steps_found))
+    ) %>%
+    semi_join(mods_sub %>% distinct(module), by = "module") %>%
+    filter(Percent_steps_found >= threshold) %>%
+    distinct(Genome_name, module) %>%
+    count(module, name = "n_MAGs") %>%
+    mutate(sample = sample_name)
+}
+
+hits <- bind_rows(
+  count_hits(module_completeness_BC13, "BC13"),
+  count_hits(module_completeness_BC14, "BC14")
+)
+
+# Ensure modules with zero hits are shown for each sample+phase
+plot_df <- tidyr::expand_grid(
+  sample = factor(c("BC13", "BC14"), levels = c("BC13", "BC14")),
+  mods_sub
+) %>%
+  left_join(hits, by = c("sample", "module")) %>%
+  mutate(n_MAGs = replace_na(n_MAGs, 0L))
+
+p <- ggplot(plot_df, aes(x = module, y = n_MAGs, fill = phase)) +
+  geom_col() +
+  facet_wrap(sample ~ phase, ncol = 2, scales = "free_x") +
+  scale_fill_manual(values = phase_cols, drop = FALSE) +
+  labs(
+    x = "modules",
+    y = paste0("Number of MAGs"),
+    title = "Acetogenesis and Methanogenesis module completeness (BC13 vs BC14)",
+    fill = "Phase"
+  ) +
+   geom_text(
+    aes(label = n_MAGs),
+    vjust = -0.3,
+    size = 2.5
+  ) +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 7),
+    legend.position = "none",
+    panel.spacing = unit(0.8, "lines")
+  )
+
+p
+
+ggsave(filename = "BC/BC13+BC14_acetogenesis_methanogenesis.png", plot = p,
+       width = 9, height = 11, dpi = 300)
+
+```
+
+
+--------------------------------------------------------------------------------
+                        BC13_NNF+BC14_NNF specifically
+--------------------------------------------------------------------------------
+
+
+BC13+NNF and BC14+NNF
+```{r}
+
+phase_cols <- c(
+  Hydrolysis     = "navyblue",
+  Acidogenesis   = "palegreen4",
+  Acetogenesis   = "palevioletred4",
+  Methanogenesis = "mediumpurple4"
+)
+
+threshold <- 100
+
+modules_plot <- modules %>%
+  transmute(module = str_squish(module),
+            phase  = str_squish(phase)) %>%
+  distinct() %>%
+  mutate(
+    phase  = fct_inorder(phase),
+    module = factor(module, levels = unique(module))
+  )
+
+count_hits <- function(df, sample_name) {
+  df %>%
+    mutate(
+      Genome_name = str_squish(Genome_name),
+      module      = str_squish(module),
+      Percent_steps_found = parse_number(as.character(Percent_steps_found))
+    ) %>%
+    semi_join(modules_plot %>% distinct(module), by = "module") %>%
+    filter(Percent_steps_found >= threshold) %>%
+    distinct(Genome_name, module) %>%
+    count(module, name = "n_MAGs") %>%
+    mutate(sample = sample_name)
+}
+
+hits_NNF <- bind_rows(
+  count_hits(module_completeness_BC13_NNF, "BC13+NNF"),
+  count_hits(module_completeness_BC14_NNF, "BC14+NNF")
+)
+
+plot_NNF <- tidyr::expand_grid(
+  sample = factor(c("BC13+NNF", "BC14+NNF"), levels = c("BC13+NNF", "BC14+NNF")),
+  modules_plot
+) %>%
+  left_join(hits_NNF, by = c("sample", "module")) %>%
+  mutate(n_MAGs = replace_na(n_MAGs, 0L))
+
+p <- ggplot(plot_NNF, aes(x = module, y = n_MAGs, fill = phase)) +
+  geom_col() +
+  facet_grid(sample ~ phase, scales = "free_x", space = "free_x") +
+  scale_fill_manual(values = phase_cols, drop = FALSE) +
+  scale_y_continuous(limits = c(0, 900), expand = expansion(mult = c(0, 0.05))) +
+  labs(
+    x = "modules",
+    y = "Number of MAGs (100% module completeness)",
+    title = "BC13+NNF and BC14+NNF",
+    fill = "Phase"
+  ) +
+   geom_text(
+    aes(label = n_MAGs),
+    vjust = -0.3,
+    size = 2.5
+  ) +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 6),
+    panel.spacing.x = unit(0.8, "lines"),
+    legend.position = "none"
+  )
+
+p
+
+ggsave(filename = "BC_NNF/BC13_NNF+BC14_NNF.png", plot = p,
+       width = 17, height = 6, dpi = 300)
+
+```
+
+
+BC13_NNF+BC14_NNF, Methanogenesis and acetogenesis only
+```{r}
+
+threshold <- 100
+target_phases <- c("Acetogenesis", "Methanogenesis")
+
+phase_cols <- c(
+  Acetogenesis   = "palevioletred4",
+  Methanogenesis = "mediumpurple4"
+)
+
+# Keep only target phases, preserving order as in `modules`
+mods_sub <- modules %>%
+  transmute(
+    module = str_squish(module),
+    phase  = str_squish(phase)
+  ) %>%
+  filter(phase %in% target_phases) %>%
+  distinct() %>%
+  mutate(
+    phase  = factor(phase, levels = target_phases),   # ensures Acetogenesis before Methanogenesis
+    module = factor(module, levels = unique(module))  # preserves module order as in `modules`
+  )
+
+count_hits <- function(df, sample_name) {
+  df %>%
+    mutate(
+      Genome_name = str_squish(Genome_name),
+      module      = str_squish(module),
+      Percent_steps_found = parse_number(as.character(Percent_steps_found))
+    ) %>%
+    semi_join(mods_sub %>% distinct(module), by = "module") %>%
+    filter(Percent_steps_found >= threshold) %>%
+    distinct(Genome_name, module) %>%
+    count(module, name = "n_MAGs") %>%
+    mutate(sample = sample_name)
+}
+
+hits <- bind_rows(
+  count_hits(module_completeness_BC13_NNF, "BC13_NNF"),
+  count_hits(module_completeness_BC14_NNF, "BC14_NNF")
+)
+
+# Ensure modules with zero hits are shown for each sample+phase
+plot_df <- tidyr::expand_grid(
+  sample = factor(c("BC13_NNF", "BC14_NNF"), levels = c("BC13_NNF", "BC14_NNF")),
+  mods_sub
+) %>%
+  left_join(hits, by = c("sample", "module")) %>%
+  mutate(n_MAGs = replace_na(n_MAGs, 0L))
+
+p <- ggplot(plot_df, aes(x = module, y = n_MAGs, fill = phase)) +
+  geom_col() +
+  facet_wrap(sample ~ phase, ncol = 2, scales = "free_x") +
+  scale_fill_manual(values = phase_cols, drop = FALSE) +
+  labs(
+    x = "modules",
+    y = paste0("Number of MAGs"),
+    title = "Acetogenesis and Methanogenesis module completeness (BC13_NNF vs BC14_NNF)",
+    fill = "Phase"
+  ) +
+   geom_text(
+    aes(label = n_MAGs),
+    vjust = -0.3,
+    size = 2.5
+  ) +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 7),
+    legend.position = "none",
+    panel.spacing = unit(0.8, "lines")
+  )
+
+p
+
+ggsave(filename = "BC_NNF/BC13_NNF+BC14_NNF_acetogenesis_methanogenesis.png", plot = p,
+       width = 9, height = 11, dpi = 300)
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
