@@ -272,7 +272,7 @@ abun_mat <- matrix(
 
 
 ```{r}
-# Colour gradient for abundance
+# Colour gradient for relative abundance
 abun_col_fun <- colorRamp2(
   c(min(abun_vec, na.rm = TRUE),
     max(abun_vec, na.rm = TRUE)),
