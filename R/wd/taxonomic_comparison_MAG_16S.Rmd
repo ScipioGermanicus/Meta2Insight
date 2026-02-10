@@ -1,0 +1,73 @@
+---
+title: "taxonomic_comparison_MAG_16S"
+author: "Lasse Steffensen"
+date: "2026-02-10"
+output: html_document
+---
+
+
+```{r}
+
+setwd("C:/Users/lasse/Desktop/wd/25/taxonomic_comparison_MAG_16S")
+
+library(tidyverse)
+library(reshape2)
+library(colorspace)
+library(ggtext)
+library(ggalluvial)
+library(scales)
+library(ggh4x)
+library(tibble)
+library(forcats)
+
+x <- read.csv("", sep="\t", header=TRUE)
+x <- read.csv("", sep="\t", header=TRUE)
+x <- read.csv("", sep="\t", header=TRUE)
+x <- read.csv("", sep="\t", header=TRUE)
+
+```
+
+```{r}
+
+
+```
+
+```{r}
+
+
+```
+
+```{r}
+
+
+```
+
+```{r}
+
+
+```
+
+```{r}
+
+
+```
+
+```{r}
+
+
+```
+
+```{r}
+
+
+```
+
+```{r}
+
+
+```
+
+```{r}
+
+
+```
