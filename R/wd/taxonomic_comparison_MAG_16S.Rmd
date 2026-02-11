@@ -10,24 +10,49 @@ output: html_document
 
 setwd("C:/Users/lasse/Desktop/wd/25/taxonomic_comparison_MAG_16S")
 
-library(tidyverse)
-library(reshape2)
-library(colorspace)
-library(ggtext)
-library(ggalluvial)
-library(scales)
-library(ggh4x)
-library(tibble)
-library(forcats)
 
-x <- read.csv("", sep="\t", header=TRUE)
-x <- read.csv("", sep="\t", header=TRUE)
-x <- read.csv("", sep="\t", header=TRUE)
-x <- read.csv("", sep="\t", header=TRUE)
+library(tidyverse)
+
+
+metadata <- read.csv("C:/Users/lasse/Desktop/wd/25/df/16S_data/metadata.txt", sep="\t", header=TRUE)
+
+barcodes <- c("FLASV", "FBE62336_barcode75", "FBE62336_barcode87", "FBE62336_barcode04", "FBE62336_barcode16", "FBE62336_barcode28", "FBE62336_barcode40")
+
+otutable_mappedreads <- read.csv("C:/Users/lasse/Desktop/wd/25/df/16S_data/FBE62336_otutable_mappedreads.tsv", sep="\t", header=TRUE) %>%
+  rename("FLASV" = "OTU") %>%
+  select(all_of(barcodes))
+
+otutable_normalised <- read.csv("C:/Users/lasse/Desktop/wd/25/df/16S_data/FBE62336_otutable_normalised.tsv", sep="\t", header=TRUE) %>%
+  rename("FLASV" = "OTU") %>%
+  select(all_of(barcodes))
+
+summary <- read.csv("C:/Users/lasse/Desktop/wd/25/df/16S_data/FBE62336_summary.txt", sep="\t", header=TRUE)
+
+usearch_taxonomy <- read.csv("C:/Users/lasse/Desktop/wd/25/df/16S_data/usearch_midas_out.tsv", sep="\t", header=FALSE) %>%
+  filter(V1 %in% otutable_mappedreads$FLASV)
+
+colnames(usearch_taxonomy)<- c("FLASV", "taxonomy_conf", "strand", "taxonomy")
+
 
 ```
 
+
 ```{r}
+
+# Parse taxonomy
+tax_parsed <- usearch_taxonomy %>%
+  separate(taxonomy,
+           into = c("d","p","c","o","f","g","s"),
+           sep = ",",
+           fill = "right") %>%
+  mutate(across(d:s, ~str_remove(.x, "^[a-z]:")))
+
+  
+# Join taxonomy onto OTU table
+otu_tax <- otutable_normalised %>%
+  left_join(tax_parsed, by = "FLASV")
+  
+
 
 
 ```
