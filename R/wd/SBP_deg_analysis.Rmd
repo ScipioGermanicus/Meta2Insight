@@ -1,0 +1,99 @@
+---
+title: "SBP_deg_analysis"
+author: "Lasse Steffensen"
+date: "2026-02-11"
+output: html_document
+---
+
+
+```{r}
+
+setwd("C:/Users/lasse/Desktop/wd/25/SBP_deg_analysis")
+
+library(tidyverse)
+library(readxl)
+
+
+file <- "C:/Users/lasse/Desktop/wd/25/df/metabolism_summary_26.xlsx"
+metabolism_summary <- read_excel(file, sheet = 2)
+
+```
+
+Make lists of relevant gene_ids
+```{r}
+
+pectin_gene_ids <- data.frame(
+  gene_id = c("GH53",
+              "GH147",
+              "GH165",
+              "GH35",
+              "GH42",
+              "GH59",
+              "GH28",
+              "PL1",
+              "PL10",
+              "PL11",
+              "PL2",
+              "PL22",
+              "PL26",
+              "PL3",
+              "PL4",
+              "PL9",
+              "CE12",
+              "CE8",
+              "GH105",
+              "GH138",
+              "GH143",
+              "GH4",
+              "GH139",
+              "GH106",
+              "GH78")
+)
+
+
+```
+
+```{r}
+
+
+```
+
+```{r}
+
+
+```
+
+```{r}
+
+
+```
+
+```{r}
+
+
+```
+
+```{r}
+
+
+```
+
+```{r}
+
+
+```
+
+```{r}
+
+
+```
+
+```{r}
+
+
+```
+
+```{r}
+
+
+```
