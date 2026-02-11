@@ -15,7 +15,8 @@ library(readxl)
 
 
 file <- "C:/Users/lasse/Desktop/wd/25/df/metabolism_summary_26.xlsx"
-metabolism_summary <- read_excel(file, sheet = 2)
+metabolism_summary <- read_excel(file, sheet = 2) %>%
+  mutate(gene_id = as.character(gene_id))
 
 ```
 
@@ -50,15 +51,36 @@ pectin_gene_ids <- data.frame(
               "GH78")
 )
 
+pectin_gene_ids_vector <- pectin_gene_ids$gene_id
 
 ```
 
-```{r}
-
-
-```
 
 ```{r}
+
+# Filter for target CAZys (pectin-related one's)
+metabolism_summary_p <- metabolism_summary %>%
+  mutate(gene_id = as.character(gene_id)) %>%
+  filter(gene_id %in% pectin_gene_ids_vector)
+
+
+# Extract gene_ids from the dataframe (will be re-added later)
+gene_ids_p <- metabolism_summary_p$gene_id
+
+
+# Build genome-only matrix
+genome_gene_matrix_p <- metabolism_summary_p %>%
+  select(-any_of(c("gene_description", "module", "header", "subheader", "gene_id"))) %>%
+  mutate(across(everything(), ~ parse_number(as.character(.x))))
+
+
+# Remove all-zero columns (i.e. irrelevant genomes)
+genome_gene_matrix_p <- genome_gene_matrix_p %>%
+  select(where(~ sum(.x, na.rm = TRUE) > 0))
+
+# Add gene_id back
+genome_gene_matrix_p <- bind_cols(tibble(gene_id = gene_ids_p), genome_gene_matrix_p)
+
 
 
 ```
