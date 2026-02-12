@@ -1,0 +1,748 @@
+---
+title: "coverm_rel_abun"
+author: "Lasse Steffensen"
+date: "2026-02-05"
+output: html_document
+---
+
+--------------------------------------------------------------------------------
+                                    Pre
+--------------------------------------------------------------------------------
+
+Pre
+```{r}
+
+setwd("C:/Users/lasse/Desktop/wd/25/coverm_rel_abun")
+
+
+library(tidyverse)
+library(patchwork)
+
+meso4 <- read.csv("C:/Users/lasse/Desktop/wd/25/df/meso_coverm4_genome.tsv", header = TRUE, sep = "\t")
+meso4 <- meso4[meso4$Genome != "unmapped", ] %>%
+  filter(rel_abun > 0, mean > 0, cov_frac > 0)
+
+thermo4 <- read.csv("C:/Users/lasse/Desktop/wd/25/df/thermo_coverm4_genome.tsv", header = TRUE, sep = "\t")
+
+thermo4 <- thermo4[thermo4$Genome != "unmapped", ] %>%
+  filter(rel_abun > 0, mean > 0, cov_frac > 0)
+
+
+cov_meso <- read.csv("C:/Users/lasse/Desktop/wd/25/df/BC13_bins.tsv", header = TRUE, sep = "\t") %>%
+  select(bin, cov)
+  
+cov_thermo <- read.csv("C:/Users/lasse/Desktop/wd/25/df/BC14_bins.tsv", header = TRUE, sep = "\t") %>%
+  select(bin, cov)
+
+
+
+
+```
+
+
+Long and wide format
+```{r}
+
+
+meso_long <- meso4 %>%
+  mutate(dataset = "Mesophilic") %>%
+  pivot_longer(
+    cols = c(rel_abun, mean, cov_frac),
+    names_to = "variable",
+    values_to = "value"
+  )
+
+thermo_long <- thermo4 %>%
+  mutate(dataset = "Thermophilic") %>%
+  pivot_longer(
+    cols = c(rel_abun, mean, cov_frac),
+    names_to = "variable",
+    values_to = "value"
+  )
+
+df_long <- bind_rows(meso_long, thermo_long)
+
+df_wide <- df_long %>%
+  filter(variable %in% c("mean", "rel_abun", "cov_frac")) %>%
+  pivot_wider(
+    names_from  = variable,
+    values_from = value
+  )
+
+
+```
+
+
+
+--------------------------------------------------------------------------------
+       No filter, full view, zoomed view + potential threshold (histograms)
+--------------------------------------------------------------------------------
+
+
+Calculation for threshold
+```{r}
+
+thr_rel_abun <- 0.01
+thr_cov_frac <- 0.9
+
+# total counts across all datasets
+counts_rel_abun_total <- df_long %>%
+  filter(variable == "rel_abun") %>%
+  summarise(
+    n_left  = sum(value <  thr_rel_abun, na.rm = TRUE),
+    n_right = sum(value >= thr_rel_abun, na.rm = TRUE)
+  )
+
+counts_cov_frac_total <- df_long %>%
+  filter(variable == "cov_frac") %>%
+  summarise(
+    n_left  = sum(value <  thr_cov_frac, na.rm = TRUE),
+    n_right = sum(value >= thr_cov_frac, na.rm = TRUE)
+  )
+
+```
+
+Histograms
+```{r}
+
+p1 <- df_long %>%
+  filter(variable == "rel_abun") %>%
+  ggplot(aes(x = value, fill = dataset)) +
+  geom_histogram(bins = 10, position = "identity", alpha = 0.5) +
+  labs(x = "Relative abundance [%]", y = "Count") +
+  geom_vline(xintercept = thr_rel_abun, colour = "red", linetype = "dotted", linewidth = 0.8)
+
+p1
+
+
+p2 <- df_long %>%
+  filter(variable == "mean") %>%
+  ggplot(aes(x = value, fill = dataset)) +
+  geom_histogram(bins = 10, position = "identity", alpha = 0.5) +
+  labs(x = "Mean coverage", y = "Count")
+
+p2
+
+
+p3 <- df_long %>%
+  filter(variable == "cov_frac") %>%
+  ggplot(aes(x = value, fill = dataset)) +
+  geom_histogram(bins = 10, position = "identity", alpha = 0.5) +
+  labs(x = "Fraction covered", y = "Count") +
+  geom_vline(xintercept = thr_cov_frac, colour = "red", linetype = "dotted", linewidth = 0.8)
+
+p3
+
+
+coverm_plot <- p1 | p2 | p3
+
+
+ggsave(filename = "hist_coverm_plot.png", plot = coverm_plot,
+       width = 30, height = 6, dpi = 300)
+
+
+
+
+p1 <- df_long %>%
+  filter(variable == "rel_abun") %>%
+  ggplot(aes(x = value, fill = dataset)) +
+  geom_histogram(bins = 10, position = "identity", alpha = 0.5) +
+  labs(x = "Relative abundance [%]", y = "Count") +
+  scale_x_continuous(limits = c(0, 0.05)) +
+  scale_y_continuous(limits = c(0, 150)) +
+  geom_vline(xintercept = thr_rel_abun, colour = "red", linetype = "dotted", linewidth = 0.8)
+
+p1
+
+
+p2 <- df_long %>%
+  filter(variable == "mean") %>%
+  ggplot(aes(x = value, fill = dataset)) +
+  geom_histogram(bins = 10, position = "identity", alpha = 0.5) +
+  labs(x = "Mean coverage", y = "Count") +
+  scale_x_continuous(limits = c(0, 10)) +
+  scale_y_continuous(limits = c(0, 150))
+
+p2
+
+
+p3 <- df_long %>%
+  filter(variable == "cov_frac") %>%
+  ggplot(aes(x = value, fill = dataset)) +
+  geom_histogram(bins = 10, position = "identity", alpha = 0.5) +
+  labs(x = "Fraction covered", y = "Count") +
+  scale_x_continuous(limits = c(0, 1)) +
+  scale_x_continuous(limits = c(0.65, 1.1)) +
+  geom_vline(xintercept = thr_cov_frac, colour = "red", linetype = "dotted", linewidth = 0.8)
+
+p3
+
+
+coverm_plot_zoomed <- p1 | p2 | p3
+
+
+
+ggsave(filename = "hist_coverm_plot_zoomed.png", plot = coverm_plot_zoomed,
+       width = 30, height = 6, dpi = 300)
+
+```
+
+
+
+-------------------------------------------------------------------------------------------
+ Introduce threshold 0.9 cov_frac + 0.1 rel_abun - Histograms, correlation, density plots
+-------------------------------------------------------------------------------------------
+
+
+Filter fun
+```{r}
+
+meso4_f <- meso4 %>%
+  filter(cov_frac >= 0.9) %>%
+  filter(rel_abun >= 0.01)
+
+thermo4_f <- thermo4 %>%
+  filter(cov_frac >= 0.9) %>%
+  filter(rel_abun >= 0.01)
+
+
+meso_long <- meso4_f %>%
+  mutate(dataset = "Mesophilic") %>%
+  pivot_longer(
+    cols = c(rel_abun, mean, cov_frac),
+    names_to = "variable",
+    values_to = "value"
+  )
+
+thermo_long <- thermo4_f %>%
+  mutate(dataset = "Thermophilic") %>%
+  pivot_longer(
+    cols = c(rel_abun, mean, cov_frac),
+    names_to = "variable",
+    values_to = "value"
+  )
+
+df_long <- bind_rows(meso_long, thermo_long)
+
+df_wide <- df_long %>%
+  filter(variable %in% c("mean", "rel_abun", "cov_frac")) %>%
+  pivot_wider(
+    names_from  = variable,
+    values_from = value
+  )
+
+```
+
+
+Histograms
+```{r}
+
+p1 <- df_long %>%
+  filter(variable == "rel_abun") %>%
+  ggplot(aes(x = value, fill = dataset)) +
+  geom_histogram(bins = 10, position = "identity", alpha = 0.5) +
+  labs(x = "Relative abundance [%]", y = "Count")
+
+p1
+
+
+p2 <- df_long %>%
+  filter(variable == "mean") %>%
+  ggplot(aes(x = value, fill = dataset)) +
+  geom_histogram(bins = 10, position = "identity", alpha = 0.5) +
+  labs(x = "Mean coverage", y = "Count")
+
+p2
+
+
+p3 <- df_long %>%
+  filter(variable == "cov_frac") %>%
+  ggplot(aes(x = value, fill = dataset)) +
+  geom_histogram(bins = 10, position = "identity", alpha = 0.5) +
+  labs(x = "Fraction covered", y = "Count") +
+  scale_x_continuous(limits = c(0.65, 1.1))
+
+p3
+
+
+coverm_plot <- p1 | p2 | p3
+
+
+ggsave(filename = "f_hist_coverm_plot.png", plot = coverm_plot,
+       width = 30, height = 6, dpi = 300)
+
+
+
+
+p1 <- df_long %>%
+  filter(variable == "rel_abun") %>%
+  ggplot(aes(x = value, fill = dataset)) +
+  geom_histogram(bins = 10, position = "identity", alpha = 0.5) +
+  labs(x = "Relative abundance [%]", y = "Count") +
+  scale_x_continuous(limits = c(0, 0.05))
+
+p1
+
+
+p2 <- df_long %>%
+  filter(variable == "mean") %>%
+  ggplot(aes(x = value, fill = dataset)) +
+  geom_histogram(bins = 10, position = "identity", alpha = 0.5) +
+  labs(x = "Mean coverage", y = "Count") +
+  scale_x_continuous(limits = c(0, 10))
+
+p2
+
+
+p3 <- df_long %>%
+  filter(variable == "cov_frac") %>%
+  ggplot(aes(x = value, fill = dataset)) +
+  geom_histogram(bins = 10, position = "identity", alpha = 0.5) +
+  labs(x = "Fraction covered", y = "Count") +
+  scale_x_continuous(limits = c(0.65, 1.1))
+
+p3
+
+
+coverm_plot_zoomed <- p1 | p2 | p3
+
+
+
+ggsave(filename = "f_hist_coverm_plot_zoomed.png", plot = coverm_plot_zoomed,
+       width = 30, height = 6, dpi = 300)
+
+```
+
+
+Relative abundance and coverage correlation
+```{r}
+
+d <- ggplot(df_wide, aes(x = mean, y = rel_abun, colour = dataset)) +
+  geom_point(alpha = 0.4) +
+  geom_smooth(method = "lm", se = TRUE, linewidth = 0.3) +
+  theme_bw() +
+  labs(
+    x = "Mean coverage",
+    y = "Relative abundance [%]",
+    colour = "Sample"
+  )
+
+d
+
+
+
+```
+
+
+Introduce 0.5 covered fraction cutoff
+```{r}
+
+
+cutoff <- 0.5
+
+df_cov <- df_long %>%
+  filter(variable == "cov_frac")
+
+# Counts per dataset, pass/fail
+cov_counts <- df_cov %>%
+  mutate(pass = value >= cutoff) %>%
+  count(dataset, pass) %>%
+  mutate(pass = if_else(pass, "Pass (≥ 0.5)", "Fail (< 0.5)")) %>%
+  arrange(dataset, pass)
+
+print(cov_counts)
+
+# Optional: also print totals across both datasets
+cov_counts_total <- df_cov %>%
+  mutate(pass = value >= cutoff) %>%
+  count(pass) %>%
+  mutate(pass = if_else(pass, "Pass (≥ 0.5)", "Fail (< 0.5)"))
+print(cov_counts_total)
+
+p_cov <- ggplot(df_cov, aes(x = value, fill = dataset)) +
+  geom_histogram(bins = 10, position = "identity", alpha = 0.5) +
+  geom_vline(xintercept = cutoff, colour = "red", linetype = "dotted", linewidth = 1) +
+  coord_cartesian(xlim = c(0, 1)) +
+  theme_bw() +
+  labs(x = "Fraction covered", y = "Count")
+
+p_cov
+
+
+ggsave(filename = "threshold_0.5_frac_covered/cov_threshold.png", plot = p_cov,
+       width = 30, height = 6, dpi = 300)
+
+
+
+
+df_wide <- df_long %>%
+  pivot_wider(names_from = variable, values_from = value)
+
+df_wide2 <- df_wide %>%
+  mutate(filter_status = "All") %>%
+  bind_rows(
+    df_wide %>%
+      filter(cov_frac >= cutoff) %>%
+      mutate(filter_status = "cov_frac ≥ 0.5")
+  ) %>%
+  mutate(filter_status = factor(filter_status, levels = c("All", "cov_frac ≥ 0.5")))
+
+p_mean <- ggplot(df_wide2, aes(x = mean, fill = dataset)) +
+  geom_histogram(bins = 10, position = "identity", alpha = 0.5) +
+  facet_wrap(~ filter_status, ncol = 1) +
+  theme_bw() +
+  labs(x = "Mean coverage", y = "Count") +
+  scale_x_continuous(limits = c(0, 100))
+
+
+# this shit broken
+p_rel <- ggplot(df_wide2, aes(x = rel_abun, fill = dataset)) +
+  geom_histogram(bins = 10, position = "identity", alpha = 0.5) +
+  facet_wrap(~ filter_status, ncol = 1) +
+  theme_bw() +
+  labs(x = "Relative abundance [%]", y = "Count") +
+  scale_x_continuous(0, 100)
+
+
+p_rel
+
+p <- (p_rel | p_mean) / p_cov
+
+
+
+ggsave(filename = "threshold_0.5_frac_covered/p.png", plot = p,
+       width = 12, height = 12, dpi = 300)
+
+
+```
+
+
+
+--------------------------------------------------------------------------------
+           Statistics on pure 0.9 cov_frac filter + coverage comparison
+--------------------------------------------------------------------------------
+
+Filter dataframes
+```{r}
+
+meso4_f_c <- meso4 %>%
+  filter(cov_frac >= 0.9)
+
+thermo4_f_c <- thermo4 %>%
+  filter(cov_frac >= 0.9)
+
+
+meso_long_f_c <- meso4_f_c %>%
+  mutate(dataset = "Mesophilic") %>%
+  pivot_longer(
+    cols = c(rel_abun, mean, cov_frac),
+    names_to = "variable",
+    values_to = "value"
+  )
+
+thermo_long_f_c <- thermo4_f_c %>%
+  mutate(dataset = "Thermophilic") %>%
+  pivot_longer(
+    cols = c(rel_abun, mean, cov_frac),
+    names_to = "variable",
+    values_to = "value"
+  )
+
+df_long_f_c <- bind_rows(meso_long_f_c, thermo_long_f_c)
+
+df_wide_f_c <- df_long_f_c %>%
+  filter(variable %in% c("mean", "rel_abun", "cov_frac")) %>%
+  pivot_wider(
+    names_from  = variable,
+    values_from = value
+  )
+
+```
+
+
+Histograms for 0.9 cov_frac filter
+```{r}
+
+p1 <- df_long %>%
+  filter(variable == "rel_abun") %>%
+  ggplot(aes(x = value, fill = dataset)) +
+  geom_histogram(bins = 10, position = "identity", alpha = 0.5) +
+  labs(x = "Relative abundance [%]", y = "Count")
+
+p1
+
+
+p2 <- df_long %>%
+  filter(variable == "mean") %>%
+  ggplot(aes(x = value, fill = dataset)) +
+  geom_histogram(bins = 10, position = "identity", alpha = 0.5) +
+  labs(x = "Mean coverage", y = "Count")
+
+p2
+
+
+p3 <- df_long %>%
+  filter(variable == "cov_frac") %>%
+  ggplot(aes(x = value, fill = dataset)) +
+  geom_histogram(bins = 10, position = "identity", alpha = 0.5) +
+  labs(x = "Fraction covered", y = "Count") +
+  scale_x_continuous(limits = c(0.65, 1.1))
+
+p3
+
+
+coverm_plot_f_c <- p1 | p2 | p3
+
+
+ggsave(filename = "threshold_0.9_cov_frac/f_c_hist_coverm_plot.png", plot = coverm_plot_f_c,
+       width = 30, height = 6, dpi = 300)
+
+
+
+
+p1 <- df_long %>%
+  filter(variable == "rel_abun") %>%
+  ggplot(aes(x = value, fill = dataset)) +
+  geom_histogram(bins = 10, position = "identity", alpha = 0.5) +
+  labs(x = "Relative abundance [%]", y = "Count") +
+  scale_x_continuous(limits = c(0, 0.05))
+
+p1
+
+
+p2 <- df_long %>%
+  filter(variable == "mean") %>%
+  ggplot(aes(x = value, fill = dataset)) +
+  geom_histogram(bins = 10, position = "identity", alpha = 0.5) +
+  labs(x = "Mean coverage", y = "Count") +
+  scale_x_continuous(limits = c(0, 10))
+
+p2
+
+
+p3 <- df_long %>%
+  filter(variable == "cov_frac") %>%
+  ggplot(aes(x = value, fill = dataset)) +
+  geom_histogram(bins = 10, position = "identity", alpha = 0.5) +
+  labs(x = "Fraction covered", y = "Count") +
+  scale_x_continuous(limits = c(0.65, 1.1))
+
+p3
+
+
+coverm_plot_zoomed_f_c <- p1 | p2 | p3
+
+
+
+ggsave(filename = "threshold_0.9_cov_frac/f_hist_coverm_plot_zoomed_f_c.png", plot = coverm_plot_zoomed_f_c,
+       width = 30, height = 6, dpi = 300)
+
+```
+
+
+Coverage comparison
+```{r}
+
+cov_meso <- cov_meso %>%
+  mutate(dataset = "de novo") %>%
+  rename(Genome = bin)
+
+cov_thermo <- cov_thermo %>%
+  mutate(dataset = "de novo") %>%
+  rename(Genome = bin)
+
+
+cov_meso4 <- meso4_f_c %>%
+  select(Genome, mean) %>%
+  rename(cov = mean) %>%
+  mutate(dataset = "Mapped")
+
+cov_thermo4 <- thermo4_f_c %>%
+  select(Genome, mean) %>%
+  rename(cov = mean) %>%
+  mutate(dataset = "Mapped")
+
+
+cov_bind_meso <- bind_rows(cov_meso, cov_meso4)
+
+cov_bind_thermo <- bind_rows(cov_thermo, cov_thermo4)
+
+
+
+
+m1 <- cov_bind_meso %>%
+  ggplot(aes(x = cov, fill = dataset)) +
+  geom_histogram(bins = 10, position = "identity", alpha = 0.5) +
+  labs(x = "Coverage", y = "MAGs") +
+  labs(title = "Mesophilic: de novo MAG coverage vs. mapped MAG coverage")
+
+m1
+
+
+m2 <- cov_bind_meso %>%
+  ggplot(aes(x = cov, fill = dataset)) +
+  geom_histogram(bins = 10, position = "identity", alpha = 0.5) +
+  labs(x = "Coverage", y = "MAGs") +
+  scale_x_continuous(limits = c(0, 50)) +
+  scale_y_continuous(limits = c(0, 110)) +
+  labs(title = "Mesophilic: de novo MAG coverage vs. mapped MAG coverage")
+
+m2
+
+
+coverage_plot_meso_f_c <- m1 | m2
+
+
+ggsave(filename = "threshold_0.9_cov_frac/f_c_hist_coverage_meso.png", plot = coverage_plot_meso_f_c,
+       width = 30, height = 6, dpi = 300)
+
+
+
+
+t1 <- cov_bind_thermo %>%
+  ggplot(aes(x = cov, fill = dataset)) +
+  geom_histogram(bins = 10, position = "identity", alpha = 0.5) +
+  labs(x = "Coverage", y = "MAGs") +
+  labs(title = "Thermophilic: de novo MAG coverage vs. mapped MAG coverage")
+
+t1
+
+
+t2 <- cov_bind_thermo %>%
+  ggplot(aes(x = cov, fill = dataset)) +
+  geom_histogram(bins = 10, position = "identity", alpha = 0.5) +
+  labs(x = "Coverage", y = "MAGs") +
+  scale_x_continuous(limits = c(0, 50)) +
+  labs(title = "Thermophilic: de novo MAG coverage vs. mapped MAG coverage")
+  
+
+t2
+
+
+coverage_plot_thermo_f_c <- t1 | t2
+
+
+
+ggsave(filename = "threshold_0.9_cov_frac/f_c_hist_coverage_thermo.png", plot = coverage_plot_thermo_f_c,
+       width = 30, height = 6, dpi = 300)
+
+
+mean_denovo_meso <- cov_bind_meso %>%
+  group_by(dataset) %>%
+  summarise(
+    mean_cov = mean(cov),
+    n = n(),
+    .groups = "drop"
+  )
+
+mean_denovo_thermo <- cov_bind_thermo %>%
+  group_by(dataset) %>%
+  summarise(
+    mean_cov = mean(cov),
+    n = n(),
+    .groups = "drop"
+  )
+
+
+
+
+```
+
+--------------------------------------------------------------------------------
+                     Compare Coverm MAGs >< mmlong2 MAGs
+--------------------------------------------------------------------------------
+
+
+Density plot with coverages
+```{r}
+
+cov_meso <- cov_meso %>%
+  mutate(dataset = "de novo") %>%
+  rename(Genome = bin)
+
+cov_thermo <- cov_thermo %>%
+  mutate(dataset = "de novo") %>%
+  rename(Genome = bin)
+
+
+cov_meso3 <- meso3 %>%
+  select(Genome, mean) %>%
+  rename(cov = mean) %>%
+  mutate(dataset = "Mapped")
+
+cov_thermo3 <- thermo3 %>%
+  select(Genome, mean) %>%
+  rename(cov = mean) %>%
+  mutate(dataset = "Mapped")
+
+
+cov_bind_meso <- bind_rows(cov_meso, cov_meso3)
+
+cov_bind_thermo <- bind_rows(cov_thermo, cov_thermo3)
+
+
+
+
+m1 <- cov_bind_meso %>%
+  ggplot(aes(x = cov, colour = dataset)) +
+  geom_histogram() +
+  labs(x = "Coverage", y = "MAGs") +
+  labs(title = "Mesophilic: de novo MAG coverage vs. mapped MAG coverage")
+
+m1
+
+
+m2 <- cov_bind_meso %>%
+  ggplot(aes(x = cov, colour = dataset)) +
+  geom_histogram() +
+  labs(x = "Coverage", y = "MAGs") +
+  scale_x_continuous(limits = c(0, 50)) +
+  labs(title = "Mesophilic: de novo MAG coverage vs. mapped MAG coverage")
+
+m2
+
+
+t1 <- cov_bind_thermo %>%
+  ggplot(aes(x = cov, colour = dataset)) +
+  geom_histogram() +
+  labs(x = "Coverage", y = "MAGs") +
+  labs(title = "Thermophilic: de novo MAG coverage vs. mapped MAG coverage")
+
+t1
+
+
+t2 <- cov_bind_thermo %>%
+  ggplot(aes(x = cov, colour = dataset)) +
+  geom_histogram() +
+  labs(x = "Coverage", y = "MAGs") +
+  scale_x_continuous(limits = c(0, 50)) +
+  labs(title = "Thermophilic: de novo MAG coverage vs. mapped MAG coverage")
+  
+
+t2
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+
+
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
