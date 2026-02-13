@@ -6,6 +6,11 @@ output: html_document
 ---
 
 
+-------------------------------------------------------------------------------------------
+                                          Pre
+-------------------------------------------------------------------------------------------
+
+Pre + load my data with tax
 ```{r}
 
 setwd("C:/Users/lasse/Desktop/wd/25/taxonomic_comparison_MAG_16S")
@@ -36,7 +41,7 @@ colnames(usearch_taxonomy)<- c("FLASV", "taxonomy_conf", "strand", "taxonomy")
 
 ```
 
-
+Parse tax of my data
 ```{r}
 
 # Parse taxonomy
@@ -57,10 +62,53 @@ otu_tax <- otutable_normalised %>%
 
 ```
 
+Load external data with tax, parse taxonomy, add relative abundance
 ```{r}
+
+# USEARACH dataframe for external data (i.e. taxonomy of dereplicated genomes)
+usearch_taxonomy_derep <- read.csv("C:/Users/lasse/Desktop/wd/25/df/16S_data/usearch_midas_derep_out.tsv", sep="\t", header=FALSE)
+
+colnames(usearch_taxonomy_derep)<- c("FLASV", "taxonomy_conf", "strand", "taxonomy")
+
+
+# Parse tax
+tax_parsed_derep <- usearch_taxonomy_derep %>%
+  separate(taxonomy,
+           into = c("d","p","c","o","f","g","s"),
+           sep = ",",
+           fill = "right") %>%
+  mutate(across(d:s, ~str_remove(.x, "^[a-z]:")))
+
+
+# Relative abundance of dereplicated genomes
+rel_abun_meso <- read.csv("C:/Users/lasse/Desktop/wd/25/df/16S_data/meso_coverm_genome.tsv", sep="\t", header=TRUE)
+
+rel_abun_thermo <- read.csv("C:/Users/lasse/Desktop/wd/25/df/16S_data/thermo_coverm_genome.tsv", sep="\t", header=TRUE)
+
+
+# Join rel_abun on taxonomy df
+tax_parsed_derep_joined <- tax_parsed_derep %>%
+  left_join(
+    rel_abun_meso %>% 
+      select(Genome, rel_abun_meso),
+    by = c("FLASV" = "Genome")
+  ) %>%
+  left_join(
+    rel_abun_thermo %>% 
+      select(Genome, rel_abun_thermo),
+    by = c("FLASV" = "Genome")
+  )
+
+
 
 
 ```
+
+
+-------------------------------------------------------------------------------------------
+                                          x
+-------------------------------------------------------------------------------------------
+
 
 ```{r}
 
