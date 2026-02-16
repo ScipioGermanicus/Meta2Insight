@@ -1,0 +1,338 @@
+---
+title: "stuff"
+author: "Lasse Steffensen"
+date: "2026-02-16"
+output: html_document
+---
+
+
+--------------------------------------------------------------------------------
+                                    Pre    
+--------------------------------------------------------------------------------
+
+
+
+Pre
+```{r}
+
+setwd("C:/Users/lasse/Desktop/wd/25/01_05")
+
+library(tidyverse)
+library(patchwork)
+
+meso_mags <- read.csv("C:/Users/lasse/Desktop/wd/25/coverm_rel_abun/meso_05_mags.tsv", header = TRUE, sep = "\t")
+thermo_mags <- read.csv("C:/Users/lasse/Desktop/wd/25/coverm_rel_abun/thermo_05_mags.tsv", header = TRUE, sep = "\t")
+
+
+meso_mags01 <- read.csv("C:/Users/lasse/Desktop/wd/25/coverm_rel_abun/meso_01_mags.tsv", header = TRUE, sep = "\t")
+thermo_mags01 <- read.csv("C:/Users/lasse/Desktop/wd/25/coverm_rel_abun/thermo_01_mags.tsv", header = TRUE, sep = "\t")
+
+
+
+# Module completeness 
+module_completeness_BC13 <- read.csv("C:/Users/lasse/Desktop/wd/25/df/26/module_completeness_BC13.tsv", sep="\t", header=TRUE) %>%
+  rename(module = Module_id)
+module_completeness_BC14 <- read.csv("C:/Users/lasse/Desktop/wd/25/df/26/module_completeness_BC14.tsv", sep="\t", header=TRUE) %>%
+  rename(module = Module_id)
+module_completeness_BC13_NNF <- read.csv("C:/Users/lasse/Desktop/wd/25/df/26/module_completeness_BC13+NNF.tsv", sep="\t", header=TRUE) %>%
+  rename(module = Module_id)
+module_completeness_BC14_NNF <- read.csv("C:/Users/lasse/Desktop/wd/25/df/26/module_completeness_BC14+NNF.tsv", sep="\t", header=TRUE) %>%
+  rename(module = Module_id)
+
+module_completeness_BC13$Percent_steps_found <-
+  as.numeric(module_completeness_BC13$Percent_steps_found)
+module_completeness_BC14$Percent_steps_found <-
+  as.numeric(module_completeness_BC14$Percent_steps_found)
+module_completeness_BC13_NNF$Percent_steps_found <-
+  as.numeric(module_completeness_BC13_NNF$Percent_steps_found)
+module_completeness_BC14_NNF$Percent_steps_found <-
+  as.numeric(module_completeness_BC14_NNF$Percent_steps_found)
+
+annotations <- bind_rows(module_completeness_BC13, module_completeness_BC13_NNF, module_completeness_BC14, module_completeness_BC14_NNF)
+
+
+# Join annotation
+meso_mags <- meso_mags %>%
+  left_join(annotations, by = c("Genome" = "Genome_name"))
+
+
+```
+
+
+Quality check on mags (0.05)
+```{r}
+
+# Covered fraction meso
+g <- ggplot(meso_mags, aes(x = cov_frac)) +
+  geom_histogram(bins = 20, fill = "steelblue") +
+  labs(title = "Distribution of covered fraction (mesophilic)", x = "Covered fraction", y = "MAG count")
+
+
+# Covered fraction thermo
+f <- ggplot(thermo_mags, aes(x = cov_frac)) +
+  geom_histogram(bins = 20, fill = "darkred") +
+  labs(title = "Distribution of covered fraction (thermophilic)", x = "Covered fraction", y = "MAG count")
+
+
+h <- g | f
+
+# Based on the distribution of covered fraction, we will need to filter those MAGs with <0.9 away
+
+thermo_mags <- thermo_mags %>%
+  filter(cov_frac >=0.9)
+
+meso_mags <- meso_mags %>%
+  filter(cov_frac >=0.9)
+
+g <- ggplot(meso_mags, aes(x = cov_frac)) +
+  geom_histogram(bins = 20, fill = "steelblue") +
+  labs(title = "Distribution of covered fraction (mesophilic)", x = "Covered fraction", y = "MAG count")
+
+
+# Covered fraction thermo
+f <- ggplot(thermo_mags, aes(x = cov_frac)) +
+  geom_histogram(bins = 20, fill = "darkred") +
+  labs(title = "Distribution of covered fraction (thermophilic)", x = "Covered fraction", y = "MAG count")
+
+
+h <- g | f
+
+
+```
+
+
+Quality check on mags (0.01)
+```{r}
+
+# Covered fraction meso
+g <- ggplot(meso_mags01, aes(x = cov_frac)) +
+  geom_histogram(bins = 20, fill = "steelblue") +
+  labs(title = "Distribution of covered fraction (mesophilic)", x = "Covered fraction", y = "MAG count")
+
+
+# Covered fraction thermo
+f <- ggplot(thermo_mags01, aes(x = cov_frac)) +
+  geom_histogram(bins = 20, fill = "darkred") +
+  labs(title = "Distribution of covered fraction (thermophilic)", x = "Covered fraction", y = "MAG count")
+
+
+h <- g | f
+
+h
+
+# Based on the distribution of covered fraction, we will need to filter those MAGs with <0.9 away
+
+thermo_mags01 <- thermo_mags01 %>%
+  filter(cov_frac >=0.9)
+
+meso_mags01 <- meso_mags01 %>%
+  filter(cov_frac >=0.9)
+
+g <- ggplot(meso_mags01, aes(x = cov_frac)) +
+  geom_histogram(bins = 20, fill = "steelblue") +
+  labs(title = "Distribution of covered fraction (mesophilic)", x = "Covered fraction", y = "MAG count")
+
+
+# Covered fraction thermo
+f <- ggplot(thermo_mags01, aes(x = cov_frac)) +
+  geom_histogram(bins = 20, fill = "darkred") +
+  labs(title = "Distribution of covered fraction (thermophilic)", x = "Covered fraction", y = "MAG count")
+
+
+h <- g | f
+
+h
+
+```
+
+
+GTDB taxonomy (from dereplicated MAGs)
+```{r}
+
+# Data frames
+BC13_bins <- read.csv("C:/Users/lasse/Desktop/wd/25/df/BC13_bins.tsv", sep="\t")
+BC14_bins <- read.csv("C:/Users/lasse/Desktop/wd/25/df/BC14_bins.tsv", sep="\t")
+
+ar53.summary <- read.csv("C:/Users/lasse/Desktop/wd/25/df/GTDB-Tk_dereps/gtdbtk.ar53.summary.dereps.tsv", sep="\t") %>%
+  select(user_genome, classification)
+
+bac120.summary <- read.csv("C:/Users/lasse/Desktop/wd/25/df/GTDB-Tk_dereps/gtdbtk.bac120.summary.dereps.tsv", sep="\t") %>%
+  select(user_genome, classification)
+
+summary <- bind_rows(ar53.summary, bac120.summary)
+
+
+# Parse taxonomy ranks
+summary_parsed <- summary %>%
+  mutate(classification = replace_na(classification, "d_Unclassified")) %>%
+  separate(classification,
+           into = c("domain","phylum","class","order","family","genus","species"),
+           sep=";", fill="right") %>%
+  mutate(
+    phylum  = str_remove(phylum,  "^p__"),
+    class   = str_remove(class,   "^c__"),
+    order   = str_remove(order,   "^o__"),
+    family  = str_remove(family,  "^f__"),
+    genus   = str_remove(genus,   "^g__"),
+    species = str_remove(species, "^s__"),
+    phylum  = if_else(is.na(phylum) | phylum == "", "Unclassified", phylum)
+  )
+
+
+# Join parsed taxonomy onto mags
+meso_mags_tax <- meso_mags %>%
+  left_join(summary_parsed, by = c("Genome" = "user_genome"))
+
+thermo_mags_tax <- thermo_mags %>%
+  left_join(summary_parsed, by = c("Genome" = "user_genome"))
+
+
+```
+
+
+MiDAS taxonomy
+```{r}
+
+# USEARACH dataframe for external data (i.e. taxonomy of dereplicated genomes)
+usearch_taxonomy_derep <- read.csv("C:/Users/lasse/Desktop/wd/25/df/16S_data/usearch_midas_derep_out.tsv", sep="\t", header=FALSE)
+
+colnames(usearch_taxonomy_derep)<- c("FLASV", "taxonomy_conf", "strand", "taxonomy")
+
+
+# Parse tax
+tax_parsed_derep <- usearch_taxonomy_derep %>%
+  separate(taxonomy,
+           into = c("d","p","c","o","f","g","s"),
+           sep = ",",
+           fill = "right") %>%
+  mutate(across(d:s, ~str_remove(.x, "^[a-z]:")))
+
+
+# Filter bins_tax2 for genomes in meso_mags and thermo_mags
+mags_midas_tax <- tax_parsed_derep %>%
+  filter(FLASV %in% c(meso_mags$Genome, thermo_mags$Genome))
+
+
+
+
+
+```
+
+
+
+--------------------------------------------------------------------------------
+                                Module exploration
+--------------------------------------------------------------------------------
+
+```{r}
+
+phase_cols <- c(
+  Hydrolysis     = "navyblue",
+  Acidogenesis   = "palegreen4",
+  Acetogenesis   = "palevioletred4",
+  Methanogenesis = "mediumpurple4"
+)
+
+
+threshold <- 100
+
+# Clean BC13 dataframe and restrict to modules of interest
+df_bc13 <- module_completeness_BC13 %>%
+  mutate(
+    Genome_name = str_squish(Genome_name),
+    module      = str_squish(module),
+    Percent_steps_found = parse_number(as.character(Percent_steps_found))
+  ) %>%
+  semi_join(
+    modules %>% transmute(module = str_squish(module)),
+    by = "module"
+  )
+
+# Count unique MAGs meeting threshold per module
+hits_bc13 <- df_bc13 %>%
+  filter(Percent_steps_found >= threshold) %>%
+  distinct(Genome_name, module) %>%
+  count(module, name = "n_MAGs")
+
+# IMPORTANT: preserve the order as it appears in `modules`
+module_order <- modules %>%
+  transmute(module = str_squish(module)) %>%
+  pull(module)
+
+# Join phase information and prepare plotting dataframe
+plot_bc13 <- modules %>%
+  transmute(
+    module = str_squish(module),
+    phase  = str_squish(phase)
+  ) %>%
+  distinct() %>%
+  left_join(hits_bc13, by = "module") %>%
+  mutate(
+    n_MAGs = replace_na(n_MAGs, 0L),
+    phase  = fct_inorder(phase),
+    module = factor(module, levels = unique(module_order))  # <- preserve order
+  )
+  # NOTE: no arrange() here (and especially not desc(n_MAGs))
+
+# Plot
+p <- ggplot(plot_bc13, aes(x = module, y = n_MAGs, fill = phase)) +
+  geom_col() +
+  facet_grid(. ~ phase, scales = "free_x", space = "free_x") +
+  scale_fill_manual(values = phase_cols, drop = FALSE) +
+  labs(
+    x = "modules",
+    y = paste0("Number of MAGs"),
+    title = "Mesophilic MAGs (BC13, dereplicated)",
+    fill = "Phase"
+  ) +
+   geom_text(
+    aes(label = n_MAGs),
+    vjust = -0.3,
+    size = 2.5
+  ) +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 6),
+    panel.spacing.x = unit(0.8, "lines"),
+    legend.position = "none"  # optional, since phase is already faceted
+  )
+
+
+ggsave(filename = "module_exploration/BC13.png", plot = p,
+       width = 17, height = 6, dpi = 300)
+
+
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
