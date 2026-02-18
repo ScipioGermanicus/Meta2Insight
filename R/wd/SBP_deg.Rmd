@@ -1,0 +1,2173 @@
+---
+title: "SBP_deg"
+author: "Lasse Steffensen"
+date: "2026-02-17"
+output: html_document
+---
+
+--------------------------------------------------------------------------------
+                                      Pre
+--------------------------------------------------------------------------------
+
+```{r}
+
+setwd("C:/Users/lasse/Desktop/wd/25/01_05/SBP_deg")
+
+library(tidyverse)
+library(readxl)
+library(patchwork)
+library(scales)
+library(grid)
+
+
+file <- "C:/Users/lasse/Desktop/wd/25/df/metabolism_summary_26.xlsx"
+metabolism_summary <- read_excel(file, sheet = 2) %>%
+  mutate(gene_id = as.character(gene_id))
+
+
+meso_mags_tax <- read.csv(
+  "C:/Users/lasse/Desktop/wd/25/01_05/write_files/meso_mags_tax.tsv",
+  header = TRUE, sep = "\t"
+)
+
+thermo_mags_tax <- read.csv(
+  "C:/Users/lasse/Desktop/wd/25/01_05/write_files/thermo_mags_tax.tsv",
+  header = TRUE, sep = "\t"
+)
+
+# original MAG IDs
+mags_meso_old   <- as.character(meso_mags_tax$Genome)
+mags_thermo_old <- as.character(thermo_mags_tax$Genome)
+
+
+# Build name map
+name_map <- bind_rows(
+  meso_mags_tax %>% mutate(source = "meso"),
+  thermo_mags_tax %>% mutate(source = "thermo")
+) %>%
+  transmute(
+    old = as.character(Genome),
+    species = str_squish(species),
+    genus   = str_squish(genus),
+    family  = str_squish(family),
+    new = case_when(
+      !is.na(species) & species != "" ~ species,
+      !is.na(genus)   & genus   != "" ~ paste0("g_", genus, " sp"),
+      !is.na(family)  & family  != "" ~ paste0("f_", family, " sp"),
+      TRUE ~ old
+    ),
+    source
+  ) %>%
+  arrange(old, desc(new != old), source) %>%
+  distinct(old, .keep_all = TRUE) %>%
+  select(old, new)
+
+# Create named rename vector
+rename_vec <- setNames(name_map$new, name_map$old)
+
+
+# Extract gene counts
+gene_counts_all_old <- metabolism_summary %>%
+  mutate(gene_id = as.character(gene_id)) %>%
+  select(gene_id, 6:ncol(.)) %>%
+  mutate(across(-gene_id, ~ parse_number(as.character(.x))))
+
+
+# Subset into samples
+gene_counts_meso <- gene_counts_all_old %>%
+  select(gene_id, any_of(mags_meso_old))
+
+gene_counts_thermo <- gene_counts_all_old %>%
+  select(gene_id, any_of(mags_thermo_old))
+
+
+# Rename columns into tax labels
+cols_meso <- intersect(names(gene_counts_meso), names(rename_vec))
+
+gene_counts_meso <- gene_counts_meso %>%
+  rename_with(~ rename_vec[.x], all_of(cols_meso))
+
+names(gene_counts_meso) <- make.unique(names(gene_counts_meso), sep = "_MAG")
+
+
+cols_thermo <- intersect(names(gene_counts_thermo), names(rename_vec))
+
+gene_counts_thermo <- gene_counts_thermo %>%
+  rename_with(~ rename_vec[.x], all_of(cols_thermo))
+
+names(gene_counts_thermo) <- make.unique(names(gene_counts_thermo), sep = "_MAG")
+
+
+```
+
+        --------------------------------------------------------------
+    -----------------------------------------------------------------------
+--------------------------------------------------------------------------------
+                                     
+                                      Pectin
+
+--------------------------------------------------------------------------------
+    -----------------------------------------------------------------------
+        --------------------------------------------------------------
+    
+
+Make lists of target gene_ids
+```{r}
+
+
+
+# Make classifications
+
+gene_classes <- tibble(
+  gene_id = c(
+    # Pectin backbone cleavage
+    "GH28", "PL1", "PL10", "PL11", "PL2", "PL22", "PL26", "PL3", "PL4", "PL9",
+
+    # Pectin oligo cleavage
+    "CE12", "CE8", "GH105", "GH138", "GH143", "GH4", "GH139", "GH106", "GH78",
+    
+    # Pectic galactan backbone cleavage
+    "GH53",
+
+    # Pectic galactan oligo cleavage
+    "GH147", "GH165", "GH35", "GH42", "GH59",
+    
+    # Arabinan backbone cleavage
+    "GH49",
+    
+    # Arabinan oligo cleavage
+    "GH51", "GH54", "GH62", "GH93"
+  ),
+  class = c(
+    rep("Pectin backbone cleavage", 10),
+    rep("Pectin oligo cleavage", 9),
+    rep("Pectic galactan backbone cleavage", 1),
+    rep("Pectic galactan oligo cleavage", 5),
+    rep("Arabinan backbone cleavage", 1),
+    rep("Arabinan oligo cleavage", 4)
+  )
+)
+
+
+```
+
+
+Obtain target gene_ids for target MAGs
+```{r}
+
+
+
+# Filter for pectin CAZYs
+gene_count_meso_pectin <- gene_counts_meso %>%
+  filter(gene_id %in% gene_classes$gene_id)
+
+gene_count_thermo_pectin <- gene_counts_thermo %>%
+  filter(gene_id %in% gene_classes$gene_id)
+
+
+
+```
+
+
+--------------------------------------------------------------------------------
+                                      Heatmaps
+--------------------------------------------------------------------------------
+
+
+```{r}
+
+
+meso_long <- gene_count_meso_pectin %>%
+  pivot_longer(
+    cols = -gene_id,
+    names_to = "genome",
+    values_to = "count"
+  )
+
+
+thermo_long <- gene_count_thermo_pectin %>%
+  pivot_longer(
+    cols = -gene_id,
+    names_to = "genome",
+    values_to = "count"
+  )
+
+
+p_meso <- ggplot(meso_long, aes(x = genome, y = gene_id, fill = count)) +
+  geom_tile() +
+  scale_fill_viridis_c(name = "Count") +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 10),
+    axis.title = element_blank()
+  ) +
+  ggtitle("Pectin CAZy repertoire – Mesophilic MAGs")
+
+
+p_thermo <- ggplot(thermo_long, aes(x = genome, y = gene_id, fill = count)) +
+  geom_tile() +
+  scale_fill_viridis_c(name = "Count") +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 10),
+    axis.title = element_blank()
+  ) +
+  ggtitle("Pectin CAZy repertoire – Thermophilic MAGs")
+
+p <- p_meso / p_thermo
+
+ggsave(filename = "pectin/gene_count_heatmap.png", plot = p,
+       width = 20, height = 12, dpi = 300)
+
+```
+
+
+--------------------------------------------------------------------------------
+                           Per-gene id MAG amount barplot
+--------------------------------------------------------------------------------
+
+
+Class-separated
+```{r}
+
+
+# ------------------------------------------------------------
+# Helper: count MAGs with count > 0 per gene_id
+# ------------------------------------------------------------
+count_mags_per_gene <- function(df_counts) {
+  df_counts %>%
+    mutate(across(-gene_id, ~ as.numeric(.x))) %>%
+    pivot_longer(-gene_id, names_to = "Genome", values_to = "count") %>%
+    mutate(present = !is.na(count) & count > 0) %>%
+    group_by(gene_id) %>%
+    summarise(n_MAGs = sum(present), .groups = "drop")
+}
+
+# helper: make labels fit in skinny facets
+# "GH53" -> "GH\n53" (works nicely for GH/PL/CE codes)
+stack_gene_label <- function(x) {
+  x <- as.character(x)
+  gsub("^([A-Z]+)([0-9]+)$", "\\1\n\\2", x)
+}
+
+# ------------------------------------------------------------
+# Plot function: facet by class + class colours from a gradient
+# ------------------------------------------------------------
+plot_cazy_by_class <- function(df_counts, gene_classes, title, y_max = NULL,
+                               gradient_anchors = c("grey80", "steelblue4"),
+                               label_stack = TRUE) {
+
+  hits <- count_mags_per_gene(df_counts)
+
+  gene_order <- gene_classes %>%
+    mutate(gene_id = as.character(gene_id)) %>%
+    pull(gene_id)
+
+  plot_df <- gene_classes %>%
+    mutate(
+      gene_id = as.character(gene_id),
+      class   = str_squish(class)
+    ) %>%
+    left_join(hits, by = "gene_id") %>%
+    mutate(
+      n_MAGs  = replace_na(n_MAGs, 0L),
+      class   = fct_inorder(class),
+      gene_id = factor(gene_id, levels = unique(gene_order))
+    )
+
+  class_levels <- gene_classes %>%
+    mutate(class = str_squish(class)) %>%
+    distinct(class) %>%
+    pull(class)
+
+  plot_df <- plot_df %>%
+    mutate(class = factor(as.character(class), levels = class_levels))
+
+  pal_fun <- colorRampPalette(gradient_anchors)
+  class_cols <- setNames(pal_fun(length(class_levels)), class_levels)
+
+  p <- ggplot(plot_df, aes(x = gene_id, y = n_MAGs, fill = class)) +
+    geom_col(width = 0.9) +
+    facet_grid(. ~ class, scales = "free_x", space = "free_x", switch = "x") +
+    scale_fill_manual(values = class_cols, drop = FALSE) +
+    geom_text(aes(label = n_MAGs), vjust = -0.3, size = 2.5) +
+    labs(
+      x = NULL,
+      y = "Number of MAGs (gene count > 0)",
+      title = title,
+      fill = "Class"
+    ) +
+    theme_bw() +
+    theme(
+      axis.text.x = element_text(
+        angle = 0,
+        hjust = 0.5, vjust = 1,
+        size = 7,
+        lineheight = 0.9
+      ),
+      axis.ticks.x = element_line(linewidth = 0.25),
+      panel.spacing.x = unit(0.9, "lines"),
+      legend.position = "none",
+      strip.placement = "outside",
+      strip.background = element_rect(fill = "grey95", colour = NA),
+      plot.margin = margin(t = 5.5, r = 5.5, b = 18, l = 5.5)
+    ) +
+    scale_y_continuous(
+      expand = expansion(mult = c(0, 0.10))
+    ) +
+    coord_cartesian(ylim = c(0, 20), clip = "off")
+
+  if (isTRUE(label_stack)) {
+    p <- p + scale_x_discrete(labels = stack_gene_label)
+  } else {
+    p <- p + scale_x_discrete(drop = FALSE)
+  }
+
+  p
+}
+
+# ------------------------------------------------------------
+# Run for meso (blue gradient) and thermo (red gradient)
+# ------------------------------------------------------------
+p_meso <- plot_cazy_by_class(
+  df_counts = gene_count_meso_pectin,
+  gene_classes = gene_classes,
+  title = "Number of mesophilic MAGs encoding each pectin CAZy (count > 0)",
+  y_max = 20,
+  gradient_anchors = c("cornflowerblue", "royalblue2", "royalblue3", "royalblue4", "midnightblue"),
+  label_stack = TRUE
+)
+
+p_thermo <- plot_cazy_by_class(
+  df_counts = gene_count_thermo_pectin,
+  gene_classes = gene_classes,
+  title = "Number of thermophilic MAGs encoding each pectin CAZy (count > 0)",
+  y_max = 20,
+  gradient_anchors = c("sandybrown", "sienna1", "sienna2", "sienna3", "sienna", "sienna4"),
+  label_stack = TRUE
+)
+
+p <- p_meso / p_thermo
+p
+
+
+
+ggsave(filename = "pectin/mag_gene_counts_barplot.png", plot = p,
+       width = 20, height = 12, dpi = 300)
+
+
+```
+
+
+Attribution plot
+```{r}
+
+
+make_stacked_contrib_plot <- function(df_counts,
+                                      gene_classes = NULL,
+                                      top_n = 7,
+                                      title = "",
+                                      mode = c("proportion", "count"),
+                                      facet_by_class = TRUE,
+                                      genome_palette = NULL,
+                                      other_colour = "grey70") {
+
+  mode <- match.arg(mode)
+
+  # Wide -> long
+  long <- df_counts %>%
+    mutate(across(-gene_id, ~ as.numeric(.x))) %>%
+    pivot_longer(-gene_id, names_to = "Genome", values_to = "count") %>%
+    mutate(count = replace_na(count, 0))
+
+  # Select top N genomes by total CAZy contribution
+  top_genomes <- long %>%
+    group_by(Genome) %>%
+    summarise(total = sum(count), .groups = "drop") %>%
+    arrange(desc(total)) %>%
+    slice_head(n = top_n) %>%
+    pull(Genome)
+
+  # Collapse others
+  long2 <- long %>%
+    mutate(Genome_grp = if_else(Genome %in% top_genomes, Genome, "Other"))
+
+  # Aggregate counts per gene_id and Genome_grp
+  plot_df <- long2 %>%
+    group_by(gene_id, Genome_grp) %>%
+    summarise(count = sum(count), .groups = "drop")
+
+  # Proportion mode
+  if (mode == "proportion") {
+    plot_df <- plot_df %>%
+      group_by(gene_id) %>%
+      mutate(
+        denom = sum(count),
+        prop  = if_else(denom > 0, count / denom, 0)
+      ) %>%
+      ungroup() %>%
+      select(-denom)
+  }
+
+  # Join class info
+  if (!is.null(gene_classes)) {
+    gene_order <- gene_classes %>% pull(gene_id) %>% as.character()
+    class_levels <- gene_classes %>%
+      mutate(class = str_squish(class)) %>%
+      distinct(class) %>%
+      pull(class)
+
+    plot_df <- plot_df %>%
+      left_join(
+        gene_classes %>%
+          mutate(gene_id = as.character(gene_id),
+                 class = str_squish(class)),
+        by = "gene_id"
+      ) %>%
+      mutate(
+        class = factor(class, levels = class_levels),
+        gene_id = factor(as.character(gene_id),
+                         levels = unique(gene_order))
+      )
+  } else {
+    plot_df <- plot_df %>%
+      mutate(gene_id = factor(as.character(gene_id)))
+  }
+
+  # Fix legend order
+  genome_levels <- c(top_genomes, "Other")
+  plot_df <- plot_df %>%
+    mutate(Genome_grp = factor(Genome_grp, levels = genome_levels))
+
+  # -------------------------
+  # COLOUR CONTROL
+  # -------------------------
+
+  if (is.null(genome_palette)) {
+    # Default: automatically generate palette for top genomes
+    pal_fun <- colorRampPalette(c("steelblue4", "goldenrod2", "firebrick3"))
+    mag_cols <- setNames(pal_fun(length(top_genomes)), top_genomes)
+  } else {
+    if (length(genome_palette) < length(top_genomes)) {
+      stop("Not enough colours supplied in genome_palette for top_n genomes.")
+    }
+    mag_cols <- setNames(genome_palette[seq_along(top_genomes)], top_genomes)
+  }
+
+  # Force "Other" to grey
+  mag_cols <- c(mag_cols, Other = other_colour)
+
+  # -------------------------
+  # Plot
+  # -------------------------
+
+  yvar <- if (mode == "proportion") "prop" else "count"
+  ylab <- if (mode == "proportion") "Proportion of total gene count"
+          else "Total gene count (summed across selected MAGs)"
+
+  p <- ggplot(plot_df, aes(x = gene_id, y = .data[[yvar]], fill = Genome_grp)) +
+    geom_col(width = 0.9) +
+    scale_fill_manual(values = mag_cols, drop = FALSE) +
+    labs(
+      x = "CAZy family (gene_id)",
+      y = ylab,
+      title = title,
+      fill = "MAG / species"
+    ) +
+    theme_bw() +
+    theme(
+      axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 7),
+      legend.position = "right"
+    )
+
+  if (facet_by_class && !is.null(gene_classes)) {
+    p <- p +
+      facet_grid(. ~ class, scales = "free_x", space = "free_x", switch = "x") +
+      theme(
+        panel.spacing.x = unit(0.8, "lines"),
+        strip.placement = "outside",
+        strip.background = element_rect(fill = "grey95", colour = NA)
+      )
+  }
+
+  p <- p +
+    scale_y_continuous(
+      labels = if (mode == "proportion") percent_format(accuracy = 1) else waiver(),
+      expand = expansion(mult = c(0, 0.05))
+    ) +
+    coord_cartesian(ylim = c(0, 45))
+
+  return(p)
+}
+
+
+p_meso_stack <- make_stacked_contrib_plot(
+  df_counts = gene_count_meso_pectin,
+  gene_classes = gene_classes,
+  top_n = 7,
+  mode = "count",
+  genome_palette = c(
+    "navy", "royalblue4",
+    "steelblue3", "mediumaquamarine",
+    "seagreen1", "seagreen3", "olivedrab"
+  ),
+  other_colour = "grey80",
+  title = "Mesophilic contribution to pectin CAZy gene counts"
+)
+
+
+p_thermo_stack <- make_stacked_contrib_plot(
+  df_counts = gene_count_thermo_pectin,
+  gene_classes = gene_classes,
+  top_n = 7,
+  mode = "count",
+  genome_palette = c(
+    "firebrick4", "firebrick3",
+    "firebrick1", "darkorange1",
+    "darkorange3", "darkorange4", "coral4"
+  ),
+  other_colour = "grey80",
+  title = "Thermophilic contribution to pectin CAZy gene counts"
+)
+
+
+p <- p_meso_stack / p_thermo_stack
+
+
+
+ggsave(filename = "pectin/attribution_barplot.png", plot = p,
+       width = 20, height = 12, dpi = 300)
+
+```
+
+
+
+        --------------------------------------------------------------
+    -----------------------------------------------------------------------
+--------------------------------------------------------------------------------
+                                     
+                                    Cellulose
+
+--------------------------------------------------------------------------------
+    -----------------------------------------------------------------------
+        --------------------------------------------------------------
+
+
+
+--------------------------------------------------------------------------------
+                                       Pre
+--------------------------------------------------------------------------------
+
+Important note regarding gene_id selection:
+Only gene_ids for genes exclusively performing a specific function are selected. Others that perform multiple other functions, including the target function, were not selected due to uncertainty and a lack of interpretability. This means that we are potentially missing out on relevant gene_ids. 
+
+
+Classifications (conservative)
+```{r}
+
+# Make classifications
+
+gene_classes_cel_con <- tibble(
+  gene_id = c(
+    # Amorphous cellulose backbone cleavage
+    "GH124", "GH6",
+
+    # Amorphous cellulose oligo cleavage
+    "GH94", "GH116",
+    
+    # Crystalline cellulose backbone cleavage
+    "AA16", "AA11", "AA15", "AA10", "AA13"
+  ),
+  class = c(
+    rep("Amorphous cellulose backbone cleavage", 2),
+    rep("Amorphous cellulose oligo cleavage", 2),
+    rep("Crystalline cellulose backbone cleavage", 5)
+  )
+)
+
+```
+
+
+Classifications (lenient)
+```{r}
+
+gene_classes_cel_len <- tibble(
+  gene_id = c(
+    # Amorphous cellulose backbone cleavage
+    "GH124", "GH6", "GH9", "GH5", "GH8", "GH12", "GH44", "GH45", "GH10",
+
+    # Amorphous cellulose oligo cleavage
+    "GH94", "GH116", "GH1", "GH3", "GH16", "GH2",
+    
+    # Crystalline cellulose backbone cleavage
+    "AA16","GH7", "AA11", "AA15", "AA10", "AA13", "AA9", "GH48"
+  ),
+  class = c(
+    rep("Amorphous cellulose backbone cleavage", 9),
+    rep("Amorphous cellulose oligo cleavage", 6),
+    rep("Crystalline cellulose backbone cleavage", 8)
+  )
+)
+
+```
+
+
+Obtain target gene_ids for target MAGs
+```{r}
+
+# Filter for cellulose CAZYs (lenient)
+gene_count_meso_cel_len <- gene_counts_meso %>%
+  filter(gene_id %in% gene_classes_cel_len$gene_id)
+
+gene_count_thermo_cel_len <- gene_counts_thermo %>%
+  filter(gene_id %in% gene_classes_cel_len$gene_id)
+
+
+# Filter for cellulose CAZYs (conservative)
+gene_count_meso_cel_con <- gene_counts_meso %>%
+  filter(gene_id %in% gene_classes_cel_con$gene_id)
+
+gene_count_thermo_cel_con <- gene_counts_thermo %>%
+  filter(gene_id %in% gene_classes_cel_con$gene_id)
+
+
+
+```
+
+
+--------------------------------------------------------------------------------
+                                     Heatmap
+--------------------------------------------------------------------------------
+
+Note regarding the (lenient) heatmaps: The most prominent CAZy genes, GH2 and GH3 are multi-functional, encoding among others pectin deg and arabinan deg, making their interpretation for the relevance in cellulose deg impossible. They are perhaps not really involved in cellulose deg.
+
+
+conservative
+```{r}
+
+
+
+meso_long <- gene_count_meso_cel_con %>%
+  pivot_longer(
+    cols = -gene_id,
+    names_to = "genome",
+    values_to = "count"
+  )
+
+
+thermo_long <- gene_count_thermo_cel_con %>%
+  pivot_longer(
+    cols = -gene_id,
+    names_to = "genome",
+    values_to = "count"
+  )
+
+
+p_meso <- ggplot(meso_long, aes(x = genome, y = gene_id, fill = count)) +
+  geom_tile() +
+  scale_fill_viridis_c(name = "Count", limits = c(0, 15)) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 10),
+    axis.title = element_blank()
+  ) +
+  ggtitle("Cellulose CAZy repertoire – Mesophilic MAGs")
+
+
+p_thermo <- ggplot(thermo_long, aes(x = genome, y = gene_id, fill = count)) +
+  geom_tile() +
+  scale_fill_viridis_c(name = "Count", limits = c(0, 8)) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 10),
+    axis.title = element_blank()
+  ) +
+  ggtitle("Cellulose CAZy repertoire – Thermophilic MAGs")
+
+p <- p_meso / p_thermo
+
+ggsave(filename = "cellulose/gene_count_heatmap_conservative.png", plot = p,
+       width = 20, height = 12, dpi = 300)
+
+```
+
+
+Lenient
+```{r}
+
+
+
+meso_long <- gene_count_meso_cel_len %>%
+  pivot_longer(
+    cols = -gene_id,
+    names_to = "genome",
+    values_to = "count"
+  )
+
+
+thermo_long <- gene_count_thermo_cel_len %>%
+  pivot_longer(
+    cols = -gene_id,
+    names_to = "genome",
+    values_to = "count"
+  )
+
+
+p_meso <- ggplot(meso_long, aes(x = genome, y = gene_id, fill = count)) +
+  geom_tile() +
+  scale_fill_viridis_c(name = "Count", limits = c(0, 15)) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 10),
+    axis.title = element_blank()
+  ) +
+  ggtitle("Pectin CAZy repertoire – Mesophilic MAGs")
+
+
+p_thermo <- ggplot(thermo_long, aes(x = genome, y = gene_id, fill = count)) +
+  geom_tile() +
+  scale_fill_viridis_c(name = "Count", limits = c(0, 8)) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 10),
+    axis.title = element_blank()
+  ) +
+  ggtitle("Pectin CAZy repertoire – Thermophilic MAGs")
+
+p <- p_meso / p_thermo
+
+ggsave(filename = "cellulose/gene_count_heatmap_lenient.png", plot = p,
+       width = 20, height = 12, dpi = 300)
+
+```
+
+
+--------------------------------------------------------------------------------
+                                     Barplots
+--------------------------------------------------------------------------------
+
+
+Class-separated
+```{r}
+### Lenient
+
+library(tidyverse)
+library(scales)
+library(grid)  # unit()
+
+# ------------------------------------------------------------
+# Helper: count MAGs with count > 0 per gene_id
+# ------------------------------------------------------------
+count_mags_per_gene <- function(df_counts) {
+  df_counts %>%
+    mutate(across(-gene_id, ~ as.numeric(.x))) %>%
+    pivot_longer(-gene_id, names_to = "Genome", values_to = "count") %>%
+    mutate(present = !is.na(count) & count > 0) %>%
+    group_by(gene_id) %>%
+    summarise(n_MAGs = sum(present), .groups = "drop")
+}
+
+# helper: make labels fit in skinny facets
+stack_gene_label <- function(x) {
+  x <- as.character(x)
+  gsub("^([A-Z]+)([0-9]+)$", "\\1\n\\2", x)
+}
+
+# ------------------------------------------------------------
+# Plot function: facet by class + class colours from a gradient
+# ------------------------------------------------------------
+plot_cazy_by_class <- function(df_counts, gene_classes_cel_len, title, y_max = NULL,
+                               gradient_anchors = c("grey80", "steelblue4"),
+                               label_stack = TRUE) {
+
+  hits <- count_mags_per_gene(df_counts)
+
+  gene_order <- gene_classes_cel_len %>%
+    mutate(gene_id = as.character(gene_id)) %>%
+    pull(gene_id)
+
+  plot_df <- gene_classes_cel_len %>%
+    mutate(
+      gene_id = as.character(gene_id),
+      class   = str_squish(class)
+    ) %>%
+    left_join(hits, by = "gene_id") %>%
+    mutate(
+      n_MAGs  = replace_na(n_MAGs, 0L),
+      class   = fct_inorder(class),
+      gene_id = factor(gene_id, levels = unique(gene_order))
+    )
+
+  class_levels <- gene_classes_cel_len %>%
+    mutate(class = str_squish(class)) %>%
+    distinct(class) %>%
+    pull(class)
+
+  plot_df <- plot_df %>%
+    mutate(class = factor(as.character(class), levels = class_levels))
+
+  pal_fun <- colorRampPalette(gradient_anchors)
+  class_cols <- setNames(pal_fun(length(class_levels)), class_levels)
+
+  p <- ggplot(plot_df, aes(x = gene_id, y = n_MAGs, fill = class)) +
+    geom_col(width = 0.9) +
+    facet_grid(. ~ class, scales = "free_x", space = "free_x", switch = "x") +
+    scale_fill_manual(values = class_cols, drop = FALSE) +
+    geom_text(aes(label = n_MAGs), vjust = -0.3, size = 2.5) +
+    labs(
+      x = NULL,
+      y = "Number of MAGs (gene count > 0)",
+      title = title,
+      fill = "Class"
+    ) +
+    theme_bw() +
+    theme(
+      axis.text.x = element_text(
+        angle = 0,
+        hjust = 0.5, vjust = 1,
+        size = 7,
+        lineheight = 0.9
+      ),
+      axis.ticks.x = element_line(linewidth = 0.25),
+      panel.spacing.x = unit(0.9, "lines"),
+      legend.position = "none",
+      strip.placement = "outside",
+      strip.background = element_rect(fill = "grey95", colour = NA),
+      plot.margin = margin(t = 5.5, r = 5.5, b = 18, l = 5.5)
+    ) +
+    scale_y_continuous(
+      limit = c(0, 50),
+      expand = expansion(mult = c(0, 0.10))
+    ) +
+    coord_cartesian(clip = "off")
+
+  if (isTRUE(label_stack)) {
+    p <- p + scale_x_discrete(labels = stack_gene_label)
+  } else {
+    p <- p + scale_x_discrete(drop = FALSE)
+  }
+
+  p
+}
+
+# ------------------------------------------------------------
+# Run for meso (blue gradient) and thermo (red gradient)
+# using gene_classes_cel_len
+# ------------------------------------------------------------
+p_meso <- plot_cazy_by_class(
+  df_counts = gene_count_meso_cel_len,        # <-- your cellulose (len) count table
+  gene_classes_cel_len = gene_classes_cel_len,
+  title = "Number of mesophilic MAGs encoding each cellulose CAZy (count > 0)",
+  y_max = 20,
+  gradient_anchors = c("cornflowerblue", "royalblue2", "royalblue3", "royalblue4", "midnightblue"),
+  label_stack = TRUE
+)
+
+p_thermo <- plot_cazy_by_class(
+  df_counts = gene_count_thermo_cel_len,      # <-- your cellulose (len) count table
+  gene_classes_cel_len = gene_classes_cel_len,
+  title = "Number of thermophilic MAGs encoding each cellulose CAZy (count > 0)",
+  y_max = 20,
+  gradient_anchors = c("sandybrown", "sienna1", "sienna2", "sienna3", "sienna", "sienna4"),
+  label_stack = TRUE
+)
+
+p <- p_meso / p_thermo
+p
+
+
+
+ggsave(filename = "cellulose/mag_gene_counts_barplot_lenient.png", plot = p,
+       width = 20, height = 12, dpi = 300)
+
+
+
+
+
+### Conservative
+
+# ------------------------------------------------------------
+# Helper: count MAGs with count > 0 per gene_id
+# ------------------------------------------------------------
+count_mags_per_gene <- function(df_counts) {
+  df_counts %>%
+    mutate(across(-gene_id, ~ as.numeric(.x))) %>%
+    pivot_longer(-gene_id, names_to = "Genome", values_to = "count") %>%
+    mutate(present = !is.na(count) & count > 0) %>%
+    group_by(gene_id) %>%
+    summarise(n_MAGs = sum(present), .groups = "drop")
+}
+
+# helper: make labels fit in skinny facets
+stack_gene_label <- function(x) {
+  x <- as.character(x)
+  gsub("^([A-Z]+)([0-9]+)$", "\\1\n\\2", x)
+}
+
+# ------------------------------------------------------------
+# Plot function: facet by class + class colours from a gradient
+# ------------------------------------------------------------
+plot_cazy_by_class <- function(df_counts, gene_classes_cel_con, title, y_max = NULL,
+                               gradient_anchors = c("grey80", "steelblue4"),
+                               label_stack = TRUE) {
+
+  hits <- count_mags_per_gene(df_counts)
+
+  gene_order <- gene_classes_cel_con %>%
+    mutate(gene_id = as.character(gene_id)) %>%
+    pull(gene_id)
+
+  plot_df <- gene_classes_cel_con %>%
+    mutate(
+      gene_id = as.character(gene_id),
+      class   = str_squish(class)
+    ) %>%
+    left_join(hits, by = "gene_id") %>%
+    mutate(
+      n_MAGs  = replace_na(n_MAGs, 0L),
+      class   = fct_inorder(class),
+      gene_id = factor(gene_id, levels = unique(gene_order))
+    )
+
+  class_levels <- gene_classes_cel_con %>%
+    mutate(class = str_squish(class)) %>%
+    distinct(class) %>%
+    pull(class)
+
+  plot_df <- plot_df %>%
+    mutate(class = factor(as.character(class), levels = class_levels))
+
+  pal_fun <- colorRampPalette(gradient_anchors)
+  class_cols <- setNames(pal_fun(length(class_levels)), class_levels)
+
+  p <- ggplot(plot_df, aes(x = gene_id, y = n_MAGs, fill = class)) +
+    geom_col(width = 0.9) +
+    facet_grid(. ~ class, scales = "free_x", space = "free_x", switch = "x") +
+    scale_fill_manual(values = class_cols, drop = FALSE) +
+    geom_text(aes(label = n_MAGs), vjust = -0.3, size = 2.5) +
+    labs(
+      x = NULL,
+      y = "Number of MAGs (gene count > 0)",
+      title = title,
+      fill = "Class"
+    ) +
+    theme_bw() +
+    theme(
+      axis.text.x = element_text(
+        angle = 0,
+        hjust = 0.5, vjust = 1,
+        size = 7,
+        lineheight = 0.9
+      ),
+      axis.ticks.x = element_line(linewidth = 0.25),
+      panel.spacing.x = unit(0.9, "lines"),
+      legend.position = "none",
+      strip.placement = "outside",
+      strip.background = element_rect(fill = "grey95", colour = NA),
+      plot.margin = margin(t = 5.5, r = 5.5, b = 18, l = 5.5)
+    ) +
+    scale_y_continuous(
+      limit = c(0, 50),
+      expand = expansion(mult = c(0, 0.10))
+    ) +
+    coord_cartesian(clip = "off")
+
+  if (isTRUE(label_stack)) {
+    p <- p + scale_x_discrete(labels = stack_gene_label)
+  } else {
+    p <- p + scale_x_discrete(drop = FALSE)
+  }
+
+  p
+}
+
+# ------------------------------------------------------------
+# Run for meso (blue gradient) and thermo (red gradient)
+# using gene_classes_cel_len
+# ------------------------------------------------------------
+p_meso <- plot_cazy_by_class(
+  df_counts = gene_count_meso_cel_con,
+  gene_classes_cel_con = gene_classes_cel_con,
+  title = "Number of mesophilic MAGs encoding each cellulose CAZy (count > 0) (conservative)",
+  y_max = 20,
+  gradient_anchors = c("cornflowerblue", "royalblue2", "royalblue3", "royalblue4", "midnightblue"),
+  label_stack = TRUE
+)
+
+p_thermo <- plot_cazy_by_class(
+  df_counts = gene_count_thermo_cel_con,      # <-- your cellulose (len) count table
+  gene_classes_cel_con = gene_classes_cel_con,
+  title = "Number of thermophilic MAGs encoding each cellulose CAZy (count > 0) (conservative)",
+  y_max = 20,
+  gradient_anchors = c("sandybrown", "sienna1", "sienna2", "sienna3", "sienna", "sienna4"),
+  label_stack = TRUE
+)
+
+p <- p_meso / p_thermo
+p
+
+
+
+ggsave(filename = "cellulose/mag_gene_counts_barplot_conservative.png", plot = p,
+       width = 20, height = 12, dpi = 300)
+
+
+
+```
+
+
+Attribution plot
+```{r}
+
+### lenient
+
+# Uses ONE shared gene class definition for both plots (e.g. gene_classes_cel_len)
+make_stacked_contrib_plot <- function(df_counts,
+                                      gene_classes,
+                                      top_n = 7,
+                                      title = "",
+                                      mode = c("proportion", "count"),
+                                      facet_by_class = TRUE,
+                                      genome_palette = NULL,
+                                      other_colour = "grey70",
+                                      y_lim = c(0, 130)) {
+
+  mode <- match.arg(mode)
+
+  long <- df_counts %>%
+    mutate(across(-gene_id, ~ as.numeric(.x))) %>%
+    pivot_longer(-gene_id, names_to = "Genome", values_to = "count") %>%
+    mutate(count = replace_na(count, 0))
+
+  top_genomes <- long %>%
+    group_by(Genome) %>%
+    summarise(total = sum(count), .groups = "drop") %>%
+    arrange(desc(total)) %>%
+    slice_head(n = top_n) %>%
+    pull(Genome)
+
+  long2 <- long %>%
+    mutate(Genome_grp = if_else(Genome %in% top_genomes, Genome, "Other"))
+
+  plot_df <- long2 %>%
+    group_by(gene_id, Genome_grp) %>%
+    summarise(count = sum(count), .groups = "drop")
+
+  if (mode == "proportion") {
+    plot_df <- plot_df %>%
+      group_by(gene_id) %>%
+      mutate(
+        denom = sum(count),
+        prop  = if_else(denom > 0, count / denom, 0)
+      ) %>%
+      ungroup() %>%
+      select(-denom)
+  }
+
+  gene_order <- gene_classes %>% mutate(gene_id = as.character(gene_id)) %>% pull(gene_id)
+  class_levels <- gene_classes %>%
+    mutate(class = str_squish(class)) %>%
+    distinct(class) %>%
+    pull(class)
+
+  plot_df <- plot_df %>%
+    mutate(gene_id = as.character(gene_id)) %>%
+    left_join(
+      gene_classes %>% mutate(gene_id = as.character(gene_id), class = str_squish(class)),
+      by = "gene_id"
+    ) %>%
+    mutate(
+      class  = factor(class, levels = class_levels),
+      gene_id = factor(gene_id, levels = unique(gene_order))
+    )
+
+  genome_levels <- c(top_genomes, "Other")
+  plot_df <- plot_df %>%
+    mutate(Genome_grp = factor(Genome_grp, levels = genome_levels))
+
+  if (is.null(genome_palette)) {
+    pal_fun <- colorRampPalette(c("steelblue4", "goldenrod2", "firebrick3"))
+    mag_cols <- setNames(pal_fun(length(top_genomes)), top_genomes)
+  } else {
+    if (length(genome_palette) < length(top_genomes)) {
+      stop("Not enough colours supplied in genome_palette for top_n genomes.")
+    }
+    mag_cols <- setNames(genome_palette[seq_along(top_genomes)], top_genomes)
+  }
+  mag_cols <- c(mag_cols, Other = other_colour)
+
+  yvar <- if (mode == "proportion") "prop" else "count"
+  ylab <- if (mode == "proportion") "Proportion of total gene count"
+  else "Total gene count (summed across selected MAGs)"
+
+  p <- ggplot(plot_df, aes(x = gene_id, y = .data[[yvar]], fill = Genome_grp)) +
+    geom_col(width = 0.9) +
+    scale_fill_manual(values = mag_cols, drop = FALSE) +
+    labs(x = "CAZy family (gene_id)", y = ylab, title = title, fill = "MAG / species") +
+    theme_bw() +
+    theme(
+      axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 7),
+      legend.position = "right"
+    )
+
+  if (facet_by_class) {
+    p <- p +
+      facet_grid(. ~ class, scales = "free_x", space = "free_x", switch = "x") +
+      theme(
+        panel.spacing.x = unit(0.8, "lines"),
+        strip.placement = "outside",
+        strip.background = element_rect(fill = "grey95", colour = NA)
+      )
+  }
+
+  # y axis formatting + FIXED y zoom (applies to BOTH count and proportion)
+  p <- p + scale_y_continuous(
+    labels = if (mode == "proportion") scales::percent_format(accuracy = 1) else waiver(),
+    expand = expansion(mult = c(0, 0.05))
+  )
+
+  if (!is.null(y_lim)) {
+    p <- p + coord_cartesian(ylim = y_lim)
+  }
+
+  p
+}
+
+
+# -------------------------------------------------------------------
+# Use the SAME gene class object for both plots:
+# e.g. gene_classes_cel_len (swap to whichever shared set you want)
+# -------------------------------------------------------------------
+GENE_CLASSES <- gene_classes_cel_len
+
+p_meso_stack <- make_stacked_contrib_plot(
+  df_counts = gene_count_meso_cel_len,
+  gene_classes = GENE_CLASSES,
+  top_n = 7,
+  mode = "count",
+  genome_palette = c(
+    "navy", "royalblue4",
+    "steelblue3", "mediumaquamarine",
+    "seagreen1", "seagreen3", "olivedrab"
+  ),
+  other_colour = "grey80",
+  title = "Mesophilic contribution (cellulose CAZy gene counts) (lenient)"
+)
+
+p_thermo_stack <- make_stacked_contrib_plot(
+  df_counts = gene_count_thermo_cel_len,
+  gene_classes = GENE_CLASSES,
+  top_n = 7,
+  mode = "count",
+  genome_palette = c(
+    "firebrick4", "firebrick3",
+    "firebrick1", "darkorange1",
+    "darkorange3", "darkorange4", "coral4"
+  ),
+  other_colour = "grey80",
+  title = "Thermophilic contribution (cellulose CAZy gene counts) (lenient)"
+)
+
+
+p <- p_meso_stack / p_thermo_stack
+
+
+ggsave(filename = "cellulose/attribution_barplot_lenient.png", plot = p,
+       width = 20, height = 12, dpi = 300)
+
+
+
+
+
+
+# Uses ONE shared gene class definition for both plots (e.g. gene_classes_cel_len)
+make_stacked_contrib_plot <- function(df_counts,
+                                      gene_classes,
+                                      top_n = 7,
+                                      title = "",
+                                      mode = c("proportion", "count"),
+                                      facet_by_class = TRUE,
+                                      genome_palette = NULL,
+                                      other_colour = "grey70") {
+
+  mode <- match.arg(mode)
+
+  # Wide -> long
+  long <- df_counts %>%
+    mutate(across(-gene_id, ~ as.numeric(.x))) %>%
+    pivot_longer(-gene_id, names_to = "Genome", values_to = "count") %>%
+    mutate(count = replace_na(count, 0))
+
+  # Select top N genomes by total contribution
+  top_genomes <- long %>%
+    group_by(Genome) %>%
+    summarise(total = sum(count), .groups = "drop") %>%
+    arrange(desc(total)) %>%
+    slice_head(n = top_n) %>%
+    pull(Genome)
+
+  # Collapse others
+  long2 <- long %>%
+    mutate(Genome_grp = if_else(Genome %in% top_genomes, Genome, "Other"))
+
+  # Aggregate counts per gene_id and Genome_grp
+  plot_df <- long2 %>%
+    group_by(gene_id, Genome_grp) %>%
+    summarise(count = sum(count), .groups = "drop")
+
+  # Proportion mode
+  if (mode == "proportion") {
+    plot_df <- plot_df %>%
+      group_by(gene_id) %>%
+      mutate(
+        denom = sum(count),
+        prop  = if_else(denom > 0, count / denom, 0)
+      ) %>%
+      ungroup() %>%
+      select(-denom)
+  }
+
+  # ---- Join the SINGLE shared class definition ----
+  gene_order <- gene_classes %>% mutate(gene_id = as.character(gene_id)) %>% pull(gene_id)
+  class_levels <- gene_classes %>%
+    mutate(class = str_squish(class)) %>%
+    distinct(class) %>%
+    pull(class)
+
+  plot_df <- plot_df %>%
+    mutate(gene_id = as.character(gene_id)) %>%
+    left_join(
+      gene_classes %>%
+        mutate(gene_id = as.character(gene_id), class = str_squish(class)),
+      by = "gene_id"
+    ) %>%
+    mutate(
+      class  = factor(class, levels = class_levels),
+      gene_id = factor(gene_id, levels = unique(gene_order))
+    )
+
+  # Fix legend order
+  genome_levels <- c(top_genomes, "Other")
+  plot_df <- plot_df %>%
+    mutate(Genome_grp = factor(Genome_grp, levels = genome_levels))
+
+  # -------------------------
+  # COLOUR CONTROL (MAGs)
+  # -------------------------
+  if (is.null(genome_palette)) {
+    pal_fun <- colorRampPalette(c("steelblue4", "goldenrod2", "firebrick3"))
+    mag_cols <- setNames(pal_fun(length(top_genomes)), top_genomes)
+  } else {
+    if (length(genome_palette) < length(top_genomes)) {
+      stop("Not enough colours supplied in genome_palette for top_n genomes.")
+    }
+    mag_cols <- setNames(genome_palette[seq_along(top_genomes)], top_genomes)
+  }
+  mag_cols <- c(mag_cols, Other = other_colour)
+
+  # -------------------------
+  # Plot
+  # -------------------------
+  yvar <- if (mode == "proportion") "prop" else "count"
+  ylab <- if (mode == "proportion") "Proportion of total gene count"
+          else "Total gene count (summed across selected MAGs)"
+
+  p <- ggplot(plot_df, aes(x = gene_id, y = .data[[yvar]], fill = Genome_grp)) +
+    geom_col(width = 0.9) +
+    scale_fill_manual(values = mag_cols, drop = FALSE) +
+    labs(
+      x = "CAZy family (gene_id)",
+      y = ylab,
+      title = title,
+      fill = "MAG / species"
+    ) +
+    theme_bw() +
+    theme(
+      axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 7),
+      legend.position = "right"
+    )
+
+  if (facet_by_class) {
+    p <- p +
+      facet_grid(. ~ class, scales = "free_x", space = "free_x", switch = "x") +
+      theme(
+        panel.spacing.x = unit(0.8, "lines"),
+        strip.placement = "outside",
+        strip.background = element_rect(fill = "grey95", colour = NA)
+      )
+  }
+
+  p <- p +
+    scale_y_continuous(
+      labels = if (mode == "proportion") percent_format(accuracy = 1) else waiver(),
+      expand = expansion(mult = c(0, 0.05))
+    ) +
+    coord_cartesian(ylim = c(0, 25))
+
+  p
+}
+
+# -------------------------------------------------------------------
+# Use the SAME gene class object for both plots:
+# e.g. gene_classes_cel_len (swap to whichever shared set you want)
+# -------------------------------------------------------------------
+GENE_CLASSES <- gene_classes_cel_len
+
+p_meso_stack <- make_stacked_contrib_plot(
+  df_counts = gene_count_meso_cel_con,
+  gene_classes = GENE_CLASSES,
+  top_n = 7,
+  mode = "count",
+  genome_palette = c(
+    "navy", "royalblue4",
+    "steelblue3", "mediumaquamarine",
+    "seagreen1", "seagreen3", "olivedrab"
+  ),
+  other_colour = "grey80",
+  title = "Mesophilic contribution (cellulose CAZy gene counts) (conservative)"
+)
+
+p_thermo_stack <- make_stacked_contrib_plot(
+  df_counts = gene_count_thermo_cel_con,
+  gene_classes = GENE_CLASSES,
+  top_n = 7,
+  mode = "count",
+  genome_palette = c(
+    "firebrick4", "firebrick3",
+    "firebrick1", "darkorange1",
+    "darkorange3", "darkorange4", "coral4"
+  ),
+  other_colour = "grey80",
+  title = "Thermophilic contribution (cellulose CAZy gene counts) (conservative)"
+)
+
+p <- p_meso_stack / p_thermo_stack
+
+
+
+ggsave(filename = "cellulose/attribution_barplot_conservative.png", plot = p,
+       width = 20, height = 12, dpi = 300)
+
+
+```
+
+
+
+
+        --------------------------------------------------------------
+    -----------------------------------------------------------------------
+--------------------------------------------------------------------------------
+                                     
+                                  Hemicellulose
+
+--------------------------------------------------------------------------------
+    -----------------------------------------------------------------------
+        --------------------------------------------------------------
+
+
+
+--------------------------------------------------------------------------------
+                                       Pre
+--------------------------------------------------------------------------------
+
+Important note regarding gene_id selection:
+Only gene_ids for genes exclusively performing a specific function are selected. Others that perform multiple other functions, including the target function, were not selected due to uncertainty and a lack of interpretability. This means that we are potentially missing out on relevant gene_ids. 
+
+
+Classifications (conservative)
+```{r}
+
+
+
+gene_classes_hem_con <- tibble(
+  gene_id = c(
+    # Alpha-mannan backbone cleavage (hemicellulose)
+    "GH99", "GH76",
+    
+    # Alpha-mannan oligo cleavage (hemicellulose)
+    "GH125", "GH38", "GH47", "GH63", "GH92", "GH76", "GH130",
+    
+    # Beta-mannan backbone cleavage (hemicellulose)
+    "GH134", "GH113",
+    
+    # Beta-mannan oligo cleavage (hemicellulose)
+    "GH130", "CE2", "GH113",
+    
+    # Mixed-linkage glucans backbone cleavage (hemicellulose)
+    "GH152", "GH157", "GH158", "GH64", "GH81", "GH17", "GH55", "GH128",
+    
+    # Mixed-linkage glucans oligo cleavage (hemicellulose)
+    "GH17", "GH55",
+    
+    # Xylan backbone cleavage (hemicellulose)
+    "GH11", "GH98", "GH26", "GH141", "GH30",
+    
+    # Xylan oligo cleavage (hemicellulose)
+    "GH115", "GH120", "GH39", "GH52", "GH67",
+    
+    # Xyloglucan backbone cleavage (hemicellulose)
+    "GH74",
+    
+    # Xyloglucan oligo cleavage (hemicellulose)
+    "GH31"
+    
+    
+  ),
+  class = c(
+    rep("Alpha-mannan backbone cleavage (hemicellulose)", 2),
+    rep("Alpha-mannan oligo cleavage (hemicellulose)", 7),
+    rep("Beta-mannan backbone cleavage (hemicellulose)", 2),
+    rep("Beta-mannan oligo cleavage (hemicellulose)", 3),
+    rep("Mixed-linkage glucans backbone cleavage (hemicellulose)", 8),
+    rep("Mixed-linkage glucans oligo cleavage (hemicellulose)", 2),
+    rep("Xylan backbone cleavage (hemicellulose)", 5),
+    rep("Xylan oligo cleavage (hemicellulose)", 5),
+    rep("Xyloglucan oligo cleavage (hemicellulose)", 1),
+    rep("Xyloglucan oligo cleavage (hemicellulose)", 1)
+  )
+)
+
+```
+
+
+Classifications (lenient)
+```{r}
+
+gene_classes_hem_len <- tibble(
+  gene_id = c(
+    # Alpha-mannan backbone cleavage (hemicellulose)
+    "GH99", "GH76",
+    
+    # Alpha-mannan oligo cleavage (hemicellulose)
+    "GH125", "GH38", "GH47", "GH63", "GH92",
+    
+    # Beta-mannan backbone cleavage (hemicellulose)
+    "GH134", "GH113", "GH26", 
+    
+    # Beta-mannan oligo cleavage (hemicellulose)
+    "GH130", "CE2", "GH2", "GH113", "GH26",
+    
+    # Mixed-linkage glucans backbone cleavage (hemicellulose)
+    "GH152", "GH157", "GH158", "GH64", "GH81", "GH17", "GH55", "GH128", "GH8", "GH16", "GH7", "GH30",
+    
+    # Mixed-linkage glucans oligo cleavage (hemicellulose)
+    "GH1", "GH3", "GH16", "GH17", "GH55",
+    
+    # Xylan backbone cleavage (hemicellulose)
+    "GH11", "GH98", "GH26", "GH141", "GH30",
+    
+    # Xylan oligo cleavage (hemicellulose)
+    "GH115", "GH120", "GH39", "GH52", "GH67", "GH3", "GH31",
+    
+    # Xyloglucan backbone cleavage (hemicellulose)
+    "GH74", "GH9", "GH5", "GH12", "GH44", "GH45", "GH16", "AA9", "GH48",
+    
+    # Xyloglucan oligo cleavage (hemicellulose)
+    "GH31", "GH10", "GH2", "GH43"
+    
+    
+  ),
+  class = c(
+    rep("Alpha-mannan backbone cleavage (hemicellulose)", 2),
+    rep("Alpha-mannan oligo cleavage (hemicellulose)", 5),
+    rep("Beta-mannan backbone cleavage (hemicellulose)", 3),
+    rep("Beta-mannan oligo cleavage (hemicellulose)", 5),
+    rep("Mixed-linkage glucans backbone cleavage (hemicellulose)", 12),
+    rep("Mixed-linkage glucans oligo cleavage (hemicellulose)", 5),
+    rep("Xylan backbone cleavage (hemicellulose)", 5),
+    rep("Xylan oligo cleavage (hemicellulose)", 7),
+    rep("Xyloglucan backbone cleavage (hemicellulose)", 9),
+    rep("Xyloglucan oligo cleavage (hemicellulose)", 4)
+  )
+)
+
+
+
+```
+
+
+Obtain target gene_ids for target MAGs
+```{r}
+
+# Filter for hemicellulose CAZYs (lenient)
+gene_count_meso_hem_len <- gene_counts_meso %>%
+  filter(gene_id %in% gene_classes_hem_len$gene_id)
+
+gene_count_thermo_hem_len <- gene_counts_thermo %>%
+  filter(gene_id %in% gene_classes_hem_len$gene_id)
+
+
+# Filter for cellulose CAZYs (conservative)
+gene_count_meso_hem_con <- gene_counts_meso %>%
+  filter(gene_id %in% gene_classes_hem_con$gene_id)
+
+gene_count_thermo_hem_con <- gene_counts_thermo %>%
+  filter(gene_id %in% gene_classes_hem_con$gene_id)
+
+
+
+```
+
+
+--------------------------------------------------------------------------------
+                                     Heatmap
+--------------------------------------------------------------------------------
+
+Note regarding the (lenient) heatmaps: The most prominent CAZy genes, GH2 and GH3 are multi-functional, encoding among others pectin deg and arabinan deg, making their interpretation for the relevance in cellulose deg impossible. They are perhaps not really involved in cellulose deg.
+
+
+conservative
+```{r}
+
+
+
+meso_long <- gene_count_meso_hem_con %>%
+  pivot_longer(
+    cols = -gene_id,
+    names_to = "genome",
+    values_to = "count"
+  )
+
+
+thermo_long <- gene_count_thermo_hem_con %>%
+  pivot_longer(
+    cols = -gene_id,
+    names_to = "genome",
+    values_to = "count"
+  )
+
+
+p_meso <- ggplot(meso_long, aes(x = genome, y = gene_id, fill = count)) +
+  geom_tile() +
+  scale_fill_viridis_c(name = "Count", limits = c(0, 15)) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 10),
+    axis.title = element_blank()
+  ) +
+  ggtitle("Hemicellulose CAZy repertoire – Mesophilic MAGs")
+
+
+p_thermo <- ggplot(thermo_long, aes(x = genome, y = gene_id, fill = count)) +
+  geom_tile() +
+  scale_fill_viridis_c(name = "Count", limits = c(0, 8)) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 10),
+    axis.title = element_blank()
+  ) +
+  ggtitle("Hemicellulose CAZy repertoire – Thermophilic MAGs")
+
+p <- p_meso / p_thermo
+
+ggsave(filename = "hemicellulose/gene_count_heatmap_conservative.png", plot = p,
+       width = 20, height = 12, dpi = 300)
+
+```
+
+
+Lenient
+```{r}
+
+
+
+meso_long <- gene_count_meso_hem_len %>%
+  pivot_longer(
+    cols = -gene_id,
+    names_to = "genome",
+    values_to = "count"
+  )
+
+
+thermo_long <- gene_count_thermo_hem_len %>%
+  pivot_longer(
+    cols = -gene_id,
+    names_to = "genome",
+    values_to = "count"
+  )
+
+
+p_meso <- ggplot(meso_long, aes(x = genome, y = gene_id, fill = count)) +
+  geom_tile() +
+  scale_fill_viridis_c(name = "Count", limits = c(0, 15)) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 10),
+    axis.title = element_blank()
+  ) +
+  ggtitle("Hemicellulose CAZy repertoire – Mesophilic MAGs")
+
+
+p_thermo <- ggplot(thermo_long, aes(x = genome, y = gene_id, fill = count)) +
+  geom_tile() +
+  scale_fill_viridis_c(name = "Count", limits = c(0, 8)) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 10),
+    axis.title = element_blank()
+  ) +
+  ggtitle("Hemicellulose CAZy repertoire – Thermophilic MAGs")
+
+p <- p_meso / p_thermo
+
+ggsave(filename = "hemicellulose/gene_count_heatmap_lenient.png", plot = p,
+       width = 20, height = 12, dpi = 300)
+
+```
+
+
+--------------------------------------------------------------------------------
+                                     Barplots
+--------------------------------------------------------------------------------
+
+
+Class-separated
+```{r}
+### Lenient
+
+
+# ------------------------------------------------------------
+# Helper: count MAGs with count > 0 per gene_id
+# ------------------------------------------------------------
+count_mags_per_gene <- function(df_counts) {
+  df_counts %>%
+    mutate(across(-gene_id, ~ as.numeric(.x))) %>%
+    pivot_longer(-gene_id, names_to = "Genome", values_to = "count") %>%
+    mutate(present = !is.na(count) & count > 0) %>%
+    group_by(gene_id) %>%
+    summarise(n_MAGs = sum(present), .groups = "drop")
+}
+
+# helper: make labels fit in skinny facets
+stack_gene_label <- function(x) {
+  x <- as.character(x)
+  gsub("^([A-Z]+)([0-9]+)$", "\\1\n\\2", x)
+}
+
+# ------------------------------------------------------------
+# Plot function: facet by class + class colours from a gradient
+# ------------------------------------------------------------
+plot_cazy_by_class <- function(df_counts, gene_classes_hem_len, title, y_max = NULL,
+                               gradient_anchors = c("grey80", "steelblue4"),
+                               label_stack = TRUE) {
+
+  hits <- count_mags_per_gene(df_counts)
+
+  gene_order <- gene_classes_hem_len %>%
+    mutate(gene_id = as.character(gene_id)) %>%
+    pull(gene_id)
+
+  plot_df <- gene_classes_hem_len %>%
+    mutate(
+      gene_id = as.character(gene_id),
+      class   = str_squish(class)
+    ) %>%
+    left_join(hits, by = "gene_id") %>%
+    mutate(
+      n_MAGs  = replace_na(n_MAGs, 0L),
+      class   = fct_inorder(class),
+      gene_id = factor(gene_id, levels = unique(gene_order))
+    )
+
+  class_levels <- gene_classes_hem_len %>%
+    mutate(class = str_squish(class)) %>%
+    distinct(class) %>%
+    pull(class)
+
+  plot_df <- plot_df %>%
+    mutate(class = factor(as.character(class), levels = class_levels))
+
+  pal_fun <- colorRampPalette(gradient_anchors)
+  class_cols <- setNames(pal_fun(length(class_levels)), class_levels)
+
+  p <- ggplot(plot_df, aes(x = gene_id, y = n_MAGs, fill = class)) +
+    geom_col(width = 0.9) +
+    facet_grid(. ~ class, scales = "free_x", space = "free_x", switch = "x") +
+    scale_fill_manual(values = class_cols, drop = FALSE) +
+    geom_text(aes(label = n_MAGs), vjust = -0.3, size = 2.5) +
+    labs(
+      x = NULL,
+      y = "Number of MAGs (gene count > 0)",
+      title = title,
+      fill = "Class"
+    ) +
+    theme_bw() +
+    theme(
+      axis.text.x = element_text(
+        angle = 0,
+        hjust = 0.5, vjust = 1,
+        size = 7,
+        lineheight = 0.9
+      ),
+      axis.ticks.x = element_line(linewidth = 0.25),
+      panel.spacing.x = unit(0.9, "lines"),
+      legend.position = "none",
+      strip.placement = "outside",
+      strip.background = element_rect(fill = "grey95", colour = NA),
+      plot.margin = margin(t = 5.5, r = 5.5, b = 18, l = 5.5)
+    ) +
+    scale_y_continuous(
+      limit = c(0, 50),
+      expand = expansion(mult = c(0, 0.10))
+    ) +
+    coord_cartesian(clip = "off")
+
+  if (isTRUE(label_stack)) {
+    p <- p + scale_x_discrete(labels = stack_gene_label)
+  } else {
+    p <- p + scale_x_discrete(drop = FALSE)
+  }
+
+  p
+}
+
+# ------------------------------------------------------------
+# Run for meso (blue gradient) and thermo (red gradient)
+# using gene_classes_cel_len
+# ------------------------------------------------------------
+p_meso <- plot_cazy_by_class(
+  df_counts = gene_count_meso_hem_len,        # <-- your cellulose (len) count table
+  gene_classes_hem_len = gene_classes_hem_len,
+  title = "Number of mesophilic MAGs encoding each cellulose CAZy (count > 0)",
+  y_max = 20,
+  gradient_anchors = c("cornflowerblue", "royalblue2", "royalblue3", "royalblue4", "midnightblue"),
+  label_stack = TRUE
+)
+
+p_thermo <- plot_cazy_by_class(
+  df_counts = gene_count_thermo_hem_len,      # <-- your cellulose (len) count table
+  gene_classes_hem_len = gene_classes_hem_len,
+  title = "Number of thermophilic MAGs encoding each cellulose CAZy (count > 0)",
+  y_max = 20,
+  gradient_anchors = c("sandybrown", "sienna1", "sienna2", "sienna3", "sienna", "sienna4"),
+  label_stack = TRUE
+)
+
+p <- p_meso / p_thermo
+p
+
+
+
+ggsave(filename = "hemicellulose/mag_gene_counts_barplot_lenient.png", plot = p,
+       width = 20, height = 12, dpi = 300)
+
+
+
+
+
+### Conservative
+
+# ------------------------------------------------------------
+# Helper: count MAGs with count > 0 per gene_id
+# ------------------------------------------------------------
+count_mags_per_gene <- function(df_counts) {
+  df_counts %>%
+    mutate(across(-gene_id, ~ as.numeric(.x))) %>%
+    pivot_longer(-gene_id, names_to = "Genome", values_to = "count") %>%
+    mutate(present = !is.na(count) & count > 0) %>%
+    group_by(gene_id) %>%
+    summarise(n_MAGs = sum(present), .groups = "drop")
+}
+
+# helper: make labels fit in skinny facets
+stack_gene_label <- function(x) {
+  x <- as.character(x)
+  gsub("^([A-Z]+)([0-9]+)$", "\\1\n\\2", x)
+}
+
+# ------------------------------------------------------------
+# Plot function: facet by class + class colours from a gradient
+# ------------------------------------------------------------
+plot_cazy_by_class <- function(df_counts, gene_classes_hem_con, title, y_max = NULL,
+                               gradient_anchors = c("grey80", "steelblue4"),
+                               label_stack = TRUE) {
+
+  hits <- count_mags_per_gene(df_counts)
+
+  gene_order <- gene_classes_hem_con %>%
+    mutate(gene_id = as.character(gene_id)) %>%
+    pull(gene_id)
+
+  plot_df <- gene_classes_hem_con %>%
+    mutate(
+      gene_id = as.character(gene_id),
+      class   = str_squish(class)
+    ) %>%
+    left_join(hits, by = "gene_id") %>%
+    mutate(
+      n_MAGs  = replace_na(n_MAGs, 0L),
+      class   = fct_inorder(class),
+      gene_id = factor(gene_id, levels = unique(gene_order))
+    )
+
+  class_levels <- gene_classes_hem_con %>%
+    mutate(class = str_squish(class)) %>%
+    distinct(class) %>%
+    pull(class)
+
+  plot_df <- plot_df %>%
+    mutate(class = factor(as.character(class), levels = class_levels))
+
+  pal_fun <- colorRampPalette(gradient_anchors)
+  class_cols <- setNames(pal_fun(length(class_levels)), class_levels)
+
+  p <- ggplot(plot_df, aes(x = gene_id, y = n_MAGs, fill = class)) +
+    geom_col(width = 0.9) +
+    facet_grid(. ~ class, scales = "free_x", space = "free_x", switch = "x") +
+    scale_fill_manual(values = class_cols, drop = FALSE) +
+    geom_text(aes(label = n_MAGs), vjust = -0.3, size = 2.5) +
+    labs(
+      x = NULL,
+      y = "Number of MAGs (gene count > 0)",
+      title = title,
+      fill = "Class"
+    ) +
+    theme_bw() +
+    theme(
+      axis.text.x = element_text(
+        angle = 0,
+        hjust = 0.5, vjust = 1,
+        size = 7,
+        lineheight = 0.9
+      ),
+      axis.ticks.x = element_line(linewidth = 0.25),
+      panel.spacing.x = unit(0.9, "lines"),
+      legend.position = "none",
+      strip.placement = "outside",
+      strip.background = element_rect(fill = "grey95", colour = NA),
+      plot.margin = margin(t = 5.5, r = 5.5, b = 18, l = 5.5)
+    ) +
+    scale_y_continuous(
+      limit = c(0, 25),
+      expand = expansion(mult = c(0, 0.10))
+    ) +
+    coord_cartesian(clip = "off")
+
+  if (isTRUE(label_stack)) {
+    p <- p + scale_x_discrete(labels = stack_gene_label)
+  } else {
+    p <- p + scale_x_discrete(drop = FALSE)
+  }
+
+  p
+}
+
+# ------------------------------------------------------------
+# Run for meso (blue gradient) and thermo (red gradient)
+# using gene_classes_cel_len
+# ------------------------------------------------------------
+p_meso <- plot_cazy_by_class(
+  df_counts = gene_count_meso_hem_con,
+  gene_classes_hem_con = gene_classes_hem_con,
+  title = "Number of mesophilic MAGs encoding each cellulose CAZy (count > 0) (conservative)",
+  y_max = 20,
+  gradient_anchors = c("cornflowerblue", "royalblue2", "royalblue3", "royalblue4", "midnightblue"),
+  label_stack = TRUE
+)
+
+p_thermo <- plot_cazy_by_class(
+  df_counts = gene_count_thermo_hem_con,      # <-- your cellulose (len) count table
+  gene_classes_hem_con = gene_classes_hem_con,
+  title = "Number of thermophilic MAGs encoding each cellulose CAZy (count > 0) (conservative)",
+  y_max = 20,
+  gradient_anchors = c("sandybrown", "sienna1", "sienna2", "sienna3", "sienna", "sienna4"),
+  label_stack = TRUE
+)
+
+p <- p_meso / p_thermo
+p
+
+
+
+ggsave(filename = "hemicellulose/mag_gene_counts_barplot_conservative.png", plot = p,
+       width = 20, height = 12, dpi = 300)
+
+
+
+```
+
+
+Attribution plot
+```{r}
+
+### lenient
+
+library(tidyverse)
+library(scales)
+library(grid)   # unit()
+
+# ============================================================
+# STACKED CONTRIBUTION PLOT FUNCTION
+# ============================================================
+
+make_stacked_contrib_plot <- function(df_counts,
+                                      gene_classes,
+                                      top_n = 7,
+                                      title = "",
+                                      mode = c("proportion", "count"),
+                                      facet_by_class = TRUE,
+                                      genome_palette = NULL,
+                                      other_colour = "grey70",
+                                      y_lim = NULL) {
+
+  mode <- match.arg(mode)
+
+  # ----------------------------------------------------------
+  # Wide -> long
+  # ----------------------------------------------------------
+  long <- df_counts %>%
+    mutate(across(-gene_id, ~ as.numeric(.x))) %>%
+    pivot_longer(-gene_id, names_to = "Genome", values_to = "count") %>%
+    mutate(count = replace_na(count, 0))
+
+  # ----------------------------------------------------------
+  # Select top N genomes by total contribution
+  # ----------------------------------------------------------
+  top_genomes <- long %>%
+    group_by(Genome) %>%
+    summarise(total = sum(count), .groups = "drop") %>%
+    arrange(desc(total)) %>%
+    slice_head(n = top_n) %>%
+    pull(Genome)
+
+  # Collapse others
+  long2 <- long %>%
+    mutate(Genome_grp = if_else(Genome %in% top_genomes, Genome, "Other"))
+
+  # ----------------------------------------------------------
+  # Aggregate counts per gene_id and Genome_grp
+  # ----------------------------------------------------------
+  plot_df <- long2 %>%
+    group_by(gene_id, Genome_grp) %>%
+    summarise(count = sum(count), .groups = "drop")
+
+  # ----------------------------------------------------------
+  # Proportion mode (optional)
+  # ----------------------------------------------------------
+  if (mode == "proportion") {
+    plot_df <- plot_df %>%
+      group_by(gene_id) %>%
+      mutate(
+        denom = sum(count),
+        prop  = if_else(denom > 0, count / denom, 0)
+      ) %>%
+      ungroup() %>%
+      select(-denom)
+  }
+
+  # ----------------------------------------------------------
+  # Join class info
+  # ----------------------------------------------------------
+  gene_order <- gene_classes %>%
+    mutate(gene_id = as.character(gene_id)) %>%
+    pull(gene_id)
+
+  class_levels <- gene_classes %>%
+    mutate(class = str_squish(class)) %>%
+    distinct(class) %>%
+    pull(class)
+
+  plot_df <- plot_df %>%
+    mutate(gene_id = as.character(gene_id)) %>%
+    left_join(
+      gene_classes %>%
+        mutate(gene_id = as.character(gene_id),
+               class = str_squish(class)),
+      by = "gene_id"
+    ) %>%
+    mutate(
+      class  = factor(class, levels = class_levels),
+      gene_id = factor(gene_id, levels = unique(gene_order))
+    )
+
+  # ----------------------------------------------------------
+  # Fix legend order
+  # ----------------------------------------------------------
+  genome_levels <- c(top_genomes, "Other")
+
+  plot_df <- plot_df %>%
+    mutate(Genome_grp = factor(Genome_grp, levels = genome_levels))
+
+  # ----------------------------------------------------------
+  # COLOUR CONTROL
+  # ----------------------------------------------------------
+  if (is.null(genome_palette)) {
+    pal_fun <- colorRampPalette(c("steelblue4", "goldenrod2", "firebrick3"))
+    mag_cols <- setNames(pal_fun(length(top_genomes)), top_genomes)
+  } else {
+    if (length(genome_palette) < length(top_genomes)) {
+      stop("Not enough colours supplied in genome_palette for top_n genomes.")
+    }
+    mag_cols <- setNames(genome_palette[seq_along(top_genomes)], top_genomes)
+  }
+
+  # Force "Other" to grey
+  mag_cols <- c(mag_cols, Other = other_colour)
+
+  # ----------------------------------------------------------
+  # Plot
+  # ----------------------------------------------------------
+  yvar <- if (mode == "proportion") "prop" else "count"
+  ylab <- if (mode == "proportion")
+    "Proportion of total gene count"
+  else
+    "Total gene count (summed across selected MAGs)"
+
+  p <- ggplot(plot_df, aes(x = gene_id, y = .data[[yvar]], fill = Genome_grp)) +
+    geom_col(width = 0.9) +
+    scale_fill_manual(values = mag_cols, drop = FALSE) +
+    labs(
+      x = "CAZy family (gene_id)",
+      y = ylab,
+      title = title,
+      fill = "MAG / species"
+    ) +
+    theme_bw() +
+    theme(
+      axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 7),
+      legend.position = "right"
+    )
+
+  if (facet_by_class) {
+    p <- p +
+      facet_grid(. ~ class, scales = "free_x", space = "free_x", switch = "x") +
+      theme(
+        panel.spacing.x = unit(0.8, "lines"),
+        strip.placement = "outside",
+        strip.background = element_rect(fill = "grey95", colour = NA)
+      )
+  }
+
+  # ----------------------------------------------------------
+  # Apply consistent y-axis scaling
+  # ----------------------------------------------------------
+  p <- p +
+    scale_y_continuous(
+      labels = if (mode == "proportion")
+        percent_format(accuracy = 1)
+      else
+        waiver(),
+      expand = expansion(mult = c(0, 0.05))
+    )
+
+  if (!is.null(y_lim)) {
+    p <- p + coord_cartesian(ylim = y_lim)
+  }
+
+  return(p)
+}
+
+# ============================================================
+# LENIENT (0–140)
+# ============================================================
+
+GENE_CLASSES <- gene_classes_hem_len
+
+p_meso_len <- make_stacked_contrib_plot(
+  df_counts = gene_count_meso_hem_len,
+  gene_classes = GENE_CLASSES,
+  top_n = 7,
+  mode = "count",
+  y_lim = c(0, 140),
+  genome_palette = c(
+    "navy", "royalblue4",
+    "steelblue3", "mediumaquamarine",
+    "seagreen1", "seagreen3", "olivedrab"
+  ),
+  other_colour = "grey80",
+  title = "Mesophilic contribution (hemicellulose CAZy gene counts) (lenient)"
+)
+
+p_thermo_len <- make_stacked_contrib_plot(
+  df_counts = gene_count_thermo_hem_len,
+  gene_classes = GENE_CLASSES,
+  top_n = 7,
+  mode = "count",
+  y_lim = c(0, 140),
+  genome_palette = c(
+    "firebrick4", "firebrick3",
+    "firebrick1","goldenrod1", "darkorange1",
+    "darkorange3", "darkorange4", "coral4"
+  ),
+  other_colour = "grey80",
+  title = "Thermophilic contribution (hemicellulose CAZy gene counts) (lenient)"
+)
+
+p_lenient <- p_meso_len / p_thermo_len
+
+
+ggsave(filename = "hemicellulose/attribution_barplot_lenient.png", plot = p_lenient,
+       width = 20, height = 12, dpi = 300)
+
+# ============================================================
+# CONSERVATIVE (0–35)
+# ============================================================
+
+p_meso_con <- make_stacked_contrib_plot(
+  df_counts = gene_count_meso_hem_con,
+  gene_classes = GENE_CLASSES,
+  top_n = 7,
+  mode = "count",
+  y_lim = c(0, 35),
+  genome_palette = c(
+    "navy", "royalblue4",
+    "steelblue3", "mediumaquamarine",
+    "seagreen1", "seagreen3", "olivedrab"
+  ),
+  other_colour = "grey80",
+  title = "Mesophilic contribution (hemicellulose CAZy gene counts) (conservative)"
+)
+
+p_thermo_con <- make_stacked_contrib_plot(
+  df_counts = gene_count_thermo_hem_con,
+  gene_classes = GENE_CLASSES,
+  top_n = 7,
+  mode = "count",
+  y_lim = c(0, 35),
+  genome_palette = c(
+    "firebrick4", "firebrick3",
+    "firebrick1", "goldenrod1", "darkorange1",
+    "darkorange3", "darkorange4", "coral4"
+  ),
+  other_colour = "grey80",
+  title = "Thermophilic contribution (hemicellulose CAZy gene counts) (conservative)"
+)
+
+p_conservative <- p_meso_con / p_thermo_con
+
+
+
+ggsave(filename = "hemicellulose/attribution_barplot_conservative.png", plot = p_conservative,
+       width = 20, height = 12, dpi = 300)
+
+
+```
+
+
+
+```{r}
+
+
+```
+
+```{r}
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
