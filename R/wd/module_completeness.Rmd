@@ -179,80 +179,79 @@ phylum_abun <- bind_rows(phylum_abun_meso, phylum_abun_thermo)
 
 #####################################################################################
 
-
-Methanogenesis (genus-level)
+Hydrolysis (phylum-level)
 ```{r}
 
-############################################################################################################
-###                                             Meso                                                     ###
-############################################################################################################
+###########################################################################################################
+###                                             Meso                                                    ###
+###########################################################################################################
 
 
 # Filter only by phase and sample
-m <- joined_ann_tax %>%
-  filter(phase == "Methanogenesis", sample == "meso") %>%
-  mutate(genus = na_if(genus, "")) %>%
-  filter(!is.na(genus))
+hyd <- joined_ann_tax %>%
+  filter(phase == "Hydrolysis", sample == "meso") %>%
+  mutate(phylum = na_if(phylum, "")) %>%
+  filter(!is.na(phylum))
 
 # Use module order from modules
-module_order_meth <- modules %>%
-  filter(phase == "Methanogenesis") %>%
+module_order_hyd <- modules %>%
+  filter(phase == "Hydrolysis") %>%
   pull(module)
 
 # collapse to genus x module
-m_genus0 <- m %>%
-  group_by(Genome, genus, module) %>%
+hyd_phylum0 <- hyd %>%
+  group_by(Genome, phylum, module) %>% 
   summarise(p = max(Percent_steps_found, na.rm = TRUE), .groups = "drop") %>%
-  group_by(genus, module) %>%  
+  group_by(phylum, module) %>%               
   summarise(
     Percent_steps_found = max(p, na.rm = TRUE),
-    n_genomes = n_distinct(Genome[p >= 50]), 
+    n_genomes = n_distinct(Genome[p >= 50]),     
     .groups = "drop"
   )
 
 
 
 # Force-show all modules by completing the grid
-m_genus <- m_genus0 %>%
-  mutate(module = factor(module, levels = module_order_meth)) %>%
+hyd_phylum <- hyd_phylum0 %>%
+  mutate(module = factor(module, levels = module_order_hyd)) %>%
   complete(
-    genus,
+    phylum,
     module,
     fill = list(
-      Percent_steps_found = 0,  # empty = 0% completeness (will be invisible with alpha mapping below)
+      Percent_steps_found = 0,
       n_genomes = 0
     )
   ) %>%
   ungroup()
 
-m_genus <- m_genus %>%
-  group_by(genus) %>%
+hyd_phylum <- hyd_phylum %>%
+  group_by(phylum) %>%
   filter(any(Percent_steps_found >= 50, na.rm = TRUE)) %>%
   ungroup()
 
 # Join genus abundance
-m_genus <- m_genus %>%
-  left_join(genus_abun %>% filter(sample == "meso"), by = "genus")
+hyd_phylum <- hyd_phylum %>%
+  left_join(phylum_abun %>% filter(sample == "meso"), by = "phylum")
 
-m_genus <- m_genus %>%
+hyd_phylum <- hyd_phylum %>%
   mutate(
     alpha = case_when(
       is.na(Percent_steps_found)        ~ 0,
-      Percent_steps_found < 50          ~ 0,  # hide <50% (set e.g. 0.05 if you want faint tiles)
+      Percent_steps_found < 50          ~ 0, 
       TRUE ~ scales::rescale(Percent_steps_found, from = c(50, 100), to = c(0.15, 1))
     )
   )
 
-genus_labels <- genus_abun %>%
+phylum_labels <- phylum_abun %>%
   filter(sample == "meso") %>%
-  mutate(abun_lab = sprintf("%.1f%%", genus_r_abund)) %>%
-  semi_join(m_genus %>% distinct(genus), by = "genus")
+  mutate(abun_lab = sprintf("%.1f%%", phylum_r_abund)) %>%
+  semi_join(hyd_phylum %>% distinct(phylum), by = "phylum")
 
 
 
-pm <- ggplot(m_genus, aes(x = module, y = genus)) +
+hydm <- ggplot(hyd_phylum, aes(x = module, y = phylum)) +
   geom_tile(aes(alpha = alpha),
-            fill = "mediumpurple4", color = NA, width = 0.9, height = 0.9) +
+            fill = "navyblue", color = NA, width = 0.9, height = 0.9) +
   scale_alpha(
     name   = "Module\ncompleteness",
     limits = c(0, 1),
@@ -260,10 +259,10 @@ pm <- ggplot(m_genus, aes(x = module, y = genus)) +
     labels = c("50%", "75%", "100%"),
     range  = c(0, 1)
   ) +
-  guides(alpha = guide_legend(override.aes = list(fill = "mediumpurple4"))) +
+  guides(alpha = guide_legend(override.aes = list(fill = "navyblue"))) +
   geom_text(
-    data = genus_labels,
-    aes(x = -Inf, y = genus, label = abun_lab),
+    data = phylum_labels,
+    aes(x = -Inf, y = phylum, label = abun_lab),
     inherit.aes = FALSE,
     hjust = 1,
     size = 3,
@@ -283,80 +282,81 @@ pm <- ggplot(m_genus, aes(x = module, y = genus)) +
     plot.margin = margin(t = 0, r = 20, b = 0, l = 60)
   )
 
-pm
+hydm
 
 
 
 
 
-############################################################################################################
-###                                             Thermo                                                   ###
-############################################################################################################
+###########################################################################################################
+###                                             Thermo                                                  ###
+###########################################################################################################
 
 # Filter only by phase and sample
-m <- joined_ann_tax %>%
-  filter(phase == "Methanogenesis", sample == "thermo") %>%
-  mutate(genus = na_if(genus, "")) %>%
-  filter(!is.na(genus))
+hyd <- joined_ann_tax %>%
+  filter(phase == "Hydrolysis", sample == "thermo") %>%
+  mutate(phylum = na_if(phylum, "")) %>%
+  filter(!is.na(phylum))
 
 # Use module order from modules
-module_order_meth <- modules %>%
-  filter(phase == "Methanogenesis") %>%
+module_order_hyd <- modules %>%
+  filter(phase == "Hydrolysis") %>%
   pull(module)
 
 # collapse to genus x module
-m_genus0 <- m %>%
-  group_by(Genome, genus, module) %>%
+hyd_phylum0 <- hyd %>%
+  group_by(Genome, phylum, module) %>%       
   summarise(p = max(Percent_steps_found, na.rm = TRUE), .groups = "drop") %>%
-  group_by(genus, module) %>%  
+  group_by(phylum, module) %>%                 
   summarise(
     Percent_steps_found = max(p, na.rm = TRUE),
-    n_genomes = n_distinct(Genome[p >= 50]), 
+    n_genomes = n_distinct(Genome[p >= 50]),   
     .groups = "drop"
   )
 
 
+
 # Force-show all modules by completing the grid
-m_genus <- m_genus0 %>%
-  mutate(module = factor(module, levels = module_order_meth)) %>%
+hyd_phylum <- hyd_phylum0 %>%
+  mutate(module = factor(module, levels = module_order_hyd)) %>%
   complete(
-    genus,
+    phylum,
     module,
     fill = list(
-      Percent_steps_found = 0,  # empty = 0% completeness (will be invisible with alpha mapping below)
+      Percent_steps_found = 0, 
       n_genomes = 0
     )
   ) %>%
   ungroup()
 
-m_genus <- m_genus %>%
-  group_by(genus) %>%
+hyd_phylum <- hyd_phylum %>%
+  group_by(phylum) %>%
   filter(any(Percent_steps_found >= 50, na.rm = TRUE)) %>%
   ungroup()
 
 # Join genus abundance
-m_genus <- m_genus %>%
-  left_join(genus_abun %>% filter(sample == "thermo"), by = "genus")
+hyd_phylum <- hyd_phylum %>%
+  left_join(phylum_abun %>% filter(sample == "thermo"), by = "phylum")
 
-m_genus <- m_genus %>%
+hyd_phylum <- hyd_phylum %>%
   mutate(
     alpha = case_when(
       is.na(Percent_steps_found)        ~ 0,
-      Percent_steps_found < 50          ~ 0,  # hide <50% (set e.g. 0.05 if you want faint tiles)
+      Percent_steps_found < 50          ~ 0,
       TRUE ~ scales::rescale(Percent_steps_found, from = c(50, 100), to = c(0.15, 1))
     )
   )
 
-genus_labels <- genus_abun %>%
+phylum_labels <- phylum_abun %>%
   filter(sample == "thermo") %>%
-  mutate(abun_lab = sprintf("%.1f%%", genus_r_abund)) %>%
-  semi_join(m_genus %>% distinct(genus), by = "genus")
+  mutate(abun_lab = sprintf("%.1f%%", phylum_r_abund)) %>%
+  semi_join(hyd_phylum %>% distinct(phylum), by = "phylum")
 
 
 
-pt <- ggplot(m_genus, aes(x = module, y = genus)) +
+hydt <- ggplot(hyd_phylum, aes(x = module, y = phylum)) +
   geom_tile(aes(alpha = alpha),
-            fill = "mediumpurple4", color = NA, width = 0.9, height = 0.9) +
+            fill = "navyblue", color = NA, width = 0.9, height = 0.9) +
   scale_alpha(
     name   = "Module\ncompleteness",
     limits = c(0, 1),
@@ -364,10 +364,10 @@ pt <- ggplot(m_genus, aes(x = module, y = genus)) +
     labels = c("50%", "75%", "100%"),
     range  = c(0, 1)
   ) +
-  guides(alpha = guide_legend(override.aes = list(fill = "mediumpurple4"))) +
+  guides(alpha = guide_legend(override.aes = list(fill = "navyblue"))) +
   geom_text(
-    data = genus_labels,
-    aes(x = -Inf, y = genus, label = abun_lab),
+    data = phylum_labels,
+    aes(x = -Inf, y = phylum, label = abun_lab),
     inherit.aes = FALSE,
     hjust = 1,
     size = 3,
@@ -387,16 +387,14 @@ pt <- ggplot(m_genus, aes(x = module, y = genus)) +
     plot.margin = margin(t = 0, r = 20, b = 0, l = 60)
   )
 
-pt
+hydt
 
 
-p <- pm | pt 
+hyd <- hydm | hydt 
 
 
-ggsave(filename = "higher_level/methanogenesis_genus.png", plot = p,
-       width = 11, height = 6, dpi = 300)
-
-
+ggsave(filename = "higher_level/hydrolysis_phylum.png", plot = hyd,
+       width = 10, height = 7, dpi = 300)
 
 
 ```
@@ -838,6 +836,227 @@ acet <- acetm | acett
 
 ggsave(filename = "higher_level/acetogenesis_phylum.png", plot = acet,
        width = 16, height = 8, dpi = 300)
+
+
+
+```
+
+Methanogenesis (genus-level)
+```{r}
+
+############################################################################################################
+###                                             Meso                                                     ###
+############################################################################################################
+
+
+# Filter only by phase and sample
+m <- joined_ann_tax %>%
+  filter(phase == "Methanogenesis", sample == "meso") %>%
+  mutate(genus = na_if(genus, "")) %>%
+  filter(!is.na(genus))
+
+# Use module order from modules
+module_order_meth <- modules %>%
+  filter(phase == "Methanogenesis") %>%
+  pull(module)
+
+# collapse to genus x module
+m_genus0 <- m %>%
+  group_by(Genome, genus, module) %>%
+  summarise(p = max(Percent_steps_found, na.rm = TRUE), .groups = "drop") %>%
+  group_by(genus, module) %>%  
+  summarise(
+    Percent_steps_found = max(p, na.rm = TRUE),
+    n_genomes = n_distinct(Genome[p >= 50]), 
+    .groups = "drop"
+  )
+
+
+
+# Force-show all modules by completing the grid
+m_genus <- m_genus0 %>%
+  mutate(module = factor(module, levels = module_order_meth)) %>%
+  complete(
+    genus,
+    module,
+    fill = list(
+      Percent_steps_found = 0,  # empty = 0% completeness (will be invisible with alpha mapping below)
+      n_genomes = 0
+    )
+  ) %>%
+  ungroup()
+
+m_genus <- m_genus %>%
+  group_by(genus) %>%
+  filter(any(Percent_steps_found >= 50, na.rm = TRUE)) %>%
+  ungroup()
+
+# Join genus abundance
+m_genus <- m_genus %>%
+  left_join(genus_abun %>% filter(sample == "meso"), by = "genus")
+
+m_genus <- m_genus %>%
+  mutate(
+    alpha = case_when(
+      is.na(Percent_steps_found)        ~ 0,
+      Percent_steps_found < 50          ~ 0,  # hide <50% (set e.g. 0.05 if you want faint tiles)
+      TRUE ~ scales::rescale(Percent_steps_found, from = c(50, 100), to = c(0.15, 1))
+    )
+  )
+
+genus_labels <- genus_abun %>%
+  filter(sample == "meso") %>%
+  mutate(abun_lab = sprintf("%.1f%%", genus_r_abund)) %>%
+  semi_join(m_genus %>% distinct(genus), by = "genus")
+
+
+
+pm <- ggplot(m_genus, aes(x = module, y = genus)) +
+  geom_tile(aes(alpha = alpha),
+            fill = "mediumpurple4", color = NA, width = 0.9, height = 0.9) +
+  scale_alpha(
+    name   = "Module\ncompleteness",
+    limits = c(0, 1),
+    breaks = scales::rescale(c(50, 75, 100), from = c(50, 100), to = c(0.15, 1)),
+    labels = c("50%", "75%", "100%"),
+    range  = c(0, 1)
+  ) +
+  guides(alpha = guide_legend(override.aes = list(fill = "mediumpurple4"))) +
+  geom_text(
+    data = genus_labels,
+    aes(x = -Inf, y = genus, label = abun_lab),
+    inherit.aes = FALSE,
+    hjust = 1,
+    size = 3,
+    colour = "black"
+  ) +
+  geom_text(aes(label = n_genomes), colour = "white", size = 3) +
+  coord_cartesian(clip = "off") +
+  theme_void() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 10),
+    axis.text.y = element_text(size = 10, hjust = -0.35),
+    axis.ticks  = element_line(color = "black"),
+    axis.title  = element_blank(),
+    legend.position = "right",
+    panel.background = element_rect(fill = "white", color = NA),
+    plot.background  = element_rect(fill = "white", color = NA),
+    plot.margin = margin(t = 0, r = 20, b = 0, l = 60)
+  )
+
+pm
+
+
+
+
+
+############################################################################################################
+###                                             Thermo                                                   ###
+############################################################################################################
+
+# Filter only by phase and sample
+m <- joined_ann_tax %>%
+  filter(phase == "Methanogenesis", sample == "thermo") %>%
+  mutate(genus = na_if(genus, "")) %>%
+  filter(!is.na(genus))
+
+# Use module order from modules
+module_order_meth <- modules %>%
+  filter(phase == "Methanogenesis") %>%
+  pull(module)
+
+# collapse to genus x module
+m_genus0 <- m %>%
+  group_by(Genome, genus, module) %>%
+  summarise(p = max(Percent_steps_found, na.rm = TRUE), .groups = "drop") %>%
+  group_by(genus, module) %>%  
+  summarise(
+    Percent_steps_found = max(p, na.rm = TRUE),
+    n_genomes = n_distinct(Genome[p >= 50]), 
+    .groups = "drop"
+  )
+
+
+# Force-show all modules by completing the grid
+m_genus <- m_genus0 %>%
+  mutate(module = factor(module, levels = module_order_meth)) %>%
+  complete(
+    genus,
+    module,
+    fill = list(
+      Percent_steps_found = 0,  # empty = 0% completeness (will be invisible with alpha mapping below)
+      n_genomes = 0
+    )
+  ) %>%
+  ungroup()
+
+m_genus <- m_genus %>%
+  group_by(genus) %>%
+  filter(any(Percent_steps_found >= 50, na.rm = TRUE)) %>%
+  ungroup()
+
+# Join genus abundance
+m_genus <- m_genus %>%
+  left_join(genus_abun %>% filter(sample == "thermo"), by = "genus")
+
+m_genus <- m_genus %>%
+  mutate(
+    alpha = case_when(
+      is.na(Percent_steps_found)        ~ 0,
+      Percent_steps_found < 50          ~ 0,  # hide <50% (set e.g. 0.05 if you want faint tiles)
+      TRUE ~ scales::rescale(Percent_steps_found, from = c(50, 100), to = c(0.15, 1))
+    )
+  )
+
+genus_labels <- genus_abun %>%
+  filter(sample == "thermo") %>%
+  mutate(abun_lab = sprintf("%.1f%%", genus_r_abund)) %>%
+  semi_join(m_genus %>% distinct(genus), by = "genus")
+
+
+
+pt <- ggplot(m_genus, aes(x = module, y = genus)) +
+  geom_tile(aes(alpha = alpha),
+            fill = "mediumpurple4", color = NA, width = 0.9, height = 0.9) +
+  scale_alpha(
+    name   = "Module\ncompleteness",
+    limits = c(0, 1),
+    breaks = scales::rescale(c(50, 75, 100), from = c(50, 100), to = c(0.15, 1)),
+    labels = c("50%", "75%", "100%"),
+    range  = c(0, 1)
+  ) +
+  guides(alpha = guide_legend(override.aes = list(fill = "mediumpurple4"))) +
+  geom_text(
+    data = genus_labels,
+    aes(x = -Inf, y = genus, label = abun_lab),
+    inherit.aes = FALSE,
+    hjust = 1,
+    size = 3,
+    colour = "black"
+  ) +
+  geom_text(aes(label = n_genomes), colour = "white", size = 3) +
+  coord_cartesian(clip = "off") +
+  theme_void() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 10),
+    axis.text.y = element_text(size = 10, hjust = -0.35),
+    axis.ticks  = element_line(color = "black"),
+    axis.title  = element_blank(),
+    legend.position = "right",
+    panel.background = element_rect(fill = "white", color = NA),
+    plot.background  = element_rect(fill = "white", color = NA),
+    plot.margin = margin(t = 0, r = 20, b = 0, l = 60)
+  )
+
+pt
+
+
+p <- pm | pt 
+
+
+ggsave(filename = "higher_level/methanogenesis_genus.png", plot = p,
+       width = 11, height = 6, dpi = 300)
+
 
 
 
