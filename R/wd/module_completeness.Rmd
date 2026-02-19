@@ -247,7 +247,7 @@ genus_abun <- bind_rows(genus_abun_meso, genus_abun_thermo)
 
 
                          Higher taxonomic level analysis
-                             (mostly phylum-level)
+                             (all taxa, no filter)
 
 
 
@@ -2706,45 +2706,29 @@ ggsave(filename = "family/hydrolysis.png", plot = hyd,
 Acidogenesis (family-level)
 ```{r}
 
-
-
-acid <- acidm / acidt
-
-
-ggsave(filename = "phylum/acidogenesis.png", plot = acid,
-       width = 20, height = 15, dpi = 300)
-
-
-```
-
-Acetogenesis (family-level)
-```{r}
-
-
-###########################################################################################################
-###                                            Meso                                                     ###
-###########################################################################################################
-
+############################################################################################################
+###                                             Meso                                                     ###
+############################################################################################################
 
 # Filter only by phase and sample
-acet <- joined_ann_tax %>%
-  filter(phase == "Acetogenesis", sample == "meso") %>%
-  mutate(phylum = na_if(phylum, "")) %>%
-  filter(!is.na(phylum))
+acid <- joined_ann_tax %>%
+  filter(phase == "Acidogenesis", sample == "meso") %>%
+  mutate(family = na_if(family, "")) %>%
+  filter(!is.na(family))
 
 # Use module order from modules
-module_order_acet <- modules %>%
-  filter(phase == "Acetogenesis") %>%
+module_order_acid <- modules %>%
+  filter(phase == "Acidogenesis") %>%
   pull(module)
 
 # collapse to genus x module
-acet_phylum0 <- acet %>%
-  group_by(Genome, phylum, module) %>%              # <-- MUST include module here
+acid_family0 <- acid %>%
+  group_by(Genome, family, module) %>%              # <-- MUST include module here
   summarise(p = max(Percent_steps_found, na.rm = TRUE), .groups = "drop") %>%
-  group_by(phylum, module) %>%                      # <-- and here
+  group_by(family, module) %>%                      # <-- and here
   summarise(
   Percent_steps_found = max(p, na.rm = TRUE),
-  # Count genomes in the highest completeness group for that phylum x module tile
+  # Count genomes in the highest completeness group for that family x module tile
   n_genomes = case_when(
     max(p, na.rm = TRUE) >= 100 ~ n_distinct(Genome[p >= 100]),
     max(p, na.rm = TRUE) >=  75 ~ n_distinct(Genome[p >=  75 & p < 100]),
@@ -2754,13 +2738,11 @@ acet_phylum0 <- acet %>%
   .groups = "drop"
 )
 
-
-
 # Force-show all modules by completing the grid
-acet_phylum <- acet_phylum0 %>%
-  mutate(module = factor(module, levels = module_order_acet)) %>%
+acid_family <- acid_family0 %>%
+  mutate(module = factor(module, levels = module_order_acid)) %>%
   complete(
-    phylum,
+    family,
     module,
     fill = list(
       Percent_steps_found = 0,  # empty = 0% completeness (will be invisible with alpha mapping below)
@@ -2769,16 +2751,239 @@ acet_phylum <- acet_phylum0 %>%
   ) %>%
   ungroup()
 
-acet_phylum <- acet_phylum %>%
-  group_by(phylum) %>%
+acid_family <- acid_family %>%
+  group_by(family) %>%
   filter(any(Percent_steps_found >= 50, na.rm = TRUE)) %>%
   ungroup()
 
 # Join genus abundance
-acet_phylum <- acet_phylum %>%
-  left_join(phylum_abun %>% filter(sample == "meso"), by = "phylum")
+acid_family <- acid_family %>%
+  left_join(family_abun %>% filter(sample == "meso"), by = "family")
 
-acet_phylum <- acet_phylum %>%
+acid_family <- acid_family %>%
+  mutate(
+    alpha = case_when(
+      is.na(Percent_steps_found)        ~ 0,
+      Percent_steps_found < 50          ~ 0,  # hide <50% (set e.g. 0.05 if you want faint tiles)
+      TRUE ~ scales::rescale(Percent_steps_found, from = c(50, 100), to = c(0.15, 1))
+    )
+  )
+
+family_labels <- family_abun %>%
+  filter(sample == "meso") %>%
+  mutate(abun_lab = sprintf("%.1f%%", family_r_abund)) %>%
+  semi_join(acid_family %>% distinct(family), by = "family")
+
+acidm <- ggplot(acid_family, aes(x = module, y = family)) +
+  geom_tile(aes(alpha = alpha),
+            fill = "palegreen4", color = NA, width = 0.9, height = 0.9) +
+  scale_alpha(
+    name   = "Module\ncompleteness",
+    limits = c(0, 1),
+    breaks = scales::rescale(c(50, 75, 100), from = c(50, 100), to = c(0.15, 1)),
+    labels = c("50%", "75%", "100%"),
+    range  = c(0, 1)
+  ) +
+  guides(alpha = guide_legend(override.aes = list(fill = "palegreen4"))) +
+  geom_text(
+    data = family_labels,
+    aes(x = -Inf, y = family, label = abun_lab),
+    inherit.aes = FALSE,
+    hjust = 1,
+    size = 3,
+    colour = "black"
+  ) +
+  geom_text(aes(label = n_genomes), colour = "white", size = 3) +
+  coord_cartesian(clip = "off") +
+  theme_void() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 10),
+    axis.text.y = element_text(size = 10, hjust = -0.35),
+    axis.ticks  = element_line(color = "black"),
+    axis.title  = element_blank(),
+    legend.position = "right",
+    panel.background = element_rect(fill = "white", color = NA),
+    plot.background  = element_rect(fill = "white", color = NA),
+    plot.margin = margin(t = 0, r = 20, b = 0, l = 60)
+  )
+
+acidm
+
+
+
+
+
+############################################################################################################
+###                                             Thermo                                                   ###
+############################################################################################################
+
+# Filter only by phase and sample
+acid <- joined_ann_tax %>%
+  filter(phase == "Acidogenesis", sample == "thermo") %>%
+  mutate(family = na_if(family, "")) %>%
+  filter(!is.na(family))
+
+# Use module order from modules
+module_order_acid <- modules %>%
+  filter(phase == "Acidogenesis") %>%
+  pull(module)
+
+# collapse to genus x module
+acid_family0 <- acid %>%
+  group_by(Genome, family, module) %>%              # <-- MUST include module here
+  summarise(p = max(Percent_steps_found, na.rm = TRUE), .groups = "drop") %>%
+  group_by(family, module) %>%                      # <-- and here
+  summarise(
+  Percent_steps_found = max(p, na.rm = TRUE),
+  # Count genomes in the highest completeness group for that family x module tile
+  n_genomes = case_when(
+    max(p, na.rm = TRUE) >= 100 ~ n_distinct(Genome[p >= 100]),
+    max(p, na.rm = TRUE) >=  75 ~ n_distinct(Genome[p >=  75 & p < 100]),
+    max(p, na.rm = TRUE) >=  50 ~ n_distinct(Genome[p >=  50 & p <  75]),
+    TRUE                        ~ 0
+  ),
+  .groups = "drop"
+)
+
+# Force-show all modules by completing the grid
+acid_family <- acid_family0 %>%
+  mutate(module = factor(module, levels = module_order_acid)) %>%
+  complete(
+    family,
+    module,
+    fill = list(
+      Percent_steps_found = 0,  # empty = 0% completeness (will be invisible with alpha mapping below)
+      n_genomes = 0
+    )
+  ) %>%
+  ungroup()
+
+acid_family <- acid_family %>%
+  group_by(family) %>%
+  filter(any(Percent_steps_found >= 50, na.rm = TRUE)) %>%
+  ungroup()
+
+# Join genus abundance
+acid_family <- acid_family %>%
+  left_join(family_abun %>% filter(sample == "thermo"), by = "family")
+
+acid_family <- acid_family %>%
+  mutate(
+    alpha = case_when(
+      is.na(Percent_steps_found)        ~ 0,
+      Percent_steps_found < 50          ~ 0,  # hide <50% (set e.g. 0.05 if you want faint tiles)
+      TRUE ~ scales::rescale(Percent_steps_found, from = c(50, 100), to = c(0.15, 1))
+    )
+  )
+
+family_labels <- family_abun %>%
+  filter(sample == "thermo") %>%
+  mutate(abun_lab = sprintf("%.1f%%", family_r_abund)) %>%
+  semi_join(acid_family %>% distinct(family), by = "family")
+
+acidt <- ggplot(acid_family, aes(x = module, y = family)) +
+  geom_tile(aes(alpha = alpha),
+            fill = "palegreen4", color = NA, width = 0.9, height = 0.9) +
+  scale_alpha(
+    name   = "Module\ncompleteness",
+    limits = c(0, 1),
+    breaks = scales::rescale(c(50, 75, 100), from = c(50, 100), to = c(0.15, 1)),
+    labels = c("50%", "75%", "100%"),
+    range  = c(0, 1)
+  ) +
+  guides(alpha = guide_legend(override.aes = list(fill = "palegreen4"))) +
+  geom_text(
+    data = family_labels,
+    aes(x = -Inf, y = family, label = abun_lab),
+    inherit.aes = FALSE,
+    hjust = 1,
+    size = 3,
+    colour = "black"
+  ) +
+  geom_text(aes(label = n_genomes), colour = "white", size = 3) +
+  coord_cartesian(clip = "off") +
+  theme_void() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 10),
+    axis.text.y = element_text(size = 10, hjust = -0.35),
+    axis.ticks  = element_line(color = "black"),
+    axis.title  = element_blank(),
+    legend.position = "right",
+    panel.background = element_rect(fill = "white", color = NA),
+    plot.background  = element_rect(fill = "white", color = NA),
+    plot.margin = margin(t = 0, r = 20, b = 0, l = 60)
+  )
+
+acidt
+
+
+acid <- acidm / acidt
+
+
+ggsave(filename = "family/acidogenesis.png", plot = acid,
+       width = 20, height = 15, dpi = 300)
+
+
+```
+
+Acetogenesis (family-level)
+```{r}
+
+###########################################################################################################
+###                                            Meso                                                     ###
+###########################################################################################################
+
+# Filter only by phase and sample
+acet <- joined_ann_tax %>%
+  filter(phase == "Acetogenesis", sample == "meso") %>%
+  mutate(family = na_if(family, "")) %>%
+  filter(!is.na(family))
+
+# Use module order from modules
+module_order_acet <- modules %>%
+  filter(phase == "Acetogenesis") %>%
+  pull(module)
+
+# collapse to genus x module
+acet_family0 <- acet %>%
+  group_by(Genome, family, module) %>%              # <-- MUST include module here
+  summarise(p = max(Percent_steps_found, na.rm = TRUE), .groups = "drop") %>%
+  group_by(family, module) %>%                      # <-- and here
+  summarise(
+  Percent_steps_found = max(p, na.rm = TRUE),
+  # Count genomes in the highest completeness group for that family x module tile
+  n_genomes = case_when(
+    max(p, na.rm = TRUE) >= 100 ~ n_distinct(Genome[p >= 100]),
+    max(p, na.rm = TRUE) >=  75 ~ n_distinct(Genome[p >=  75 & p < 100]),
+    max(p, na.rm = TRUE) >=  50 ~ n_distinct(Genome[p >=  50 & p <  75]),
+    TRUE                        ~ 0
+  ),
+  .groups = "drop"
+)
+
+# Force-show all modules by completing the grid
+acet_family <- acet_family0 %>%
+  mutate(module = factor(module, levels = module_order_acet)) %>%
+  complete(
+    family,
+    module,
+    fill = list(
+      Percent_steps_found = 0,  # empty = 0% completeness (will be invisible with alpha mapping below)
+      n_genomes = 0
+    )
+  ) %>%
+  ungroup()
+
+acet_family <- acet_family %>%
+  group_by(family) %>%
+  filter(any(Percent_steps_found >= 50, na.rm = TRUE)) %>%
+  ungroup()
+
+# Join genus abundance
+acet_family <- acet_family %>%
+  left_join(family_abun %>% filter(sample == "meso"), by = "family")
+
+acet_family <- acet_family %>%
   mutate(
     alpha = case_when(
       is.na(Percent_steps_found)        ~ 0,
@@ -2787,14 +2992,12 @@ acet_phylum <- acet_phylum %>%
     )
   )
 
-phylum_labels <- phylum_abun %>%
+family_labels <- family_abun %>%
   filter(sample == "meso") %>%
-  mutate(abun_lab = sprintf("%.1f%%", phylum_r_abund)) %>%
-  semi_join(acet_phylum %>% distinct(phylum), by = "phylum")
+  mutate(abun_lab = sprintf("%.1f%%", family_r_abund)) %>%
+  semi_join(acet_family %>% distinct(family), by = "family")
 
-
-
-acetm <- ggplot(acet_phylum, aes(x = module, y = phylum)) +
+acetm <- ggplot(acet_family, aes(x = module, y = family)) +
   geom_tile(aes(alpha = alpha),
             fill = "palevioletred4", color = NA, width = 0.9, height = 0.9) +
   scale_alpha(
@@ -2806,8 +3009,8 @@ acetm <- ggplot(acet_phylum, aes(x = module, y = phylum)) +
   ) +
   guides(alpha = guide_legend(override.aes = list(fill = "palevioletred4"))) +
   geom_text(
-    data = phylum_labels,
-    aes(x = -Inf, y = phylum, label = abun_lab),
+    data = family_labels,
+    aes(x = -Inf, y = family, label = abun_lab),
     inherit.aes = FALSE,
     hjust = 1,
     size = 3,
@@ -2840,8 +3043,8 @@ acetm
 # Filter only by phase and sample
 acet <- joined_ann_tax %>%
   filter(phase == "Acetogenesis", sample == "thermo") %>%
-  mutate(phylum = na_if(phylum, "")) %>%
-  filter(!is.na(phylum))
+  mutate(family = na_if(family, "")) %>%
+  filter(!is.na(family))
 
 # Use module order from modules
 module_order_acet <- modules %>%
@@ -2849,13 +3052,13 @@ module_order_acet <- modules %>%
   pull(module)
 
 # collapse to genus x module
-acet_phylum0 <- acet %>%
-  group_by(Genome, phylum, module) %>%              # <-- MUST include module here
+acet_family0 <- acet %>%
+  group_by(Genome, family, module) %>%              # <-- MUST include module here
   summarise(p = max(Percent_steps_found, na.rm = TRUE), .groups = "drop") %>%
-  group_by(phylum, module) %>%                      # <-- and here
+  group_by(family, module) %>%                      # <-- and here
   summarise(
   Percent_steps_found = max(p, na.rm = TRUE),
-  # Count genomes in the highest completeness group for that phylum x module tile
+  # Count genomes in the highest completeness group for that family x module tile
   n_genomes = case_when(
     max(p, na.rm = TRUE) >= 100 ~ n_distinct(Genome[p >= 100]),
     max(p, na.rm = TRUE) >=  75 ~ n_distinct(Genome[p >=  75 & p < 100]),
@@ -2865,13 +3068,11 @@ acet_phylum0 <- acet %>%
   .groups = "drop"
 )
 
-
-
 # Force-show all modules by completing the grid
-acet_phylum <- acet_phylum0 %>%
+acet_family <- acet_family0 %>%
   mutate(module = factor(module, levels = module_order_acet)) %>%
   complete(
-    phylum,
+    family,
     module,
     fill = list(
       Percent_steps_found = 0,  # empty = 0% completeness (will be invisible with alpha mapping below)
@@ -2880,16 +3081,16 @@ acet_phylum <- acet_phylum0 %>%
   ) %>%
   ungroup()
 
-acet_phylum <- acet_phylum %>%
-  group_by(phylum) %>%
+acet_family <- acet_family %>%
+  group_by(family) %>%
   filter(any(Percent_steps_found >= 50, na.rm = TRUE)) %>%
   ungroup()
 
 # Join genus abundance
-acet_phylum <- acet_phylum %>%
-  left_join(phylum_abun %>% filter(sample == "thermo"), by = "phylum")
+acet_family <- acet_family %>%
+  left_join(family_abun %>% filter(sample == "thermo"), by = "family")
 
-acet_phylum <- acet_phylum %>%
+acet_family <- acet_family %>%
   mutate(
     alpha = case_when(
       is.na(Percent_steps_found)        ~ 0,
@@ -2898,14 +3099,12 @@ acet_phylum <- acet_phylum %>%
     )
   )
 
-phylum_labels <- phylum_abun %>%
+family_labels <- family_abun %>%
   filter(sample == "thermo") %>%
-  mutate(abun_lab = sprintf("%.1f%%", phylum_r_abund)) %>%
-  semi_join(acet_phylum %>% distinct(phylum), by = "phylum")
+  mutate(abun_lab = sprintf("%.1f%%", family_r_abund)) %>%
+  semi_join(acet_family %>% distinct(family), by = "family")
 
-
-
-acett <- ggplot(acet_phylum, aes(x = module, y = phylum)) +
+acett <- ggplot(acet_family, aes(x = module, y = family)) +
   geom_tile(aes(alpha = alpha),
             fill = "palevioletred4", color = NA, width = 0.9, height = 0.9) +
   scale_alpha(
@@ -2917,8 +3116,8 @@ acett <- ggplot(acet_phylum, aes(x = module, y = phylum)) +
   ) +
   guides(alpha = guide_legend(override.aes = list(fill = "palevioletred4"))) +
   geom_text(
-    data = phylum_labels,
-    aes(x = -Inf, y = phylum, label = abun_lab),
+    data = family_labels,
+    aes(x = -Inf, y = family, label = abun_lab),
     inherit.aes = FALSE,
     hjust = 1,
     size = 3,
@@ -2944,13 +3143,34 @@ acett
 acet <- acetm | acett 
 
 
-ggsave(filename = "phylum/acetogenesis.png", plot = acet,
+ggsave(filename = "family/acetogenesis.png", plot = acet,
        width = 16, height = 8, dpi = 300)
 
 
 
 ```
 
+
+
+#####################################################################################
+
+
+
+
+
+
+
+                         Lower taxonomic level analysis
+                         (top X contributing taxa only)
+
+
+
+
+
+
+
+
+#####################################################################################
 
 
 
