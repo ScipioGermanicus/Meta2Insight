@@ -23,7 +23,7 @@ library(ggh4x)
 library(tibble)
 library(tidytext)
 library(patchwork)
-
+library(RColorBrewer)
 
 
 # Annotation files
@@ -231,7 +231,41 @@ genus_abun_thermo <- thermo_tax %>%
 genus_abun <- bind_rows(genus_abun_meso, genus_abun_thermo)
 
 
+### Species-level
+meso_ann_tax_unique <- meso_ann_tax %>%
+  select(Genome, new) %>%
+  distinct()
 
+thermo_ann_tax_unique <- thermo_ann_tax %>%
+  select(Genome, new) %>%
+  distinct()
+
+
+meso_tax <- meso_tax %>%
+  left_join(meso_ann_tax_unique, by = "Genome")
+
+thermo_tax <- thermo_tax %>%
+  left_join(thermo_ann_tax_unique, by = "Genome")
+
+
+new_abun_meso <- meso_tax %>%
+  group_by(new) %>%
+  summarise(
+    new_r_abund = sum(rel_abun, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  mutate(sample = "meso")
+
+
+new_abun_thermo <- thermo_tax %>%
+  group_by(new) %>%
+  summarise(
+    new_r_abund = sum(rel_abun, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  mutate(sample = "thermo")
+
+new_abun <- bind_rows(new_abun_meso, new_abun_thermo)
 
 
 ```
@@ -3172,21 +3206,1191 @@ ggsave(filename = "family/acetogenesis.png", plot = acet,
 
 #####################################################################################
 
-
-
+Hydrolysis
 ```{r}
+
+
+###########################################################################################################
+###                 Top-15 per sample (meso + thermo) + shared colours for shared species               ###
+###########################################################################################################
+
+# Determine which new are eligible per sample (>=1 Acidogenesis module at 100% in that sample)
+hyd <- joined_ann_tax %>%
+  filter(phase == "Hydrolysis") %>%
+  mutate(new = na_if(new, "")) %>%
+  filter(!is.na(new)) %>%
+  group_by(sample, Genome, new, module) %>%
+  summarise(p = max(Percent_steps_found, na.rm = TRUE), .groups = "drop")
+
+eligible_new_by_sample <- hyd %>%
+  group_by(sample, new) %>%
+  summarise(has100 = any(p >= 100, na.rm = TRUE), .groups = "drop") %>%
+  filter(has100)
+
+# Top 15 within EACH sample (based on that sample's abundance table)
+top_new_meso <- new_abun %>%
+  filter(sample == "meso") %>%
+  semi_join(eligible_new_by_sample %>% filter(sample == "meso"), by = c("sample", "new")) %>%
+  arrange(desc(new_r_abund)) %>%
+  slice_head(n = 15) %>%
+  pull(new)
+
+top_new_thermo <- new_abun %>%
+  filter(sample == "thermo") %>%
+  semi_join(eligible_new_by_sample %>% filter(sample == "thermo"), by = c("sample", "new")) %>%
+  arrange(desc(new_r_abund)) %>%
+  slice_head(n = 15) %>%
+  pull(new)
+
+# Shared species among the two top-15 lists
+shared_new <- intersect(top_new_meso, top_new_thermo)
+
+# Shared colours only (everything else will be grey)
+pal_shared <- if (length(shared_new) == 0) character(0) else
+  colorRampPalette(brewer.pal(12, "Paired"))(length(shared_new))
+
+new_cols <- c(
+  setNames(pal_shared, shared_new),
+  Unique = "grey75"
+)
+
+
+###########################################################################################################
+###                                             Meso                                                    ###
+###########################################################################################################
+
+# Filter only by phase and sample
+m <- joined_ann_tax %>%
+  filter(phase == "Hydrolysis", sample == "meso") %>%
+  mutate(new = na_if(new, "")) %>%
+  filter(!is.na(new)) %>%
+  filter(new %in% top_new_meso)
+
+# Use module order from modules
+module_order_hyd <- modules %>%
+  filter(phase == "Hydrolysis") %>%
+  pull(module)
+
+# collapse to new x module
+m_new0 <- m %>%
+  group_by(Genome, new, module) %>%
+  summarise(p = max(Percent_steps_found, na.rm = TRUE), .groups = "drop") %>%
+  group_by(new, module) %>%
+  summarise(
+    Percent_steps_found = max(p, na.rm = TRUE),
+    # Count genomes in the highest completeness group for that phylum x module tile
+    n_genomes = case_when(
+      max(p, na.rm = TRUE) >= 100 ~ n_distinct(Genome[p >= 100]),
+      max(p, na.rm = TRUE) >=  75 ~ n_distinct(Genome[p >=  75 & p < 100]),
+      max(p, na.rm = TRUE) >=  50 ~ n_distinct(Genome[p >=  50 & p <  75]),
+      TRUE                        ~ 0
+    ),
+    .groups = "drop"
+  )
+
+# Force-show all modules by completing the grid
+m_new <- m_new0 %>%
+  mutate(module = factor(module, levels = module_order_hyd)) %>%
+  complete(
+    new,
+    module,
+    fill = list(
+      Percent_steps_found = 0,
+      n_genomes = 0
+    )
+  ) %>%
+  ungroup()
+
+m_new <- m_new %>%
+  group_by(new) %>%
+  filter(any(Percent_steps_found >= 50, na.rm = TRUE)) %>%
+  ungroup()
+
+# Join new abundance
+m_new <- m_new %>%
+  left_join(new_abun %>% filter(sample == "meso"), by = "new")
+
+m_new <- m_new %>%
+  mutate(
+    alpha = case_when(
+      is.na(Percent_steps_found) ~ 0,
+      Percent_steps_found < 50   ~ 0,  # hide <50% (set e.g. 0.05 if you want faint tiles)
+      TRUE ~ scales::rescale(Percent_steps_found, from = c(50, 100), to = c(0.15, 1))
+    ),
+    fill_key = ifelse(new %in% shared_new, as.character(new), "Unique")
+  )
+
+new_labels <- new_abun %>%
+  filter(sample == "meso") %>%
+  mutate(abun_lab = sprintf("%.1f%%", new_r_abund)) %>%
+  semi_join(m_new %>% distinct(new), by = "new")
+
+# Enforce meso y order (top->bottom)
+m_new <- m_new %>%
+  mutate(new = factor(new, levels = top_new_meso))
+
+new_labels <- new_labels %>%
+  mutate(new = factor(new, levels = top_new_meso))
+
+pm <- ggplot(m_new, aes(x = module, y = new)) +
+  geom_tile(aes(fill = fill_key, alpha = alpha),
+            color = NA, width = 0.9, height = 0.9) +
+  scale_fill_manual(values = new_cols, guide = "none") +
+  scale_alpha(
+    name   = "Module\ncompleteness",
+    limits = c(0, 1),
+    breaks = scales::rescale(c(50, 75, 100), from = c(50, 100), to = c(0.15, 1)),
+    labels = c("50%", "75%", "100%"),
+    range  = c(0, 1)
+  ) +
+  guides(alpha = guide_legend(override.aes = list(fill = "grey50"))) +
+  geom_text(
+    data = new_labels,
+    aes(x = -Inf, y = new, label = abun_lab),
+    inherit.aes = FALSE,
+    hjust = 1,
+    size = 3,
+    colour = "black"
+  ) +
+  geom_text(aes(label = n_genomes), colour = "white", size = 3) +
+  coord_cartesian(clip = "off") +
+  theme_void() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 10),
+    axis.text.y = element_text(size = 10, hjust = -0.35),
+    axis.ticks  = element_line(color = "black"),
+    axis.title  = element_blank(),
+    legend.position = "right",
+    panel.background = element_rect(fill = "white", color = NA),
+    plot.background  = element_rect(fill = "white", color = NA),
+    plot.margin = margin(t = 0, r = 20, b = 0, l = 60)
+  )
+
+
+###########################################################################################################
+###                                             Thermo                                                  ###
+###########################################################################################################
+
+# Filter only by phase and sample
+m <- joined_ann_tax %>%
+  filter(phase == "Hydrolysis", sample == "thermo") %>%
+  mutate(new = na_if(new, "")) %>%
+  filter(!is.na(new)) %>%
+  filter(new %in% top_new_thermo)
+
+# Use module order from modules
+module_order_hyd <- modules %>%
+  filter(phase == "Hydrolysis") %>%
+  pull(module)
+
+# collapse to new x module
+m_new0 <- m %>%
+  group_by(Genome, new, module) %>%
+  summarise(p = max(Percent_steps_found, na.rm = TRUE), .groups = "drop") %>%
+  group_by(new, module) %>%
+  summarise(
+    Percent_steps_found = max(p, na.rm = TRUE),
+    # Count genomes in the highest completeness group for that phylum x module tile
+    n_genomes = case_when(
+      max(p, na.rm = TRUE) >= 100 ~ n_distinct(Genome[p >= 100]),
+      max(p, na.rm = TRUE) >=  75 ~ n_distinct(Genome[p >=  75 & p < 100]),
+      max(p, na.rm = TRUE) >=  50 ~ n_distinct(Genome[p >=  50 & p <  75]),
+      TRUE                        ~ 0
+    ),
+    .groups = "drop"
+  )
+
+# Force-show all modules by completing the grid
+m_new <- m_new0 %>%
+  mutate(module = factor(module, levels = module_order_hyd)) %>%
+  complete(
+    new,
+    module,
+    fill = list(
+      Percent_steps_found = 0,  # empty = 0% completeness (will be invisible with alpha mapping below)
+      n_genomes = 0
+    )
+  ) %>%
+  ungroup()
+
+m_new <- m_new %>%
+  group_by(new) %>%
+  filter(any(Percent_steps_found >= 50, na.rm = TRUE)) %>%
+  ungroup()
+
+# Join genus abundance
+m_new <- m_new %>%
+  left_join(new_abun %>% filter(sample == "thermo"), by = "new")
+
+m_new <- m_new %>%
+  mutate(
+    alpha = case_when(
+      is.na(Percent_steps_found) ~ 0,
+      Percent_steps_found < 50   ~ 0,  # hide <50% (set e.g. 0.05 if you want faint tiles)
+      TRUE ~ scales::rescale(Percent_steps_found, from = c(50, 100), to = c(0.15, 1))
+    ),
+    fill_key = ifelse(new %in% shared_new, as.character(new), "Unique")
+  )
+
+new_labels <- new_abun %>%
+  filter(sample == "thermo") %>%
+  mutate(abun_lab = sprintf("%.1f%%", new_r_abund)) %>%
+  semi_join(m_new %>% distinct(new), by = "new")
+
+# Enforce thermo y order (top->bottom)
+m_new <- m_new %>%
+  mutate(new = factor(new, levels = top_new_thermo))
+
+new_labels <- new_labels %>%
+  mutate(new = factor(new, levels = top_new_thermo))
+
+pt <- ggplot(m_new, aes(x = module, y = new)) +
+  geom_tile(aes(fill = fill_key, alpha = alpha),
+            color = NA, width = 0.9, height = 0.9) +
+  scale_fill_manual(values = new_cols, guide = "none") +
+  scale_alpha(
+    name   = "Module\ncompleteness",
+    limits = c(0, 1),
+    breaks = scales::rescale(c(50, 75, 100), from = c(50, 100), to = c(0.15, 1)),
+    labels = c("50%", "75%", "100%"),
+    range  = c(0, 1)
+  ) +
+  guides(alpha = guide_legend(override.aes = list(fill = "grey50"))) +
+  geom_text(
+    data = new_labels,
+    aes(x = -Inf, y = new, label = abun_lab),
+    inherit.aes = FALSE,
+    hjust = 1,
+    size = 3,
+    colour = "black"
+  ) +
+  geom_text(aes(label = n_genomes), colour = "white", size = 3) +
+  coord_cartesian(clip = "off") +
+  theme_void() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 10),
+    axis.text.y = element_text(size = 10, hjust = -0.35),
+    axis.ticks  = element_line(color = "black"),
+    axis.title  = element_blank(),
+    legend.position = "right",
+    panel.background = element_rect(fill = "white", color = NA),
+    plot.background  = element_rect(fill = "white", color = NA),
+    plot.margin = margin(t = 0, r = 20, b = 0, l = 60)
+  )
+
+
+p <- pm | pt
+
+
+ggsave(filename = "species/species_hydrolysis.png", plot = p,
+       width = 14, height = 9, dpi = 300, limitsize = FALSE)
+
+
+
 
 ```
 
+
+Acidogenesis
 ```{r}
+
+
+###########################################################################################################
+###                 Top-15 per sample (meso + thermo) + shared colours for shared species                 ###
+###########################################################################################################
+
+# Determine which new are eligible per sample (>=1 Acidogenesis module at 100% in that sample)
+acid <- joined_ann_tax %>%
+  filter(phase == "Acidogenesis") %>%
+  mutate(new = na_if(new, "")) %>%
+  filter(!is.na(new)) %>%
+  group_by(sample, Genome, new, module) %>%
+  summarise(p = max(Percent_steps_found, na.rm = TRUE), .groups = "drop")
+
+eligible_new_by_sample <- acid %>%
+  group_by(sample, new) %>%
+  summarise(has100 = any(p >= 100, na.rm = TRUE), .groups = "drop") %>%
+  filter(has100)
+
+# Top 15 within EACH sample (based on that sample's abundance table)
+top_new_meso <- new_abun %>%
+  filter(sample == "meso") %>%
+  semi_join(eligible_new_by_sample %>% filter(sample == "meso"), by = c("sample", "new")) %>%
+  arrange(desc(new_r_abund)) %>%
+  slice_head(n = 15) %>%
+  pull(new)
+
+top_new_thermo <- new_abun %>%
+  filter(sample == "thermo") %>%
+  semi_join(eligible_new_by_sample %>% filter(sample == "thermo"), by = c("sample", "new")) %>%
+  arrange(desc(new_r_abund)) %>%
+  slice_head(n = 15) %>%
+  pull(new)
+
+# Shared species among the two top-15 lists
+shared_new <- intersect(top_new_meso, top_new_thermo)
+
+# Shared colours only (everything else will be grey)
+pal_shared <- if (length(shared_new) == 0) character(0) else
+  colorRampPalette(brewer.pal(12, "Paired"))(length(shared_new))
+
+new_cols <- c(
+  setNames(pal_shared, shared_new),
+  Unique = "grey75"
+)
+
+
+###########################################################################################################
+###                                             Meso                                                    ###
+###########################################################################################################
+
+# Filter only by phase and sample
+m <- joined_ann_tax %>%
+  filter(phase == "Acidogenesis", sample == "meso") %>%
+  mutate(new = na_if(new, "")) %>%
+  filter(!is.na(new)) %>%
+  filter(new %in% top_new_meso)
+
+# Use module order from modules
+module_order_acid <- modules %>%
+  filter(phase == "Acidogenesis") %>%
+  pull(module)
+
+# collapse to new x module
+m_new0 <- m %>%
+  group_by(Genome, new, module) %>%
+  summarise(p = max(Percent_steps_found, na.rm = TRUE), .groups = "drop") %>%
+  group_by(new, module) %>%
+  summarise(
+    Percent_steps_found = max(p, na.rm = TRUE),
+    # Count genomes in the highest completeness group for that phylum x module tile
+    n_genomes = case_when(
+      max(p, na.rm = TRUE) >= 100 ~ n_distinct(Genome[p >= 100]),
+      max(p, na.rm = TRUE) >=  75 ~ n_distinct(Genome[p >=  75 & p < 100]),
+      max(p, na.rm = TRUE) >=  50 ~ n_distinct(Genome[p >=  50 & p <  75]),
+      TRUE                        ~ 0
+    ),
+    .groups = "drop"
+  )
+
+# Force-show all modules by completing the grid
+m_new <- m_new0 %>%
+  mutate(module = factor(module, levels = module_order_acid)) %>%
+  complete(
+    new,
+    module,
+    fill = list(
+      Percent_steps_found = 0,
+      n_genomes = 0
+    )
+  ) %>%
+  ungroup()
+
+m_new <- m_new %>%
+  group_by(new) %>%
+  filter(any(Percent_steps_found >= 50, na.rm = TRUE)) %>%
+  ungroup()
+
+# Join new abundance
+m_new <- m_new %>%
+  left_join(new_abun %>% filter(sample == "meso"), by = "new")
+
+m_new <- m_new %>%
+  mutate(
+    alpha = case_when(
+      is.na(Percent_steps_found) ~ 0,
+      Percent_steps_found < 50   ~ 0,  # hide <50% (set e.g. 0.05 if you want faint tiles)
+      TRUE ~ scales::rescale(Percent_steps_found, from = c(50, 100), to = c(0.15, 1))
+    ),
+    fill_key = ifelse(new %in% shared_new, as.character(new), "Unique")
+  )
+
+new_labels <- new_abun %>%
+  filter(sample == "meso") %>%
+  mutate(abun_lab = sprintf("%.1f%%", new_r_abund)) %>%
+  semi_join(m_new %>% distinct(new), by = "new")
+
+# Enforce meso y order (top->bottom)
+m_new <- m_new %>%
+  mutate(new = factor(new, levels = top_new_meso))
+
+new_labels <- new_labels %>%
+  mutate(new = factor(new, levels = top_new_meso))
+
+pm <- ggplot(m_new, aes(x = module, y = new)) +
+  geom_tile(aes(fill = fill_key, alpha = alpha),
+            color = NA, width = 0.9, height = 0.9) +
+  scale_fill_manual(values = new_cols, guide = "none") +
+  scale_alpha(
+    name   = "Module\ncompleteness",
+    limits = c(0, 1),
+    breaks = scales::rescale(c(50, 75, 100), from = c(50, 100), to = c(0.15, 1)),
+    labels = c("50%", "75%", "100%"),
+    range  = c(0, 1)
+  ) +
+  guides(alpha = guide_legend(override.aes = list(fill = "grey50"))) +
+  geom_text(
+    data = new_labels,
+    aes(x = -Inf, y = new, label = abun_lab),
+    inherit.aes = FALSE,
+    hjust = 1,
+    size = 3,
+    colour = "black"
+  ) +
+  geom_text(aes(label = n_genomes), colour = "white", size = 3) +
+  coord_cartesian(clip = "off") +
+  theme_void() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 10),
+    axis.text.y = element_text(size = 10, hjust = -0.35),
+    axis.ticks  = element_line(color = "black"),
+    axis.title  = element_blank(),
+    legend.position = "right",
+    panel.background = element_rect(fill = "white", color = NA),
+    plot.background  = element_rect(fill = "white", color = NA),
+    plot.margin = margin(t = 0, r = 20, b = 0, l = 60)
+  )
+
+
+###########################################################################################################
+###                                             Thermo                                                  ###
+###########################################################################################################
+
+# Filter only by phase and sample
+m <- joined_ann_tax %>%
+  filter(phase == "Acidogenesis", sample == "thermo") %>%
+  mutate(new = na_if(new, "")) %>%
+  filter(!is.na(new)) %>%
+  filter(new %in% top_new_thermo)
+
+# Use module order from modules
+module_orderacid <- modules %>%
+  filter(phase == "Acidogenesis") %>%
+  pull(module)
+
+# collapse to new x module
+m_new0 <- m %>%
+  group_by(Genome, new, module) %>%
+  summarise(p = max(Percent_steps_found, na.rm = TRUE), .groups = "drop") %>%
+  group_by(new, module) %>%
+  summarise(
+    Percent_steps_found = max(p, na.rm = TRUE),
+    # Count genomes in the highest completeness group for that phylum x module tile
+    n_genomes = case_when(
+      max(p, na.rm = TRUE) >= 100 ~ n_distinct(Genome[p >= 100]),
+      max(p, na.rm = TRUE) >=  75 ~ n_distinct(Genome[p >=  75 & p < 100]),
+      max(p, na.rm = TRUE) >=  50 ~ n_distinct(Genome[p >=  50 & p <  75]),
+      TRUE                        ~ 0
+    ),
+    .groups = "drop"
+  )
+
+# Force-show all modules by completing the grid
+m_new <- m_new0 %>%
+  mutate(module = factor(module, levels = module_order_acid)) %>%
+  complete(
+    new,
+    module,
+    fill = list(
+      Percent_steps_found = 0,  # empty = 0% completeness (will be invisible with alpha mapping below)
+      n_genomes = 0
+    )
+  ) %>%
+  ungroup()
+
+m_new <- m_new %>%
+  group_by(new) %>%
+  filter(any(Percent_steps_found >= 50, na.rm = TRUE)) %>%
+  ungroup()
+
+# Join genus abundance
+m_new <- m_new %>%
+  left_join(new_abun %>% filter(sample == "thermo"), by = "new")
+
+m_new <- m_new %>%
+  mutate(
+    alpha = case_when(
+      is.na(Percent_steps_found) ~ 0,
+      Percent_steps_found < 50   ~ 0,  # hide <50% (set e.g. 0.05 if you want faint tiles)
+      TRUE ~ scales::rescale(Percent_steps_found, from = c(50, 100), to = c(0.15, 1))
+    ),
+    fill_key = ifelse(new %in% shared_new, as.character(new), "Unique")
+  )
+
+new_labels <- new_abun %>%
+  filter(sample == "thermo") %>%
+  mutate(abun_lab = sprintf("%.1f%%", new_r_abund)) %>%
+  semi_join(m_new %>% distinct(new), by = "new")
+
+# Enforce thermo y order (top->bottom)
+m_new <- m_new %>%
+  mutate(new = factor(new, levels = top_new_thermo))
+
+new_labels <- new_labels %>%
+  mutate(new = factor(new, levels = top_new_thermo))
+
+pt <- ggplot(m_new, aes(x = module, y = new)) +
+  geom_tile(aes(fill = fill_key, alpha = alpha),
+            color = NA, width = 0.9, height = 0.9) +
+  scale_fill_manual(values = new_cols, guide = "none") +
+  scale_alpha(
+    name   = "Module\ncompleteness",
+    limits = c(0, 1),
+    breaks = scales::rescale(c(50, 75, 100), from = c(50, 100), to = c(0.15, 1)),
+    labels = c("50%", "75%", "100%"),
+    range  = c(0, 1)
+  ) +
+  guides(alpha = guide_legend(override.aes = list(fill = "grey50"))) +
+  geom_text(
+    data = new_labels,
+    aes(x = -Inf, y = new, label = abun_lab),
+    inherit.aes = FALSE,
+    hjust = 1,
+    size = 3,
+    colour = "black"
+  ) +
+  geom_text(aes(label = n_genomes), colour = "white", size = 3) +
+  coord_cartesian(clip = "off") +
+  theme_void() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 10),
+    axis.text.y = element_text(size = 10, hjust = -0.35),
+    axis.ticks  = element_line(color = "black"),
+    axis.title  = element_blank(),
+    legend.position = "right",
+    panel.background = element_rect(fill = "white", color = NA),
+    plot.background  = element_rect(fill = "white", color = NA),
+    plot.margin = margin(t = 0, r = 20, b = 0, l = 60)
+  )
+
+
+p <- pm / pt
+
+
+ggsave(filename = "species/species_acidogenesis.png", plot = p,
+       width = 30, height = 23, dpi = 300, limitsize = FALSE)
+
+
+
 
 ```
 
+
+Acetogenesis (incl. transporters)
 ```{r}
+
+
+###########################################################################################################
+###                 Top-15 per sample (meso + thermo) + shared colours for shared species                 ###
+###########################################################################################################
+
+# Determine which new are eligible per sample (>=1 Acetgenesis module at 100% in that sample)
+acid <- joined_ann_tax %>%
+  filter(phase == "Acetogenesis") %>%
+  mutate(new = na_if(new, "")) %>%
+  filter(!is.na(new)) %>%
+  group_by(sample, Genome, new, module) %>%
+  summarise(p = max(Percent_steps_found, na.rm = TRUE), .groups = "drop")
+
+eligible_new_by_sample <- acid %>%
+  group_by(sample, new) %>%
+  summarise(has100 = any(p >= 100, na.rm = TRUE), .groups = "drop") %>%
+  filter(has100)
+
+# Top 15 within EACH sample (based on that sample's abundance table)
+top_new_meso <- new_abun %>%
+  filter(sample == "meso") %>%
+  semi_join(eligible_new_by_sample %>% filter(sample == "meso"), by = c("sample", "new")) %>%
+  arrange(desc(new_r_abund)) %>%
+  slice_head(n = 15) %>%
+  pull(new)
+
+top_new_thermo <- new_abun %>%
+  filter(sample == "thermo") %>%
+  semi_join(eligible_new_by_sample %>% filter(sample == "thermo"), by = c("sample", "new")) %>%
+  arrange(desc(new_r_abund)) %>%
+  slice_head(n = 15) %>%
+  pull(new)
+
+# Shared species among the two top-15 lists
+shared_new <- intersect(top_new_meso, top_new_thermo)
+
+# Shared colours only (everything else will be grey)
+pal_shared <- if (length(shared_new) == 0) character(0) else
+  colorRampPalette(brewer.pal(12, "Paired"))(length(shared_new))
+
+new_cols <- c(
+  setNames(pal_shared, shared_new),
+  Unique = "grey75"
+)
+
+
+###########################################################################################################
+###                                             Meso                                                    ###
+###########################################################################################################
+
+# Filter only by phase and sample
+m <- joined_ann_tax %>%
+  filter(phase == "Acetogenesis", sample == "meso") %>%
+  mutate(new = na_if(new, "")) %>%
+  filter(!is.na(new)) %>%
+  filter(new %in% top_new_meso)
+
+# Use module order from modules
+module_order_meth <- modules %>%
+  filter(phase == "Acetogenesis") %>%
+  pull(module)
+
+# collapse to new x module
+m_new0 <- m %>%
+  group_by(Genome, new, module) %>%
+  summarise(p = max(Percent_steps_found, na.rm = TRUE), .groups = "drop") %>%
+  group_by(new, module) %>%
+  summarise(
+    Percent_steps_found = max(p, na.rm = TRUE),
+    # Count genomes in the highest completeness group for that phylum x module tile
+    n_genomes = case_when(
+      max(p, na.rm = TRUE) >= 100 ~ n_distinct(Genome[p >= 100]),
+      max(p, na.rm = TRUE) >=  75 ~ n_distinct(Genome[p >=  75 & p < 100]),
+      max(p, na.rm = TRUE) >=  50 ~ n_distinct(Genome[p >=  50 & p <  75]),
+      TRUE                        ~ 0
+    ),
+    .groups = "drop"
+  )
+
+# Force-show all modules by completing the grid
+m_new <- m_new0 %>%
+  mutate(module = factor(module, levels = module_order_meth)) %>%
+  complete(
+    new,
+    module,
+    fill = list(
+      Percent_steps_found = 0,
+      n_genomes = 0
+    )
+  ) %>%
+  ungroup()
+
+m_new <- m_new %>%
+  group_by(new) %>%
+  filter(any(Percent_steps_found >= 50, na.rm = TRUE)) %>%
+  ungroup()
+
+# Join new abundance
+m_new <- m_new %>%
+  left_join(new_abun %>% filter(sample == "meso"), by = "new")
+
+m_new <- m_new %>%
+  mutate(
+    alpha = case_when(
+      is.na(Percent_steps_found) ~ 0,
+      Percent_steps_found < 50   ~ 0,  # hide <50% (set e.g. 0.05 if you want faint tiles)
+      TRUE ~ scales::rescale(Percent_steps_found, from = c(50, 100), to = c(0.15, 1))
+    ),
+    fill_key = ifelse(new %in% shared_new, as.character(new), "Unique")
+  )
+
+new_labels <- new_abun %>%
+  filter(sample == "meso") %>%
+  mutate(abun_lab = sprintf("%.1f%%", new_r_abund)) %>%
+  semi_join(m_new %>% distinct(new), by = "new")
+
+# Enforce meso y order (top->bottom)
+m_new <- m_new %>%
+  mutate(new = factor(new, levels = top_new_meso))
+
+new_labels <- new_labels %>%
+  mutate(new = factor(new, levels = top_new_meso))
+
+pm <- ggplot(m_new, aes(x = module, y = new)) +
+  geom_tile(aes(fill = fill_key, alpha = alpha),
+            color = NA, width = 0.9, height = 0.9) +
+  scale_fill_manual(values = new_cols, guide = "none") +
+  scale_alpha(
+    name   = "Module\ncompleteness",
+    limits = c(0, 1),
+    breaks = scales::rescale(c(50, 75, 100), from = c(50, 100), to = c(0.15, 1)),
+    labels = c("50%", "75%", "100%"),
+    range  = c(0, 1)
+  ) +
+  guides(alpha = guide_legend(override.aes = list(fill = "grey50"))) +
+  geom_text(
+    data = new_labels,
+    aes(x = -Inf, y = new, label = abun_lab),
+    inherit.aes = FALSE,
+    hjust = 1,
+    size = 3,
+    colour = "black"
+  ) +
+  geom_text(aes(label = n_genomes), colour = "white", size = 3) +
+  coord_cartesian(clip = "off") +
+  theme_void() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 10),
+    axis.text.y = element_text(size = 10, hjust = -0.35),
+    axis.ticks  = element_line(color = "black"),
+    axis.title  = element_blank(),
+    legend.position = "right",
+    panel.background = element_rect(fill = "white", color = NA),
+    plot.background  = element_rect(fill = "white", color = NA),
+    plot.margin = margin(t = 0, r = 20, b = 0, l = 60)
+  )
+
+
+###########################################################################################################
+###                                             Thermo                                                  ###
+###########################################################################################################
+
+# Filter only by phase and sample
+m <- joined_ann_tax %>%
+  filter(phase == "Acetogenesis", sample == "thermo") %>%
+  mutate(new = na_if(new, "")) %>%
+  filter(!is.na(new)) %>%
+  filter(new %in% top_new_thermo)
+
+# Use module order from modules
+module_order_meth <- modules %>%
+  filter(phase == "Acetogenesis") %>%
+  pull(module)
+
+# collapse to new x module
+m_new0 <- m %>%
+  group_by(Genome, new, module) %>%
+  summarise(p = max(Percent_steps_found, na.rm = TRUE), .groups = "drop") %>%
+  group_by(new, module) %>%
+  summarise(
+    Percent_steps_found = max(p, na.rm = TRUE),
+    # Count genomes in the highest completeness group for that phylum x module tile
+    n_genomes = case_when(
+      max(p, na.rm = TRUE) >= 100 ~ n_distinct(Genome[p >= 100]),
+      max(p, na.rm = TRUE) >=  75 ~ n_distinct(Genome[p >=  75 & p < 100]),
+      max(p, na.rm = TRUE) >=  50 ~ n_distinct(Genome[p >=  50 & p <  75]),
+      TRUE                        ~ 0
+    ),
+    .groups = "drop"
+  )
+
+# Force-show all modules by completing the grid
+m_new <- m_new0 %>%
+  mutate(module = factor(module, levels = module_order_meth)) %>%
+  complete(
+    new,
+    module,
+    fill = list(
+      Percent_steps_found = 0,  # empty = 0% completeness (will be invisible with alpha mapping below)
+      n_genomes = 0
+    )
+  ) %>%
+  ungroup()
+
+m_new <- m_new %>%
+  group_by(new) %>%
+  filter(any(Percent_steps_found >= 50, na.rm = TRUE)) %>%
+  ungroup()
+
+# Join genus abundance
+m_new <- m_new %>%
+  left_join(new_abun %>% filter(sample == "thermo"), by = "new")
+
+m_new <- m_new %>%
+  mutate(
+    alpha = case_when(
+      is.na(Percent_steps_found) ~ 0,
+      Percent_steps_found < 50   ~ 0,  # hide <50% (set e.g. 0.05 if you want faint tiles)
+      TRUE ~ scales::rescale(Percent_steps_found, from = c(50, 100), to = c(0.15, 1))
+    ),
+    fill_key = ifelse(new %in% shared_new, as.character(new), "Unique")
+  )
+
+new_labels <- new_abun %>%
+  filter(sample == "thermo") %>%
+  mutate(abun_lab = sprintf("%.1f%%", new_r_abund)) %>%
+  semi_join(m_new %>% distinct(new), by = "new")
+
+# Enforce thermo y order (top->bottom)
+m_new <- m_new %>%
+  mutate(new = factor(new, levels = top_new_thermo))
+
+new_labels <- new_labels %>%
+  mutate(new = factor(new, levels = top_new_thermo))
+
+pt <- ggplot(m_new, aes(x = module, y = new)) +
+  geom_tile(aes(fill = fill_key, alpha = alpha),
+            color = NA, width = 0.9, height = 0.9) +
+  scale_fill_manual(values = new_cols, guide = "none") +
+  scale_alpha(
+    name   = "Module\ncompleteness",
+    limits = c(0, 1),
+    breaks = scales::rescale(c(50, 75, 100), from = c(50, 100), to = c(0.15, 1)),
+    labels = c("50%", "75%", "100%"),
+    range  = c(0, 1)
+  ) +
+  guides(alpha = guide_legend(override.aes = list(fill = "grey50"))) +
+  geom_text(
+    data = new_labels,
+    aes(x = -Inf, y = new, label = abun_lab),
+    inherit.aes = FALSE,
+    hjust = 1,
+    size = 3,
+    colour = "black"
+  ) +
+  geom_text(aes(label = n_genomes), colour = "white", size = 3) +
+  coord_cartesian(clip = "off") +
+  theme_void() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 10),
+    axis.text.y = element_text(size = 10, hjust = -0.35),
+    axis.ticks  = element_line(color = "black"),
+    axis.title  = element_blank(),
+    legend.position = "right",
+    panel.background = element_rect(fill = "white", color = NA),
+    plot.background  = element_rect(fill = "white", color = NA),
+    plot.margin = margin(t = 0, r = 20, b = 0, l = 60)
+  )
+
+
+p <- pm | pt
+
+
+ggsave(filename = "species/species_acetogenesis_incl_transporters.png", plot = p,
+       width = 15, height = 7, dpi = 300, limitsize = FALSE)
+
+
 
 ```
 
+
+Acetogenesis (excl. transporters)
 ```{r}
+
+
+###########################################################################################################
+###                 Top-15 per sample (meso + thermo) + shared colours for shared species                 ###
+###########################################################################################################
+
+exclude_modules <- c("Formate transporter", "Formate degradation", "Acetate transporter")
+
+
+# Determine which new are eligible per sample (>=1 Acetgenesis module at 100% in that sample)
+acet <- joined_ann_tax %>%
+  filter(
+    phase == "Acetogenesis",
+    !module %in% c("Formate transporter", "Formate degradation", "Acetate transporter")) %>%
+  mutate(new = na_if(new, "")) %>%
+  filter(!is.na(new)) %>%
+  group_by(sample, Genome, new, module) %>%
+  summarise(p = max(Percent_steps_found, na.rm = TRUE), .groups = "drop")
+
+eligible_new_by_sample <- acet %>%
+  group_by(sample, new) %>%
+  summarise(has100 = any(p >= 100, na.rm = TRUE), .groups = "drop") %>%
+  filter(has100)
+
+# Top 15 within EACH sample (based on that sample's abundance table)
+top_new_meso <- new_abun %>%
+  filter(sample == "meso") %>%
+  semi_join(eligible_new_by_sample %>% filter(sample == "meso"), by = c("sample", "new")) %>%
+  arrange(desc(new_r_abund)) %>%
+  slice_head(n = 15) %>%
+  pull(new)
+
+top_new_thermo <- new_abun %>%
+  filter(sample == "thermo") %>%
+  semi_join(eligible_new_by_sample %>% filter(sample == "thermo"), by = c("sample", "new")) %>%
+  arrange(desc(new_r_abund)) %>%
+  slice_head(n = 15) %>%
+  pull(new)
+
+# Shared species among the two top-15 lists
+shared_new <- intersect(top_new_meso, top_new_thermo)
+
+# Shared colours only (everything else will be grey)
+pal_shared <- if (length(shared_new) == 0) character(0) else
+  colorRampPalette(brewer.pal(12, "Paired"))(length(shared_new))
+
+new_cols <- c(
+  setNames(pal_shared, shared_new),
+  Unique = "grey75"
+)
+
+
+###########################################################################################################
+###                                             Meso                                                    ###
+###########################################################################################################
+
+# Filter only by phase and sample
+m <- joined_ann_tax %>%
+  filter(phase == "Acetogenesis", sample == "meso",
+    !module %in% exclude_modules) %>%
+  mutate(new = na_if(new, "")) %>%
+  filter(!is.na(new)) %>%
+  filter(new %in% top_new_meso)
+
+# Use module order from modules
+module_order_meth <- modules %>%
+  filter(phase == "Acetogenesis",
+    !module %in% exclude_modules) %>%
+  pull(module)
+
+# collapse to new x module
+m_new0 <- m %>%
+  group_by(Genome, new, module) %>%
+  summarise(p = max(Percent_steps_found, na.rm = TRUE), .groups = "drop") %>%
+  group_by(new, module) %>%
+  summarise(
+    Percent_steps_found = max(p, na.rm = TRUE),
+    # Count genomes in the highest completeness group for that phylum x module tile
+    n_genomes = case_when(
+      max(p, na.rm = TRUE) >= 100 ~ n_distinct(Genome[p >= 100]),
+      max(p, na.rm = TRUE) >=  75 ~ n_distinct(Genome[p >=  75 & p < 100]),
+      max(p, na.rm = TRUE) >=  50 ~ n_distinct(Genome[p >=  50 & p <  75]),
+      TRUE                        ~ 0
+    ),
+    .groups = "drop"
+  )
+
+# Force-show all modules by completing the grid
+m_new <- m_new0 %>%
+  mutate(module = factor(module, levels = module_order_meth)) %>%
+  complete(
+    new,
+    module,
+    fill = list(
+      Percent_steps_found = 0,
+      n_genomes = 0
+    )
+  ) %>%
+  ungroup()
+
+m_new <- m_new %>%
+  group_by(new) %>%
+  filter(any(Percent_steps_found >= 50, na.rm = TRUE)) %>%
+  ungroup()
+
+# Join new abundance
+m_new <- m_new %>%
+  left_join(new_abun %>% filter(sample == "meso"), by = "new")
+
+m_new <- m_new %>%
+  mutate(
+    alpha = case_when(
+      is.na(Percent_steps_found) ~ 0,
+      Percent_steps_found < 50   ~ 0,  # hide <50% (set e.g. 0.05 if you want faint tiles)
+      TRUE ~ scales::rescale(Percent_steps_found, from = c(50, 100), to = c(0.15, 1))
+    ),
+    fill_key = ifelse(new %in% shared_new, as.character(new), "Unique")
+  )
+
+new_labels <- new_abun %>%
+  filter(sample == "meso") %>%
+  mutate(abun_lab = sprintf("%.1f%%", new_r_abund)) %>%
+  semi_join(m_new %>% distinct(new), by = "new")
+
+# Enforce meso y order (top->bottom)
+m_new <- m_new %>%
+  mutate(new = factor(new, levels = top_new_meso))
+
+new_labels <- new_labels %>%
+  mutate(new = factor(new, levels = top_new_meso))
+
+pm <- ggplot(m_new, aes(x = module, y = new)) +
+  geom_tile(aes(fill = fill_key, alpha = alpha),
+            color = NA, width = 0.9, height = 0.9) +
+  scale_fill_manual(values = new_cols, guide = "none") +
+  scale_alpha(
+    name   = "Module\ncompleteness",
+    limits = c(0, 1),
+    breaks = scales::rescale(c(50, 75, 100), from = c(50, 100), to = c(0.15, 1)),
+    labels = c("50%", "75%", "100%"),
+    range  = c(0, 1)
+  ) +
+  guides(alpha = guide_legend(override.aes = list(fill = "grey50"))) +
+  geom_text(
+    data = new_labels,
+    aes(x = -Inf, y = new, label = abun_lab),
+    inherit.aes = FALSE,
+    hjust = 1,
+    size = 3,
+    colour = "black"
+  ) +
+  geom_text(aes(label = n_genomes), colour = "white", size = 3) +
+  coord_cartesian(clip = "off") +
+  theme_void() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 10),
+    axis.text.y = element_text(size = 10, hjust = -0.35),
+    axis.ticks  = element_line(color = "black"),
+    axis.title  = element_blank(),
+    legend.position = "right",
+    panel.background = element_rect(fill = "white", color = NA),
+    plot.background  = element_rect(fill = "white", color = NA),
+    plot.margin = margin(t = 0, r = 20, b = 0, l = 60)
+  ) +
+  labs(title = "Mesophilic")
+
+
+###########################################################################################################
+###                                             Thermo                                                  ###
+###########################################################################################################
+
+# Filter only by phase and sample
+m <- joined_ann_tax %>%
+  filter(phase == "Acetogenesis", sample == "thermo",
+    !module %in% exclude_modules) %>%
+  mutate(new = na_if(new, "")) %>%
+  filter(!is.na(new)) %>%
+  filter(new %in% top_new_thermo)
+
+# Use module order from modules
+module_order_meth <- modules %>%
+  filter(phase == "Acetogenesis",
+    !module %in% exclude_modules) %>%
+  pull(module)
+
+# collapse to new x module
+m_new0 <- m %>%
+  group_by(Genome, new, module) %>%
+  summarise(p = max(Percent_steps_found, na.rm = TRUE), .groups = "drop") %>%
+  group_by(new, module) %>%
+  summarise(
+    Percent_steps_found = max(p, na.rm = TRUE),
+    # Count genomes in the highest completeness group for that phylum x module tile
+    n_genomes = case_when(
+      max(p, na.rm = TRUE) >= 100 ~ n_distinct(Genome[p >= 100]),
+      max(p, na.rm = TRUE) >=  75 ~ n_distinct(Genome[p >=  75 & p < 100]),
+      max(p, na.rm = TRUE) >=  50 ~ n_distinct(Genome[p >=  50 & p <  75]),
+      TRUE                        ~ 0
+    ),
+    .groups = "drop"
+  )
+
+# Force-show all modules by completing the grid
+m_new <- m_new0 %>%
+  mutate(module = factor(module, levels = module_order_meth)) %>%
+  complete(
+    new,
+    module,
+    fill = list(
+      Percent_steps_found = 0,  # empty = 0% completeness (will be invisible with alpha mapping below)
+      n_genomes = 0
+    )
+  ) %>%
+  ungroup()
+
+m_new <- m_new %>%
+  group_by(new) %>%
+  filter(any(Percent_steps_found >= 50, na.rm = TRUE)) %>%
+  ungroup()
+
+# Join genus abundance
+m_new <- m_new %>%
+  left_join(new_abun %>% filter(sample == "thermo"), by = "new")
+
+m_new <- m_new %>%
+  mutate(
+    alpha = case_when(
+      is.na(Percent_steps_found) ~ 0,
+      Percent_steps_found < 50   ~ 0,  # hide <50% (set e.g. 0.05 if you want faint tiles)
+      TRUE ~ scales::rescale(Percent_steps_found, from = c(50, 100), to = c(0.15, 1))
+    ),
+    fill_key = ifelse(new %in% shared_new, as.character(new), "Unique")
+  )
+
+new_labels <- new_abun %>%
+  filter(sample == "thermo") %>%
+  mutate(abun_lab = sprintf("%.1f%%", new_r_abund)) %>%
+  semi_join(m_new %>% distinct(new), by = "new")
+
+# Enforce thermo y order (top->bottom)
+m_new <- m_new %>%
+  mutate(new = factor(new, levels = top_new_thermo))
+
+new_labels <- new_labels %>%
+  mutate(new = factor(new, levels = top_new_thermo))
+
+pt <- ggplot(m_new, aes(x = module, y = new)) +
+  geom_tile(aes(fill = fill_key, alpha = alpha),
+            color = NA, width = 0.9, height = 0.9) +
+  scale_fill_manual(values = new_cols, guide = "none") +
+  scale_alpha(
+    name   = "Module\ncompleteness",
+    limits = c(0, 1),
+    breaks = scales::rescale(c(50, 75, 100), from = c(50, 100), to = c(0.15, 1)),
+    labels = c("50%", "75%", "100%"),
+    range  = c(0, 1)
+  ) +
+  guides(alpha = guide_legend(override.aes = list(fill = "grey50"))) +
+  geom_text(
+    data = new_labels,
+    aes(x = -Inf, y = new, label = abun_lab),
+    inherit.aes = FALSE,
+    hjust = 1,
+    size = 3,
+    colour = "black"
+  ) +
+  geom_text(aes(label = n_genomes), colour = "white", size = 3) +
+  coord_cartesian(clip = "off") +
+  theme_void() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 10),
+    axis.text.y = element_text(size = 10, hjust = -1.5),
+    axis.ticks  = element_line(color = "black"),
+    axis.title  = element_blank(),
+    legend.position = "right",
+    panel.background = element_rect(fill = "white", color = NA),
+    plot.background  = element_rect(fill = "white", color = NA),
+    plot.margin = margin(t = 0, r = 20, b = 0, l = 60)
+  ) +
+  labs(title = "Thermophilic")
+
+
+p <- pm | pt
+
+
+ggsave(filename = "species/species_acetogenesis_excl_transporters.png", plot = p,
+       width = 15, height = 7, dpi = 300, limitsize = FALSE)
+
+
+
+
+```
+
+
+Glimpse syntrophic butyrate- and propionate deg. and SAO
+```{r}
+# Syntrophic butyrate degradation
+meso_syn_buty <- meso_ann_tax %>%
+  filter(module == "Syntrophic butyrate degradation, butyrate => acetyl-CoA")
+
+thermo_syn_buty <- thermo_ann_tax %>%
+  filter(module == "Syntrophic butyrate degradation, butyrate => acetyl-CoA")
+
+
+# Syntrophic propionate degradation
+meso_syn_prop <- meso_ann_tax %>%
+  filter(module == "Syntrophic propionate degradation, propionate => acetate")
+
+thermo_syn_prop <- thermo_ann_tax %>%
+  filter(module == "Syntrophic propionate degradation, propionate => acetate")
+
+
+# Wood-Ljungdahl
+meso_wl <- meso_ann_tax %>%
+  filter(module == "Reductive acetyl-CoA pathway (Wood-Ljungdahl pathway)")
+
+thermo_wl <- thermo_ann_tax %>%
+  filter(module == "Reductive acetyl-CoA pathway (Wood-Ljungdahl pathway)")
+
+
+# SAO
+sao <- c("Reversed WL pathway, acetate => CO2", "WLP-GCS pathway, acetate => CO2")
+
+meso_sao <- meso_ann_tax %>%
+  filter(module %in% sao)
+
+thermo_sao <- thermo_ann_tax %>%
+  filter(module %in% sao)
+
 
 ```
 
