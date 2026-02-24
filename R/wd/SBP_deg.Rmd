@@ -18,6 +18,9 @@ library(readxl)
 library(patchwork)
 library(scales)
 library(grid)
+library(viridisLite)
+library(scico)
+
 
 
 file <- "C:/Users/lasse/Desktop/wd/25/df/metabolism_summary_26.xlsx"
@@ -26,12 +29,12 @@ metabolism_summary <- read_excel(file, sheet = 2) %>%
 
 
 meso_mags_tax <- read.csv(
-  "C:/Users/lasse/Desktop/wd/25/01_05/write_files/meso_mags_tax.tsv",
+  "C:/Users/lasse/Desktop/wd/25/01_05/write_files/05/meso_mags_tax.tsv",
   header = TRUE, sep = "\t"
 )
 
 thermo_mags_tax <- read.csv(
-  "C:/Users/lasse/Desktop/wd/25/01_05/write_files/thermo_mags_tax.tsv",
+  "C:/Users/lasse/Desktop/wd/25/01_05/write_files/05/thermo_mags_tax.tsv",
   header = TRUE, sep = "\t"
 )
 
@@ -40,27 +43,11 @@ mags_meso_old   <- as.character(meso_mags_tax$Genome)
 mags_thermo_old <- as.character(thermo_mags_tax$Genome)
 
 
-# Build name map
-name_map <- bind_rows(
-  meso_mags_tax %>% mutate(source = "meso"),
-  thermo_mags_tax %>% mutate(source = "thermo")
-) %>%
-  transmute(
-    old = as.character(Genome),
-    species = str_squish(species),
-    genus   = str_squish(genus),
-    family  = str_squish(family),
-    new = case_when(
-      !is.na(species) & species != "" ~ species,
-      !is.na(genus)   & genus   != "" ~ paste0("g_", genus, " sp"),
-      !is.na(family)  & family  != "" ~ paste0("f_", family, " sp"),
-      TRUE ~ old
-    ),
-    source
-  ) %>%
-  arrange(old, desc(new != old), source) %>%
-  distinct(old, .keep_all = TRUE) %>%
-  select(old, new)
+# Import name map
+name_map <- read.csv("C:/Users/lasse/Desktop/wd/25/01_05/module_completeness/name_map.tsv", header = TRUE, sep = "\t")
+
+
+
 
 # Create named rename vector
 rename_vec <- setNames(name_map$new, name_map$old)
@@ -98,6 +85,15 @@ gene_counts_thermo <- gene_counts_thermo %>%
 names(gene_counts_thermo) <- make.unique(names(gene_counts_thermo), sep = "_MAG")
 
 
+# Add rel abun
+meso_mags_tax <- meso_mags_tax %>%
+  left_join(name_map, by = c("Genome" = "old"))
+
+thermo_mags_tax <- thermo_mags_tax %>%
+  left_join(name_map, by = c("Genome" = "old"))
+
+
+
 ```
 
         --------------------------------------------------------------
@@ -132,9 +128,6 @@ gene_classes <- tibble(
     # Pectic galactan oligo cleavage
     "GH147", "GH165", "GH35", "GH42", "GH59",
     
-    # Arabinan backbone cleavage
-    "GH49",
-    
     # Arabinan oligo cleavage
     "GH51", "GH54", "GH62", "GH93"
   ),
@@ -143,7 +136,6 @@ gene_classes <- tibble(
     rep("Pectin oligo cleavage", 9),
     rep("Pectic galactan backbone cleavage", 1),
     rep("Pectic galactan oligo cleavage", 5),
-    rep("Arabinan backbone cleavage", 1),
     rep("Arabinan oligo cleavage", 4)
   )
 )
@@ -359,143 +351,452 @@ ggsave(filename = "pectin/mag_gene_counts_barplot.png", plot = p,
 ```
 
 
-Attribution plot
+Attribution plot (top 10 by gene count + X)
 ```{r}
+
+special_meso <- c("UBA3950 Nemesis")
 
 
 make_stacked_contrib_plot <- function(df_counts,
                                       gene_classes = NULL,
-                                      top_n = 7,
+                                      top_n = 10,
                                       title = "",
                                       mode = c("proportion", "count"),
                                       facet_by_class = TRUE,
                                       genome_palette = NULL,
-                                      other_colour = "grey70") {
+                                      other_colour = "grey70",
+                                      # abundance mapping:
+                                      mags_tax = NULL,
+                                      name_col = "new",
+                                      rel_abun_col = "rel_abun",
+                                      rel_abun_digits = 2,
+                                      # NEW:
+                                      highlight_genomes = character(0)) {
 
   mode <- match.arg(mode)
 
   # Wide -> long
   long <- df_counts %>%
-    mutate(across(-gene_id, ~ as.numeric(.x))) %>%
-    pivot_longer(-gene_id, names_to = "Genome", values_to = "count") %>%
-    mutate(count = replace_na(count, 0))
+    dplyr::mutate(dplyr::across(-gene_id, ~ as.numeric(.x))) %>%
+    tidyr::pivot_longer(-gene_id, names_to = "Genome", values_to = "count") %>%
+    dplyr::mutate(count = tidyr::replace_na(count, 0))
 
-  # Select top N genomes by total CAZy contribution
+  # Top N by total
   top_genomes <- long %>%
-    group_by(Genome) %>%
-    summarise(total = sum(count), .groups = "drop") %>%
-    arrange(desc(total)) %>%
-    slice_head(n = top_n) %>%
-    pull(Genome)
+    dplyr::group_by(Genome) %>%
+    dplyr::summarise(total = sum(count), .groups = "drop") %>%
+    dplyr::arrange(dplyr::desc(total)) %>%
+    dplyr::slice_head(n = top_n) %>%
+    dplyr::pull(Genome)
 
-  # Collapse others
+  # NEW: combine + preserve order (top first, then highlighted that aren't already in top)
+  keep_genomes <- c(top_genomes, setdiff(highlight_genomes, top_genomes))
+
+  # Collapse others (but keep highlighted)
   long2 <- long %>%
-    mutate(Genome_grp = if_else(Genome %in% top_genomes, Genome, "Other"))
+    dplyr::mutate(Genome_grp = dplyr::if_else(Genome %in% keep_genomes, Genome, "Other"))
 
-  # Aggregate counts per gene_id and Genome_grp
+  # Aggregate
   plot_df <- long2 %>%
-    group_by(gene_id, Genome_grp) %>%
-    summarise(count = sum(count), .groups = "drop")
+    dplyr::group_by(gene_id, Genome_grp) %>%
+    dplyr::summarise(count = sum(count), .groups = "drop")
 
   # Proportion mode
   if (mode == "proportion") {
     plot_df <- plot_df %>%
-      group_by(gene_id) %>%
-      mutate(
+      dplyr::group_by(gene_id) %>%
+      dplyr::mutate(
         denom = sum(count),
-        prop  = if_else(denom > 0, count / denom, 0)
+        prop  = dplyr::if_else(denom > 0, count / denom, 0)
       ) %>%
-      ungroup() %>%
-      select(-denom)
+      dplyr::ungroup() %>%
+      dplyr::select(-denom)
   }
 
   # Join class info
   if (!is.null(gene_classes)) {
-    gene_order <- gene_classes %>% pull(gene_id) %>% as.character()
+    gene_order <- gene_classes %>% dplyr::pull(gene_id) %>% as.character()
     class_levels <- gene_classes %>%
-      mutate(class = str_squish(class)) %>%
-      distinct(class) %>%
-      pull(class)
+      dplyr::mutate(class = stringr::str_squish(class)) %>%
+      dplyr::distinct(class) %>%
+      dplyr::pull(class)
 
     plot_df <- plot_df %>%
-      left_join(
+      dplyr::left_join(
         gene_classes %>%
-          mutate(gene_id = as.character(gene_id),
-                 class = str_squish(class)),
+          dplyr::mutate(gene_id = as.character(gene_id),
+                        class = stringr::str_squish(class)),
         by = "gene_id"
       ) %>%
-      mutate(
+      dplyr::mutate(
         class = factor(class, levels = class_levels),
         gene_id = factor(as.character(gene_id),
                          levels = unique(gene_order))
       )
   } else {
     plot_df <- plot_df %>%
-      mutate(gene_id = factor(as.character(gene_id)))
+      dplyr::mutate(gene_id = factor(as.character(gene_id)))
   }
 
-  # Fix legend order
-  genome_levels <- c(top_genomes, "Other")
+  # Factor levels for legend order
+  genome_levels <- c(keep_genomes, "Other")
   plot_df <- plot_df %>%
-    mutate(Genome_grp = factor(Genome_grp, levels = genome_levels))
+    dplyr::mutate(Genome_grp = factor(Genome_grp, levels = genome_levels))
 
   # -------------------------
-  # COLOUR CONTROL
+  # Colours
   # -------------------------
+  n_keep <- length(keep_genomes)
 
   if (is.null(genome_palette)) {
-    # Default: automatically generate palette for top genomes
-    pal_fun <- colorRampPalette(c("steelblue4", "goldenrod2", "firebrick3"))
-    mag_cols <- setNames(pal_fun(length(top_genomes)), top_genomes)
+    pal_fun <- grDevices::colorRampPalette(c("steelblue4", "goldenrod2", "firebrick3"))
+    keep_cols <- stats::setNames(pal_fun(n_keep), keep_genomes)
   } else {
-    if (length(genome_palette) < length(top_genomes)) {
-      stop("Not enough colours supplied in genome_palette for top_n genomes.")
+    if (length(genome_palette) < n_keep) {
+      stop("Not enough colours supplied in genome_palette for top_n + highlight_genomes.")
     }
-    mag_cols <- setNames(genome_palette[seq_along(top_genomes)], top_genomes)
+    keep_cols <- stats::setNames(genome_palette[seq_len(n_keep)], keep_genomes)
   }
+  mag_cols <- c(keep_cols, Other = other_colour)
 
-  # Force "Other" to grey
-  mag_cols <- c(mag_cols, Other = other_colour)
+  # -------------------------
+  # Legend labels with rel_abun for kept genomes
+  # -------------------------
+  legend_labels <- stats::setNames(genome_levels, genome_levels)
+
+  if (!is.null(mags_tax)) {
+    ab_map <- mags_tax %>%
+      dplyr::select(
+        Genome = dplyr::all_of(name_col),
+        rel_abun = dplyr::all_of(rel_abun_col)
+      ) %>%
+      dplyr::filter(!is.na(Genome)) %>%
+      dplyr::distinct(Genome, .keep_all = TRUE)
+
+    ab_vec <- ab_map$rel_abun
+    names(ab_vec) <- ab_map$Genome
+
+    keep_labels <- vapply(
+      keep_genomes,
+      function(g) {
+        ra <- ab_vec[[g]]
+        if (is.null(ra) || is.na(ra)) {
+          sprintf("%s (NA%%)", g)
+        } else {
+          sprintf(paste0("%s (%.", rel_abun_digits, "f%%)"), g, ra)
+        }
+      },
+      character(1)
+    )
+    names(keep_labels) <- keep_genomes
+
+    legend_labels <- c(keep_labels, Other = "Other")
+  }
 
   # -------------------------
   # Plot
   # -------------------------
-
   yvar <- if (mode == "proportion") "prop" else "count"
   ylab <- if (mode == "proportion") "Proportion of total gene count"
-          else "Total gene count (summed across selected MAGs)"
+  else "Total gene count (summed across selected MAGs)"
 
-  p <- ggplot(plot_df, aes(x = gene_id, y = .data[[yvar]], fill = Genome_grp)) +
-    geom_col(width = 0.9) +
-    scale_fill_manual(values = mag_cols, drop = FALSE) +
-    labs(
+  p <- ggplot2::ggplot(plot_df, ggplot2::aes(x = gene_id, y = .data[[yvar]], fill = Genome_grp)) +
+    ggplot2::geom_col(width = 0.9) +
+    ggplot2::scale_fill_manual(
+      values = mag_cols,
+      breaks = genome_levels,
+      labels = legend_labels,
+      drop = FALSE
+    ) +
+    ggplot2::labs(
       x = "CAZy family (gene_id)",
       y = ylab,
       title = title,
       fill = "MAG / species"
     ) +
-    theme_bw() +
-    theme(
-      axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 7),
+    ggplot2::theme_bw() +
+    ggplot2::theme(
+      axis.text.x = ggplot2::element_text(angle = 45, hjust = 1, vjust = 1, size = 7),
       legend.position = "right"
     )
 
   if (facet_by_class && !is.null(gene_classes)) {
     p <- p +
-      facet_grid(. ~ class, scales = "free_x", space = "free_x", switch = "x") +
-      theme(
-        panel.spacing.x = unit(0.8, "lines"),
+      ggplot2::facet_grid(. ~ class, scales = "free_x", space = "free_x", switch = "x") +
+      ggplot2::theme(
+        panel.spacing.x = grid::unit(0.8, "lines"),
         strip.placement = "outside",
-        strip.background = element_rect(fill = "grey95", colour = NA)
+        strip.background = ggplot2::element_rect(fill = "grey95", colour = NA)
       )
   }
 
   p <- p +
-    scale_y_continuous(
-      labels = if (mode == "proportion") percent_format(accuracy = 1) else waiver(),
-      expand = expansion(mult = c(0, 0.05))
+    ggplot2::scale_y_continuous(
+      labels = if (mode == "proportion") scales::percent_format(accuracy = 1) else waiver(),
+      expand = ggplot2::expansion(mult = c(0, 0.05))
     ) +
-    coord_cartesian(ylim = c(0, 45))
+    ggplot2::coord_cartesian(ylim = c(0, 45))
+
+  return(p)
+}
+
+
+
+p_meso_stack <- make_stacked_contrib_plot(
+  df_counts = gene_count_meso_pectin,
+  gene_classes = gene_classes,
+  top_n = 10,
+  highlight_genomes = special_meso,   # <- THIS was missing
+  mode = "count",
+  mags_tax = meso_mags_tax,
+  name_col = "new",
+  rel_abun_col = "rel_abun",
+  rel_abun_digits = 2,
+  genome_palette = c(
+    "orchid1", "purple", "slateblue", "slateblue4", "navy",
+    "steelblue3", "mediumaquamarine",
+    "seagreen1", "seagreen3", "olivedrab", "khaki4"
+  ),
+  other_colour = "grey80",
+  title = "Mesophilic contribution to pectin CAZy gene counts"
+)
+
+p_thermo_stack <- make_stacked_contrib_plot(
+  df_counts = gene_count_thermo_pectin,
+  gene_classes = gene_classes,
+  top_n = 10,
+  mode = "count",
+  mags_tax = thermo_mags_tax,    # NEW
+  name_col = "new",
+  rel_abun_col = "rel_abun",
+  rel_abun_digits = 2,
+  genome_palette = c(
+    "black", "firebrick4", "firebrick3",
+    "firebrick1", "gold3", "gold1", "darkorange1",
+    "chocolate", "darkorange4", "darkred"
+  ),
+  other_colour = "grey80",
+  title = "Thermophilic contribution to pectin CAZy gene counts"
+)
+
+p <- p_meso_stack / p_thermo_stack
+
+
+ggsave(filename = "pectin/attribution_barplot.png", plot = p,
+       width = 20, height = 12, dpi = 300)
+
+```
+
+
+Attribution plot (top 10 by abundance)
+```{r}
+
+make_stacked_contrib_plot <- function(df_counts,
+                                      gene_classes = NULL,
+                                      top_n = 10,
+                                      title = "",
+                                      mode = c("proportion", "count"),
+                                      facet_by_class = TRUE,
+                                      genome_palette = NULL,
+                                      other_colour = "grey70",
+                                      # abundance mapping:
+                                      mags_tax = NULL,
+                                      name_col = "new",
+                                      rel_abun_col = "rel_abun",
+                                      rel_abun_digits = 2) {
+
+  mode <- match.arg(mode)
+
+  # Wide -> long
+  long <- df_counts %>%
+    dplyr::mutate(dplyr::across(-gene_id, ~ as.numeric(.x))) %>%
+    tidyr::pivot_longer(-gene_id, names_to = "Genome", values_to = "count") %>%
+    dplyr::mutate(count = tidyr::replace_na(count, 0))
+
+  # -------------------------
+  # Select TOP_N GENOMES
+  #   - Prefer rel_abun from mags_tax (most abundant)
+  #   - Fall back to total gene counts if mags_tax is NULL
+  # -------------------------
+  if (!is.null(mags_tax)) {
+
+    ab_map <- mags_tax %>%
+      dplyr::select(
+        Genome = dplyr::all_of(name_col),
+        rel_abun = dplyr::all_of(rel_abun_col)
+      ) %>%
+      dplyr::filter(!is.na(Genome)) %>%
+      dplyr::mutate(rel_abun = as.numeric(rel_abun)) %>%
+      dplyr::distinct(Genome, .keep_all = TRUE)
+
+    # Only keep genomes that exist in df_counts
+    present_genomes <- unique(long$Genome)
+
+    top_genomes <- ab_map %>%
+      dplyr::filter(Genome %in% present_genomes) %>%
+      dplyr::arrange(dplyr::desc(rel_abun)) %>%
+      dplyr::slice_head(n = top_n) %>%
+      dplyr::pull(Genome)
+
+  } else {
+
+    # fallback: top N by total gene contribution
+    top_genomes <- long %>%
+      dplyr::group_by(Genome) %>%
+      dplyr::summarise(total = sum(count), .groups = "drop") %>%
+      dplyr::arrange(dplyr::desc(total)) %>%
+      dplyr::slice_head(n = top_n) %>%
+      dplyr::pull(Genome)
+  }
+
+  keep_genomes <- top_genomes
+
+  # Collapse others
+  long2 <- long %>%
+    dplyr::mutate(Genome_grp = dplyr::if_else(Genome %in% keep_genomes, Genome, "Other"))
+
+  # Aggregate counts per gene_id and Genome_grp
+  plot_df <- long2 %>%
+    dplyr::group_by(gene_id, Genome_grp) %>%
+    dplyr::summarise(count = sum(count), .groups = "drop")
+
+  # Proportion mode
+  if (mode == "proportion") {
+    plot_df <- plot_df %>%
+      dplyr::group_by(gene_id) %>%
+      dplyr::mutate(
+        denom = sum(count),
+        prop  = dplyr::if_else(denom > 0, count / denom, 0)
+      ) %>%
+      dplyr::ungroup() %>%
+      dplyr::select(-denom)
+  }
+
+  # Join class info
+  if (!is.null(gene_classes)) {
+    gene_order <- gene_classes %>% dplyr::pull(gene_id) %>% as.character()
+    class_levels <- gene_classes %>%
+      dplyr::mutate(class = stringr::str_squish(class)) %>%
+      dplyr::distinct(class) %>%
+      dplyr::pull(class)
+
+    plot_df <- plot_df %>%
+      dplyr::left_join(
+        gene_classes %>%
+          dplyr::mutate(gene_id = as.character(gene_id),
+                        class = stringr::str_squish(class)),
+        by = "gene_id"
+      ) %>%
+      dplyr::mutate(
+        class = factor(class, levels = class_levels),
+        gene_id = factor(as.character(gene_id),
+                         levels = unique(gene_order))
+      )
+  } else {
+    plot_df <- plot_df %>%
+      dplyr::mutate(gene_id = factor(as.character(gene_id)))
+  }
+
+  # Factor levels for legend order
+  genome_levels <- c(keep_genomes, "Other")
+  plot_df <- plot_df %>%
+    dplyr::mutate(Genome_grp = factor(Genome_grp, levels = genome_levels))
+
+  # -------------------------
+  # Colours
+  # -------------------------
+  n_keep <- length(keep_genomes)
+
+  if (is.null(genome_palette)) {
+    pal_fun <- grDevices::colorRampPalette(c("steelblue4", "goldenrod2", "firebrick3"))
+    keep_cols <- stats::setNames(pal_fun(n_keep), keep_genomes)
+  } else {
+    if (length(genome_palette) < n_keep) {
+      stop("Not enough colours supplied in genome_palette for top_n genomes.")
+    }
+    keep_cols <- stats::setNames(genome_palette[seq_len(n_keep)], keep_genomes)
+  }
+
+  mag_cols <- c(keep_cols, Other = other_colour)
+
+  # -------------------------
+  # Legend labels with rel_abun for kept genomes
+  # -------------------------
+  legend_labels <- stats::setNames(genome_levels, genome_levels)
+
+  if (!is.null(mags_tax)) {
+    ab_map2 <- mags_tax %>%
+      dplyr::select(
+        Genome = dplyr::all_of(name_col),
+        rel_abun = dplyr::all_of(rel_abun_col)
+      ) %>%
+      dplyr::filter(!is.na(Genome)) %>%
+      dplyr::mutate(rel_abun = as.numeric(rel_abun)) %>%
+      dplyr::distinct(Genome, .keep_all = TRUE)
+
+    ab_vec <- ab_map2$rel_abun
+    names(ab_vec) <- ab_map2$Genome
+
+    keep_labels <- vapply(
+      keep_genomes,
+      function(g) {
+        ra <- ab_vec[[g]]
+        if (is.null(ra) || is.na(ra)) {
+          sprintf("%s (NA%%)", g)
+        } else {
+          sprintf(paste0("%s (%.", rel_abun_digits, "f%%)"), g, ra)
+        }
+      },
+      character(1)
+    )
+    names(keep_labels) <- keep_genomes
+
+    legend_labels <- c(keep_labels, Other = "Other")
+  }
+
+  # -------------------------
+  # Plot
+  # -------------------------
+  yvar <- if (mode == "proportion") "prop" else "count"
+  ylab <- if (mode == "proportion") "Proportion of total gene count"
+  else "Total gene count (summed across selected MAGs)"
+
+  p <- ggplot2::ggplot(plot_df, ggplot2::aes(x = gene_id, y = .data[[yvar]], fill = Genome_grp)) +
+    ggplot2::geom_col(width = 0.9) +
+    ggplot2::scale_fill_manual(
+      values = mag_cols,
+      breaks = genome_levels,
+      labels = legend_labels,
+      drop = FALSE
+    ) +
+    ggplot2::labs(
+      x = "CAZy family (gene_id)",
+      y = ylab,
+      title = title,
+      fill = "MAG / species"
+    ) +
+    ggplot2::theme_bw() +
+    ggplot2::theme(
+      axis.text.x = ggplot2::element_text(angle = 45, hjust = 1, vjust = 1, size = 7),
+      legend.position = "right"
+    )
+
+  if (facet_by_class && !is.null(gene_classes)) {
+    p <- p +
+      ggplot2::facet_grid(. ~ class, scales = "free_x", space = "free_x", switch = "x") +
+      ggplot2::theme(
+        panel.spacing.x = grid::unit(0.8, "lines"),
+        strip.placement = "outside",
+        strip.background = ggplot2::element_rect(fill = "grey95", colour = NA)
+      )
+  }
+
+  p <- p +
+    ggplot2::scale_y_continuous(
+      labels = if (mode == "proportion") scales::percent_format(accuracy = 1) else waiver(),
+      expand = ggplot2::expansion(mult = c(0, 0.05))
+    ) +
+    ggplot2::coord_cartesian(ylim = c(0, 45))
 
   return(p)
 }
@@ -504,10 +805,14 @@ make_stacked_contrib_plot <- function(df_counts,
 p_meso_stack <- make_stacked_contrib_plot(
   df_counts = gene_count_meso_pectin,
   gene_classes = gene_classes,
-  top_n = 7,
+  top_n = 10,
   mode = "count",
+  mags_tax = meso_mags_tax,      # now drives top_n selection by rel_abun
+  name_col = "new",
+  rel_abun_col = "rel_abun",
+  rel_abun_digits = 2,
   genome_palette = c(
-    "navy", "royalblue4",
+    "orchid1", "purple", "slateblue", "slateblue4", "navy",
     "steelblue3", "mediumaquamarine",
     "seagreen1", "seagreen3", "olivedrab"
   ),
@@ -515,31 +820,410 @@ p_meso_stack <- make_stacked_contrib_plot(
   title = "Mesophilic contribution to pectin CAZy gene counts"
 )
 
-
 p_thermo_stack <- make_stacked_contrib_plot(
   df_counts = gene_count_thermo_pectin,
   gene_classes = gene_classes,
-  top_n = 7,
+  top_n = 10,
   mode = "count",
+  mags_tax = thermo_mags_tax,    # now drives top_n selection by rel_abun
+  name_col = "new",
+  rel_abun_col = "rel_abun",
+  rel_abun_digits = 2,
   genome_palette = c(
-    "firebrick4", "firebrick3",
-    "firebrick1", "darkorange1",
-    "darkorange3", "darkorange4", "coral4"
+    "black", "firebrick4", "firebrick3",
+    "firebrick1", "gold3", "gold1", "darkorange1",
+    "chocolate", "darkorange4", "darkred"
   ),
   other_colour = "grey80",
   title = "Thermophilic contribution to pectin CAZy gene counts"
 )
 
-
 p <- p_meso_stack / p_thermo_stack
 
 
 
-ggsave(filename = "pectin/attribution_barplot.png", plot = p,
+ggsave(filename = "pectin/abun_attribution_barplot.png", plot = p,
        width = 20, height = 12, dpi = 300)
 
 ```
 
+
+Abundance only Attribute plot
+```{r}
+
+make_stacked_contrib_plot <- function(df_counts,
+                                      gene_classes = NULL,
+                                      top_n = 10,
+                                      title = "",
+                                      mode = c("proportion", "count"),
+                                      facet_by_class = TRUE,
+                                      genome_palette = NULL,
+                                      other_colour = "grey70",
+                                      mags_tax = NULL,
+                                      name_col = "new",
+                                      rel_abun_col = "rel_abun",
+                                      rel_abun_digits = 2) {
+
+  mode <- match.arg(mode)
+
+  long <- df_counts %>%
+    dplyr::mutate(dplyr::across(-gene_id, ~ as.numeric(.x))) %>%
+    tidyr::pivot_longer(-gene_id, names_to = "Genome", values_to = "count") %>%
+    dplyr::mutate(count = tidyr::replace_na(count, 0))
+
+  if (!is.null(mags_tax)) {
+
+    ab_map <- mags_tax %>%
+      dplyr::select(
+        Genome = dplyr::all_of(name_col),
+        rel_abun = dplyr::all_of(rel_abun_col)
+      ) %>%
+      dplyr::filter(!is.na(Genome)) %>%
+      dplyr::mutate(rel_abun = as.numeric(rel_abun)) %>%
+      dplyr::distinct(Genome, .keep_all = TRUE)
+
+    present_genomes <- unique(long$Genome)
+
+    genomes_with_any_gene <- long %>%
+      dplyr::group_by(Genome) %>%
+      dplyr::summarise(has_gene = any(count >= 1), .groups = "drop") %>%
+      dplyr::filter(has_gene) %>%
+      dplyr::pull(Genome)
+
+    top_genomes <- ab_map %>%
+      dplyr::filter(Genome %in% present_genomes, Genome %in% genomes_with_any_gene) %>%
+      dplyr::arrange(dplyr::desc(rel_abun)) %>%
+      dplyr::slice_head(n = top_n) %>%
+      dplyr::pull(Genome)
+
+  } else {
+
+    top_genomes <- long %>%
+      dplyr::group_by(Genome) %>%
+      dplyr::summarise(total = sum(count), .groups = "drop") %>%
+      dplyr::arrange(dplyr::desc(total)) %>%
+      dplyr::slice_head(n = top_n) %>%
+      dplyr::pull(Genome)
+  }
+
+  keep_genomes <- top_genomes
+
+  long2 <- long %>%
+    dplyr::mutate(Genome_grp = dplyr::if_else(Genome %in% keep_genomes, Genome, "Other"))
+
+  plot_df <- long2 %>%
+    dplyr::group_by(gene_id, Genome_grp) %>%
+    dplyr::summarise(count = sum(count), .groups = "drop")
+
+  if (mode == "proportion") {
+    plot_df <- plot_df %>%
+      dplyr::group_by(gene_id) %>%
+      dplyr::mutate(
+        denom = sum(count),
+        prop  = dplyr::if_else(denom > 0, count / denom, 0)
+      ) %>%
+      dplyr::ungroup() %>%
+      dplyr::select(-denom)
+  }
+
+  if (!is.null(gene_classes)) {
+    gene_order <- gene_classes %>% dplyr::pull(gene_id) %>% as.character()
+    class_levels <- gene_classes %>%
+      dplyr::mutate(class = stringr::str_squish(class)) %>%
+      dplyr::distinct(class) %>%
+      dplyr::pull(class)
+
+    plot_df <- plot_df %>%
+      dplyr::left_join(
+        gene_classes %>%
+          dplyr::mutate(gene_id = as.character(gene_id),
+                        class = stringr::str_squish(class)),
+        by = "gene_id"
+      ) %>%
+      dplyr::mutate(
+        class = factor(class, levels = class_levels),
+        gene_id = factor(as.character(gene_id),
+                         levels = unique(gene_order))
+      )
+  } else {
+    plot_df <- plot_df %>%
+      dplyr::mutate(gene_id = factor(as.character(gene_id)))
+  }
+
+  genome_levels <- c(keep_genomes, "Other")
+  plot_df <- plot_df %>%
+    dplyr::mutate(Genome_grp = factor(Genome_grp, levels = genome_levels))
+
+  n_keep <- length(keep_genomes)
+
+  if (is.null(genome_palette)) {
+    pal_fun <- grDevices::colorRampPalette(c("steelblue4", "goldenrod2", "firebrick3"))
+    keep_cols <- stats::setNames(pal_fun(n_keep), keep_genomes)
+  } else {
+    if (length(genome_palette) < n_keep) {
+      stop("Not enough colours supplied in genome_palette for top_n genomes.")
+    }
+    keep_cols <- stats::setNames(genome_palette[seq_len(n_keep)], keep_genomes)
+  }
+
+  mag_cols <- c(keep_cols, Other = other_colour)
+
+  legend_labels <- stats::setNames(genome_levels, genome_levels)
+
+  if (!is.null(mags_tax)) {
+    ab_map2 <- mags_tax %>%
+      dplyr::select(
+        Genome = dplyr::all_of(name_col),
+        rel_abun = dplyr::all_of(rel_abun_col)
+      ) %>%
+      dplyr::filter(!is.na(Genome)) %>%
+      dplyr::mutate(rel_abun = as.numeric(rel_abun)) %>%
+      dplyr::distinct(Genome, .keep_all = TRUE)
+
+    ab_vec <- ab_map2$rel_abun
+    names(ab_vec) <- ab_map2$Genome
+
+    keep_labels <- vapply(
+      keep_genomes,
+      function(g) {
+        ra <- ab_vec[[g]]
+        if (is.null(ra) || is.na(ra)) {
+          sprintf("%s (NA%%)", g)
+        } else {
+          sprintf(paste0("%s (%.", rel_abun_digits, "f%%)"), g, ra)
+        }
+      },
+      character(1)
+    )
+    names(keep_labels) <- keep_genomes
+
+    legend_labels <- c(keep_labels, Other = "Other")
+  }
+
+  yvar <- if (mode == "proportion") "prop" else "count"
+  ylab <- if (mode == "proportion") "Proportion of total gene count"
+  else "Total gene count (summed across selected MAGs)"
+
+  p <- ggplot2::ggplot(plot_df, ggplot2::aes(x = gene_id, y = .data[[yvar]], fill = Genome_grp)) +
+    ggplot2::geom_col(width = 0.9) +
+    ggplot2::scale_fill_manual(
+      values = mag_cols,
+      breaks = genome_levels,
+      labels = legend_labels,
+      drop = FALSE
+    ) +
+    ggplot2::labs(
+      x = "CAZy family (gene_id)",
+      y = ylab,
+      title = title,
+      fill = "MAG / species"
+    ) +
+    ggplot2::theme_bw() +
+    ggplot2::theme(
+      axis.text.x = ggplot2::element_text(angle = 45, hjust = 1, vjust = 1, size = 7),
+      legend.position = "right"
+    )
+
+  if (facet_by_class && !is.null(gene_classes)) {
+    p <- p +
+      ggplot2::facet_grid(. ~ class, scales = "free_x", space = "free_x", switch = "x") +
+      ggplot2::theme(
+        panel.spacing.x = grid::unit(0.8, "lines"),
+        strip.placement = "outside",
+        strip.background = ggplot2::element_rect(fill = "grey95", colour = NA)
+      )
+  }
+
+  p <- p +
+    ggplot2::scale_y_continuous(
+      labels = if (mode == "proportion") scales::percent_format(accuracy = 1) else waiver(),
+      expand = ggplot2::expansion(mult = c(0, 0.05))
+    ) +
+    ggplot2::coord_cartesian(ylim = c(0, 45))
+
+  return(p)
+}
+
+p_meso_stack <- make_stacked_contrib_plot(
+  df_counts = gene_count_meso_pectin,
+  gene_classes = gene_classes,
+  top_n = 10,
+  mode = "count",
+  mags_tax = meso_mags_tax,
+  name_col = "new",
+  rel_abun_col = "rel_abun",
+  rel_abun_digits = 2,
+  genome_palette = c(
+    "orchid1", "purple", "slateblue", "slateblue4", "navy",
+    "steelblue3", "mediumaquamarine",
+    "seagreen1", "seagreen3", "olivedrab"
+  ),
+  other_colour = "grey80",
+  title = "Mesophilic contribution to pectin CAZy gene counts"
+)
+
+p_thermo_stack <- make_stacked_contrib_plot(
+  df_counts = gene_count_thermo_pectin,
+  gene_classes = gene_classes,
+  top_n = 10,
+  mode = "count",
+  mags_tax = thermo_mags_tax,
+  name_col = "new",
+  rel_abun_col = "rel_abun",
+  rel_abun_digits = 2,
+  genome_palette = c(
+    "black", "firebrick4", "firebrick3",
+    "firebrick1", "gold3", "gold1", "darkorange1",
+    "chocolate", "darkorange4", "darkred"
+  ),
+  other_colour = "grey80",
+  title = "Thermophilic contribution to pectin CAZy gene counts"
+)
+
+p <- p_meso_stack / p_thermo_stack
+
+ggsave(filename = "pectin/only_abun_attribution_barplot.png", plot = p,
+       width = 20, height = 12, dpi = 300)
+
+```
+
+
+Masked abundance stacked barplot
+```{r}
+
+
+make_abun_stack_plot <- function(df_counts,
+                                 gene_classes,
+                                 mags_tax,
+                                 name_col = "new",
+                                 rel_abun_col = "rel_abun",
+                                 rel_abun_digits = 2,
+                                 top_n = 10,
+                                 title = "",
+                                 y_lim = c(0, 45),
+                                 other_colour = "grey80") {
+
+  long <- df_counts %>%
+    mutate(across(-gene_id, ~ as.numeric(.x))) %>%
+    pivot_longer(-gene_id, names_to = "Genome", values_to = "count") %>%
+    mutate(count = replace_na(count, 0))
+
+  ab_map <- mags_tax %>%
+    select(Genome = all_of(name_col),
+           rel_abun = all_of(rel_abun_col)) %>%
+    filter(!is.na(Genome)) %>%
+    mutate(rel_abun = as.numeric(rel_abun)) %>%
+    distinct(Genome, .keep_all = TRUE)
+
+  long <- long %>% left_join(ab_map, by = "Genome")
+
+  plot_df0 <- long %>%
+    filter(count >= 1) %>%
+    select(gene_id, Genome, rel_abun)
+
+  genomes_with_any_gene <- plot_df0 %>%
+    distinct(Genome) %>%
+    pull(Genome)
+
+  top_genomes <- ab_map %>%
+    filter(Genome %in% genomes_with_any_gene) %>%
+    arrange(desc(rel_abun)) %>%
+    slice_head(n = top_n) %>%
+    pull(Genome)
+
+  plot_df <- plot_df0 %>%
+    mutate(Genome_grp = if_else(Genome %in% top_genomes, Genome, "Other")) %>%
+    group_by(gene_id, Genome_grp) %>%
+    summarise(rel_abun = sum(rel_abun, na.rm = TRUE), .groups = "drop")
+
+  gene_classes2 <- gene_classes %>%
+    mutate(gene_id = as.character(gene_id),
+           class = str_squish(class))
+
+  gene_order <- gene_classes2 %>% pull(gene_id)
+  class_levels <- gene_classes2 %>% distinct(class) %>% pull(class)
+
+  plot_df <- plot_df %>%
+    mutate(gene_id = as.character(gene_id)) %>%
+    left_join(gene_classes2, by = "gene_id", relationship = "many-to-many") %>%
+    mutate(
+      class   = factor(class, levels = class_levels),
+      gene_id = factor(gene_id, levels = unique(gene_order))
+    )
+
+  genome_levels <- c(top_genomes, "Other")
+  plot_df <- plot_df %>%
+    mutate(Genome_grp = factor(Genome_grp, levels = genome_levels))
+
+  keep_cols <- setNames(scico::scico(length(top_genomes), palette = "managua"), top_genomes)
+  mag_cols <- c(keep_cols, Other = other_colour)
+
+  ab_vec <- ab_map$rel_abun
+  names(ab_vec) <- ab_map$Genome
+
+  keep_labels <- vapply(
+    top_genomes,
+    function(g) {
+      ra <- ab_vec[[g]]
+      if (is.null(ra) || is.na(ra)) sprintf("%s (NA%%)", g)
+      else sprintf(paste0("%s (%.", rel_abun_digits, "f%%)"), g, ra)
+    },
+    character(1)
+  )
+  names(keep_labels) <- top_genomes
+  legend_labels <- c(keep_labels, Other = "Other")
+
+  p <- ggplot(plot_df, aes(x = gene_id, y = rel_abun, fill = Genome_grp)) +
+    geom_col(width = 0.9) +
+    scale_fill_manual(values = mag_cols, breaks = genome_levels, labels = legend_labels, drop = FALSE) +
+    labs(x = "CAZy family (gene_id)", y = "Relative abundance (%)", title = title, fill = "MAG / species") +
+    theme_bw() +
+    theme(
+      axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 7),
+      legend.position = "right"
+    ) +
+    scale_y_continuous(expand = expansion(mult = c(0, 0.05))) +
+    coord_cartesian(ylim = y_lim) +
+    facet_grid(. ~ class, scales = "free_x", space = "free_x", switch = "x") +
+    theme(
+      panel.spacing.x = unit(0.8, "lines"),
+      strip.placement = "outside",
+      strip.background = element_rect(fill = "grey95", colour = NA)
+    )
+
+  p
+}
+
+p_meso_stack <- make_abun_stack_plot(
+  df_counts = gene_count_meso_pectin,
+  gene_classes = gene_classes,
+  mags_tax = meso_mags_tax,
+  name_col = "new",
+  rel_abun_col = "rel_abun",
+  rel_abun_digits = 2,
+  top_n = 10,
+  y_lim = c(0, 14),
+  title = "Mesophilic: relative abundance of genomes with CAZy count ≥ 1 (top 10 coloured)"
+)
+
+p_thermo_stack <- make_abun_stack_plot(
+  df_counts = gene_count_thermo_pectin,
+  gene_classes = gene_classes,
+  mags_tax = thermo_mags_tax,
+  name_col = "new",
+  rel_abun_col = "rel_abun",
+  rel_abun_digits = 2,
+  top_n = 10,
+  y_lim = c(0, 14),
+  title = "Thermophilic: relative abundance of genomes with CAZy count ≥ 1 (top 10 coloured)"
+)
+
+p <- p_meso_stack / p_thermo_stack
+
+ggsave("pectin/abun_masked_attribution_barplot.png",
+       p, width = 20, height = 12, dpi = 300)
+
+```
 
 
         --------------------------------------------------------------
@@ -1019,35 +1703,58 @@ ggsave(filename = "cellulose/mag_gene_counts_barplot_conservative.png", plot = p
 Attribution plot
 ```{r}
 
-### lenient
 
-# Uses ONE shared gene class definition for both plots (e.g. gene_classes_cel_len)
 make_stacked_contrib_plot <- function(df_counts,
                                       gene_classes,
-                                      top_n = 7,
+                                      top_n = 10,
                                       title = "",
                                       mode = c("proportion", "count"),
                                       facet_by_class = TRUE,
                                       genome_palette = NULL,
                                       other_colour = "grey70",
-                                      y_lim = c(0, 130)) {
+                                      y_lim = NULL,
+                                      mags_tax = NULL,
+                                      name_col = "new",
+                                      rel_abun_col = "rel_abun",
+                                      rel_abun_digits = 2,
+                                      select_top_by = c("gene_count", "abundance")) {
 
   mode <- match.arg(mode)
+  select_top_by <- match.arg(select_top_by)
 
   long <- df_counts %>%
     mutate(across(-gene_id, ~ as.numeric(.x))) %>%
     pivot_longer(-gene_id, names_to = "Genome", values_to = "count") %>%
     mutate(count = replace_na(count, 0))
 
-  top_genomes <- long %>%
-    group_by(Genome) %>%
-    summarise(total = sum(count), .groups = "drop") %>%
-    arrange(desc(total)) %>%
-    slice_head(n = top_n) %>%
-    pull(Genome)
+  present_genomes <- unique(long$Genome)
+
+  if (select_top_by == "abundance") {
+    if (is.null(mags_tax)) stop("select_top_by='abundance' requires mags_tax.")
+
+    ab_map <- mags_tax %>%
+      select(Genome = all_of(name_col), rel_abun = all_of(rel_abun_col)) %>%
+      filter(!is.na(Genome)) %>%
+      mutate(rel_abun = as.numeric(rel_abun)) %>%
+      distinct(Genome, .keep_all = TRUE)
+
+    keep_genomes <- ab_map %>%
+      filter(Genome %in% present_genomes) %>%
+      arrange(desc(rel_abun)) %>%
+      slice_head(n = top_n) %>%
+      pull(Genome)
+
+  } else {
+    keep_genomes <- long %>%
+      group_by(Genome) %>%
+      summarise(total = sum(count), .groups = "drop") %>%
+      arrange(desc(total)) %>%
+      slice_head(n = top_n) %>%
+      pull(Genome)
+  }
 
   long2 <- long %>%
-    mutate(Genome_grp = if_else(Genome %in% top_genomes, Genome, "Other"))
+    mutate(Genome_grp = if_else(Genome %in% keep_genomes, Genome, "Other"))
 
   plot_df <- long2 %>%
     group_by(gene_id, Genome_grp) %>%
@@ -1056,45 +1763,62 @@ make_stacked_contrib_plot <- function(df_counts,
   if (mode == "proportion") {
     plot_df <- plot_df %>%
       group_by(gene_id) %>%
-      mutate(
-        denom = sum(count),
-        prop  = if_else(denom > 0, count / denom, 0)
-      ) %>%
+      mutate(denom = sum(count), prop = if_else(denom > 0, count / denom, 0)) %>%
       ungroup() %>%
       select(-denom)
   }
 
   gene_order <- gene_classes %>% mutate(gene_id = as.character(gene_id)) %>% pull(gene_id)
-  class_levels <- gene_classes %>%
-    mutate(class = str_squish(class)) %>%
-    distinct(class) %>%
-    pull(class)
+  class_levels <- gene_classes %>% mutate(class = str_squish(class)) %>% distinct(class) %>% pull(class)
 
   plot_df <- plot_df %>%
     mutate(gene_id = as.character(gene_id)) %>%
-    left_join(
-      gene_classes %>% mutate(gene_id = as.character(gene_id), class = str_squish(class)),
-      by = "gene_id"
-    ) %>%
+    left_join(gene_classes %>% mutate(gene_id = as.character(gene_id), class = str_squish(class)),
+              by = "gene_id") %>%
     mutate(
-      class  = factor(class, levels = class_levels),
+      class   = factor(class, levels = class_levels),
       gene_id = factor(gene_id, levels = unique(gene_order))
     )
 
-  genome_levels <- c(top_genomes, "Other")
-  plot_df <- plot_df %>%
-    mutate(Genome_grp = factor(Genome_grp, levels = genome_levels))
+  genome_levels <- c(keep_genomes, "Other")
+  plot_df <- plot_df %>% mutate(Genome_grp = factor(Genome_grp, levels = genome_levels))
+
+  n_keep <- length(keep_genomes)
 
   if (is.null(genome_palette)) {
-    pal_fun <- colorRampPalette(c("steelblue4", "goldenrod2", "firebrick3"))
-    mag_cols <- setNames(pal_fun(length(top_genomes)), top_genomes)
+    pal_fun <- grDevices::colorRampPalette(c("steelblue4", "goldenrod2", "firebrick3"))
+    keep_cols <- stats::setNames(pal_fun(n_keep), keep_genomes)
   } else {
-    if (length(genome_palette) < length(top_genomes)) {
-      stop("Not enough colours supplied in genome_palette for top_n genomes.")
-    }
-    mag_cols <- setNames(genome_palette[seq_along(top_genomes)], top_genomes)
+    if (length(genome_palette) < n_keep) stop("Not enough colours supplied in genome_palette.")
+    keep_cols <- stats::setNames(genome_palette[seq_len(n_keep)], keep_genomes)
   }
-  mag_cols <- c(mag_cols, Other = other_colour)
+
+  mag_cols <- c(keep_cols, Other = other_colour)
+
+  legend_labels <- stats::setNames(genome_levels, genome_levels)
+
+  if (!is.null(mags_tax)) {
+    ab_map2 <- mags_tax %>%
+      select(Genome = all_of(name_col), rel_abun = all_of(rel_abun_col)) %>%
+      filter(!is.na(Genome)) %>%
+      mutate(rel_abun = as.numeric(rel_abun)) %>%
+      distinct(Genome, .keep_all = TRUE)
+
+    ab_vec <- ab_map2$rel_abun
+    names(ab_vec) <- ab_map2$Genome
+
+    keep_labels <- vapply(
+      keep_genomes,
+      function(g) {
+        ra <- ab_vec[[g]]
+        if (is.null(ra) || is.na(ra)) sprintf("%s (NA%%)", g)
+        else sprintf(paste0("%s (%.", rel_abun_digits, "f%%)"), g, ra)
+      },
+      character(1)
+    )
+    names(keep_labels) <- keep_genomes
+    legend_labels <- c(keep_labels, Other = "Other")
+  }
 
   yvar <- if (mode == "proportion") "prop" else "count"
   ylab <- if (mode == "proportion") "Proportion of total gene count"
@@ -1102,182 +1826,464 @@ make_stacked_contrib_plot <- function(df_counts,
 
   p <- ggplot(plot_df, aes(x = gene_id, y = .data[[yvar]], fill = Genome_grp)) +
     geom_col(width = 0.9) +
-    scale_fill_manual(values = mag_cols, drop = FALSE) +
+    scale_fill_manual(values = mag_cols, breaks = genome_levels, labels = legend_labels, drop = FALSE) +
     labs(x = "CAZy family (gene_id)", y = ylab, title = title, fill = "MAG / species") +
     theme_bw() +
-    theme(
-      axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 7),
-      legend.position = "right"
-    )
+    theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 7),
+          legend.position = "right")
 
   if (facet_by_class) {
     p <- p +
       facet_grid(. ~ class, scales = "free_x", space = "free_x", switch = "x") +
-      theme(
-        panel.spacing.x = unit(0.8, "lines"),
-        strip.placement = "outside",
-        strip.background = element_rect(fill = "grey95", colour = NA)
-      )
+      theme(panel.spacing.x = unit(0.8, "lines"),
+            strip.placement = "outside",
+            strip.background = element_rect(fill = "grey95", colour = NA))
   }
 
-  # y axis formatting + FIXED y zoom (applies to BOTH count and proportion)
-  p <- p + scale_y_continuous(
-    labels = if (mode == "proportion") scales::percent_format(accuracy = 1) else waiver(),
-    expand = expansion(mult = c(0, 0.05))
-  )
+  p <- p +
+    scale_y_continuous(
+      labels = if (mode == "proportion") percent_format(accuracy = 1) else waiver(),
+      expand = expansion(mult = c(0, 0.05))
+    )
 
-  if (!is.null(y_lim)) {
-    p <- p + coord_cartesian(ylim = y_lim)
-  }
-
+  if (!is.null(y_lim)) p <- p + coord_cartesian(ylim = y_lim)
   p
 }
 
-
-# -------------------------------------------------------------------
-# Use the SAME gene class object for both plots:
-# e.g. gene_classes_cel_len (swap to whichever shared set you want)
-# -------------------------------------------------------------------
 GENE_CLASSES <- gene_classes_cel_len
 
-p_meso_stack <- make_stacked_contrib_plot(
+# Use the exact sample-specific palettes you like (same approach as your working pectin code)
+PAL_MESO_10 <- c(
+  "orchid1", "purple", "slateblue", "slateblue4", "navy",
+  "steelblue3", "mediumaquamarine", "seagreen1", "seagreen3", "olivedrab"
+)
+
+PAL_THERMO_10 <- c(
+  "black", "firebrick4", "firebrick3",
+  "firebrick1", "gold3", "gold1", "darkorange1",
+  "chocolate", "darkorange4", "darkred"
+)
+
+# Top 10 by abundance (lenient)
+p_meso_abun_len <- make_stacked_contrib_plot(
   df_counts = gene_count_meso_cel_len,
   gene_classes = GENE_CLASSES,
-  top_n = 7,
+  top_n = 10,
+  select_top_by = "abundance",
   mode = "count",
-  genome_palette = c(
-    "navy", "royalblue4",
-    "steelblue3", "mediumaquamarine",
-    "seagreen1", "seagreen3", "olivedrab"
-  ),
+  mags_tax = meso_mags_tax,
+  name_col = "new",
+  rel_abun_col = "rel_abun",
+  rel_abun_digits = 2,
+  genome_palette = PAL_MESO_10,
   other_colour = "grey80",
-  title = "Mesophilic contribution (cellulose CAZy gene counts) (lenient)"
+  y_lim = c(0, 130),
+  title = "Mesophilic contribution (cellulose CAZy gene counts) (lenient) — top 10 by abundance"
 )
 
-p_thermo_stack <- make_stacked_contrib_plot(
+p_thermo_abun_len <- make_stacked_contrib_plot(
   df_counts = gene_count_thermo_cel_len,
   gene_classes = GENE_CLASSES,
-  top_n = 7,
+  top_n = 10,
+  select_top_by = "abundance",
   mode = "count",
-  genome_palette = c(
-    "firebrick4", "firebrick3",
-    "firebrick1", "darkorange1",
-    "darkorange3", "darkorange4", "coral4"
-  ),
+  mags_tax = thermo_mags_tax,
+  name_col = "new",
+  rel_abun_col = "rel_abun",
+  rel_abun_digits = 2,
+  genome_palette = PAL_THERMO_10,
   other_colour = "grey80",
-  title = "Thermophilic contribution (cellulose CAZy gene counts) (lenient)"
+  y_lim = c(0, 130),
+  title = "Thermophilic contribution (cellulose CAZy gene counts) (lenient) — top 10 by abundance"
 )
 
+p_abun_len <- p_meso_abun_len / p_thermo_abun_len
 
-p <- p_meso_stack / p_thermo_stack
-
-
-ggsave(filename = "cellulose/attribution_barplot_lenient.png", plot = p,
+ggsave("cellulose/abun_attribution_barplot_lenient_top10.png", p_abun_len,
        width = 20, height = 12, dpi = 300)
 
+# Top 10 by abundance (conservative)
+p_meso_abun_con <- make_stacked_contrib_plot(
+  df_counts = gene_count_meso_cel_con,
+  gene_classes = GENE_CLASSES,
+  top_n = 10,
+  select_top_by = "abundance",
+  mode = "count",
+  mags_tax = meso_mags_tax,
+  name_col = "new",
+  rel_abun_col = "rel_abun",
+  rel_abun_digits = 2,
+  genome_palette = PAL_MESO_10,
+  other_colour = "grey80",
+  y_lim = c(0, 25),
+  title = "Mesophilic contribution (cellulose CAZy gene counts) (conservative) — top 10 by abundance"
+)
+
+p_thermo_abun_con <- make_stacked_contrib_plot(
+  df_counts = gene_count_thermo_cel_con,
+  gene_classes = GENE_CLASSES,
+  top_n = 10,
+  select_top_by = "abundance",
+  mode = "count",
+  mags_tax = thermo_mags_tax,
+  name_col = "new",
+  rel_abun_col = "rel_abun",
+  rel_abun_digits = 2,
+  genome_palette = PAL_THERMO_10,
+  other_colour = "grey80",
+  y_lim = c(0, 25),
+  title = "Thermophilic contribution (cellulose CAZy gene counts) (conservative) — top 10 by abundance"
+)
+
+p_abun_con <- p_meso_abun_con / p_thermo_abun_con
+
+ggsave("cellulose/abun_attribution_barplot_conservative_top10.png", p_abun_con,
+       width = 20, height = 12, dpi = 300)
+
+ggsave(
+  filename = "cellulose/abun_attribution_barplot_conservative_top10.png",
+  plot = p_abun_con,
+  width = 20, height = 12, dpi = 300
+)
+
+```
 
 
+Abundance only attribute plot
+```{r}
 
-
-
-# Uses ONE shared gene class definition for both plots (e.g. gene_classes_cel_len)
 make_stacked_contrib_plot <- function(df_counts,
                                       gene_classes,
-                                      top_n = 7,
+                                      top_n = 10,
                                       title = "",
                                       mode = c("proportion", "count"),
                                       facet_by_class = TRUE,
                                       genome_palette = NULL,
-                                      other_colour = "grey70") {
+                                      other_colour = "grey70",
+                                      y_lim = NULL,
+                                      mags_tax = NULL,
+                                      name_col = "new",
+                                      rel_abun_col = "rel_abun",
+                                      rel_abun_digits = 2,
+                                      select_top_by = c("gene_count", "abundance")) {
 
   mode <- match.arg(mode)
+  select_top_by <- match.arg(select_top_by)
 
-  # Wide -> long
   long <- df_counts %>%
     mutate(across(-gene_id, ~ as.numeric(.x))) %>%
     pivot_longer(-gene_id, names_to = "Genome", values_to = "count") %>%
     mutate(count = replace_na(count, 0))
 
-  # Select top N genomes by total contribution
-  top_genomes <- long %>%
-    group_by(Genome) %>%
-    summarise(total = sum(count), .groups = "drop") %>%
-    arrange(desc(total)) %>%
-    slice_head(n = top_n) %>%
-    pull(Genome)
+  present_genomes <- unique(long$Genome)
 
-  # Collapse others
+  if (select_top_by == "abundance") {
+    if (is.null(mags_tax)) stop("select_top_by='abundance' requires mags_tax.")
+
+    ab_map <- mags_tax %>%
+      select(Genome = all_of(name_col), rel_abun = all_of(rel_abun_col)) %>%
+      filter(!is.na(Genome)) %>%
+      mutate(rel_abun = as.numeric(rel_abun)) %>%
+      distinct(Genome, .keep_all = TRUE)
+
+    genomes_with_any_gene <- long %>%
+      group_by(Genome) %>%
+      summarise(has_gene = any(count >= 1), .groups = "drop") %>%
+      filter(has_gene) %>%
+      pull(Genome)
+
+    keep_genomes <- ab_map %>%
+      filter(Genome %in% present_genomes, Genome %in% genomes_with_any_gene) %>%
+      arrange(desc(rel_abun)) %>%
+      slice_head(n = top_n) %>%
+      pull(Genome)
+
+  } else {
+    keep_genomes <- long %>%
+      group_by(Genome) %>%
+      summarise(total = sum(count), .groups = "drop") %>%
+      arrange(desc(total)) %>%
+      slice_head(n = top_n) %>%
+      pull(Genome)
+  }
+
   long2 <- long %>%
-    mutate(Genome_grp = if_else(Genome %in% top_genomes, Genome, "Other"))
+    mutate(Genome_grp = if_else(Genome %in% keep_genomes, Genome, "Other"))
 
-  # Aggregate counts per gene_id and Genome_grp
   plot_df <- long2 %>%
     group_by(gene_id, Genome_grp) %>%
     summarise(count = sum(count), .groups = "drop")
 
-  # Proportion mode
   if (mode == "proportion") {
     plot_df <- plot_df %>%
       group_by(gene_id) %>%
-      mutate(
-        denom = sum(count),
-        prop  = if_else(denom > 0, count / denom, 0)
-      ) %>%
+      mutate(denom = sum(count), prop = if_else(denom > 0, count / denom, 0)) %>%
       ungroup() %>%
       select(-denom)
   }
 
-  # ---- Join the SINGLE shared class definition ----
   gene_order <- gene_classes %>% mutate(gene_id = as.character(gene_id)) %>% pull(gene_id)
-  class_levels <- gene_classes %>%
-    mutate(class = str_squish(class)) %>%
-    distinct(class) %>%
-    pull(class)
+  class_levels <- gene_classes %>% mutate(class = str_squish(class)) %>% distinct(class) %>% pull(class)
 
   plot_df <- plot_df %>%
     mutate(gene_id = as.character(gene_id)) %>%
-    left_join(
-      gene_classes %>%
-        mutate(gene_id = as.character(gene_id), class = str_squish(class)),
-      by = "gene_id"
-    ) %>%
+    left_join(gene_classes %>% mutate(gene_id = as.character(gene_id), class = str_squish(class)),
+              by = "gene_id") %>%
     mutate(
-      class  = factor(class, levels = class_levels),
+      class   = factor(class, levels = class_levels),
       gene_id = factor(gene_id, levels = unique(gene_order))
     )
 
-  # Fix legend order
-  genome_levels <- c(top_genomes, "Other")
-  plot_df <- plot_df %>%
-    mutate(Genome_grp = factor(Genome_grp, levels = genome_levels))
+  genome_levels <- c(keep_genomes, "Other")
+  plot_df <- plot_df %>% mutate(Genome_grp = factor(Genome_grp, levels = genome_levels))
 
-  # -------------------------
-  # COLOUR CONTROL (MAGs)
-  # -------------------------
+  n_keep <- length(keep_genomes)
+
   if (is.null(genome_palette)) {
-    pal_fun <- colorRampPalette(c("steelblue4", "goldenrod2", "firebrick3"))
-    mag_cols <- setNames(pal_fun(length(top_genomes)), top_genomes)
+    pal_fun <- grDevices::colorRampPalette(c("steelblue4", "goldenrod2", "firebrick3"))
+    keep_cols <- stats::setNames(pal_fun(n_keep), keep_genomes)
   } else {
-    if (length(genome_palette) < length(top_genomes)) {
-      stop("Not enough colours supplied in genome_palette for top_n genomes.")
-    }
-    mag_cols <- setNames(genome_palette[seq_along(top_genomes)], top_genomes)
+    if (length(genome_palette) < n_keep) stop("Not enough colours supplied in genome_palette.")
+    keep_cols <- stats::setNames(genome_palette[seq_len(n_keep)], keep_genomes)
   }
-  mag_cols <- c(mag_cols, Other = other_colour)
 
-  # -------------------------
-  # Plot
-  # -------------------------
+  mag_cols <- c(keep_cols, Other = other_colour)
+
+  legend_labels <- stats::setNames(genome_levels, genome_levels)
+
+  if (!is.null(mags_tax)) {
+    ab_map2 <- mags_tax %>%
+      select(Genome = all_of(name_col), rel_abun = all_of(rel_abun_col)) %>%
+      filter(!is.na(Genome)) %>%
+      mutate(rel_abun = as.numeric(rel_abun)) %>%
+      distinct(Genome, .keep_all = TRUE)
+
+    ab_vec <- ab_map2$rel_abun
+    names(ab_vec) <- ab_map2$Genome
+
+    keep_labels <- vapply(
+      keep_genomes,
+      function(g) {
+        ra <- ab_vec[[g]]
+        if (is.null(ra) || is.na(ra)) sprintf("%s (NA%%)", g)
+        else sprintf(paste0("%s (%.", rel_abun_digits, "f%%)"), g, ra)
+      },
+      character(1)
+    )
+    names(keep_labels) <- keep_genomes
+    legend_labels <- c(keep_labels, Other = "Other")
+  }
+
   yvar <- if (mode == "proportion") "prop" else "count"
   ylab <- if (mode == "proportion") "Proportion of total gene count"
-          else "Total gene count (summed across selected MAGs)"
+  else "Total gene count (summed across selected MAGs)"
 
   p <- ggplot(plot_df, aes(x = gene_id, y = .data[[yvar]], fill = Genome_grp)) +
     geom_col(width = 0.9) +
-    scale_fill_manual(values = mag_cols, drop = FALSE) +
+    scale_fill_manual(values = mag_cols, breaks = genome_levels, labels = legend_labels, drop = FALSE) +
+    labs(x = "CAZy family (gene_id)", y = ylab, title = title, fill = "MAG / species") +
+    theme_bw() +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 7),
+          legend.position = "right")
+
+  if (facet_by_class) {
+    p <- p +
+      facet_grid(. ~ class, scales = "free_x", space = "free_x", switch = "x") +
+      theme(panel.spacing.x = unit(0.8, "lines"),
+            strip.placement = "outside",
+            strip.background = element_rect(fill = "grey95", colour = NA))
+  }
+
+  p <- p +
+    scale_y_continuous(
+      labels = if (mode == "proportion") percent_format(accuracy = 1) else waiver(),
+      expand = expansion(mult = c(0, 0.05))
+    )
+
+  if (!is.null(y_lim)) p <- p + coord_cartesian(ylim = y_lim)
+  p
+}
+
+GENE_CLASSES <- gene_classes_cel_len
+
+PAL_MESO_10 <- c(
+  "orchid1", "purple", "slateblue", "slateblue4", "navy",
+  "steelblue3", "mediumaquamarine", "seagreen1", "seagreen3", "olivedrab"
+)
+
+PAL_THERMO_10 <- c(
+  "black", "firebrick4", "firebrick3",
+  "firebrick1", "gold3", "gold1", "darkorange1",
+  "chocolate", "darkorange4", "darkred"
+)
+
+p_meso_abun_len <- make_stacked_contrib_plot(
+  df_counts = gene_count_meso_cel_len,
+  gene_classes = GENE_CLASSES,
+  top_n = 10,
+  select_top_by = "abundance",
+  mode = "count",
+  mags_tax = meso_mags_tax,
+  name_col = "new",
+  rel_abun_col = "rel_abun",
+  rel_abun_digits = 2,
+  genome_palette = PAL_MESO_10,
+  other_colour = "grey80",
+  y_lim = c(0, 130),
+  title = "Mesophilic contribution (cellulose CAZy gene counts) (lenient) — top 10 by abundance (>=1 gene)"
+)
+
+p_thermo_abun_len <- make_stacked_contrib_plot(
+  df_counts = gene_count_thermo_cel_len,
+  gene_classes = GENE_CLASSES,
+  top_n = 10,
+  select_top_by = "abundance",
+  mode = "count",
+  mags_tax = thermo_mags_tax,
+  name_col = "new",
+  rel_abun_col = "rel_abun",
+  rel_abun_digits = 2,
+  genome_palette = PAL_THERMO_10,
+  other_colour = "grey80",
+  y_lim = c(0, 130),
+  title = "Thermophilic contribution (cellulose CAZy gene counts) (lenient) — top 10 by abundance (>=1 gene)"
+)
+
+p_abun_len <- p_meso_abun_len / p_thermo_abun_len
+
+ggsave("cellulose/only_abun_attribution_barplot_lenient_top10.png", p_abun_len,
+       width = 20, height = 12, dpi = 300)
+
+p_meso_abun_con <- make_stacked_contrib_plot(
+  df_counts = gene_count_meso_cel_con,
+  gene_classes = GENE_CLASSES,
+  top_n = 10,
+  select_top_by = "abundance",
+  mode = "count",
+  mags_tax = meso_mags_tax,
+  name_col = "new",
+  rel_abun_col = "rel_abun",
+  rel_abun_digits = 2,
+  genome_palette = PAL_MESO_10,
+  other_colour = "grey80",
+  y_lim = c(0, 25),
+  title = "Mesophilic contribution (cellulose CAZy gene counts) (conservative) — top 10 by abundance (>=1 gene)"
+)
+
+p_thermo_abun_con <- make_stacked_contrib_plot(
+  df_counts = gene_count_thermo_cel_con,
+  gene_classes = GENE_CLASSES,
+  top_n = 10,
+  select_top_by = "abundance",
+  mode = "count",
+  mags_tax = thermo_mags_tax,
+  name_col = "new",
+  rel_abun_col = "rel_abun",
+  rel_abun_digits = 2,
+  genome_palette = PAL_THERMO_10,
+  other_colour = "grey80",
+  y_lim = c(0, 25),
+  title = "Thermophilic contribution (cellulose CAZy gene counts) (conservative) — top 10 by abundance (>=1 gene)"
+)
+
+p_abun_con <- p_meso_abun_con / p_thermo_abun_con
+
+ggsave("cellulose/only_abun_attribution_barplot_conservative_top10.png", p_abun_con,
+       width = 20, height = 12, dpi = 300)
+
+```
+
+
+Masked abundance stacked barplot
+```{r}
+
+make_abun_stack_plot <- function(df_counts,
+                                 gene_classes,
+                                 title = "",
+                                 facet_by_class = TRUE,
+                                 mags_tax,
+                                 name_col = "new",
+                                 rel_abun_col = "rel_abun",
+                                 top_n_abun = 20,
+                                 other_colour = "grey85",
+                                 y_lim = NULL) {
+
+  long <- df_counts %>%
+    mutate(across(-gene_id, ~ as.numeric(.x))) %>%
+    pivot_longer(-gene_id, names_to = "Genome", values_to = "count") %>%
+    mutate(count = replace_na(count, 0))
+
+  ab_map <- mags_tax %>%
+    select(Genome = all_of(name_col), rel_abun = all_of(rel_abun_col)) %>%
+    filter(!is.na(Genome)) %>%
+    mutate(rel_abun = as.numeric(rel_abun)) %>%
+    distinct(Genome, .keep_all = TRUE)
+
+  long2 <- long %>%
+    filter(count >= 1) %>%
+    left_join(ab_map, by = "Genome")
+
+  # keep top N by abundance among genomes that appear (count>=1 for >=1 gene)
+  top_genomes <- long2 %>%
+    distinct(Genome, rel_abun) %>%
+    arrange(desc(rel_abun)) %>%
+    slice_head(n = top_n_abun) %>%
+    pull(Genome)
+
+  long3 <- long2 %>%
+    mutate(Genome_grp = if_else(Genome %in% top_genomes, Genome, "Other")) %>%
+    group_by(gene_id, Genome_grp) %>%
+    summarise(rel_abun = sum(rel_abun, na.rm = TRUE), .groups = "drop")
+
+  gene_classes2 <- gene_classes %>%
+    mutate(gene_id = as.character(gene_id), class = str_squish(class))
+
+  gene_order <- gene_classes2 %>% pull(gene_id)
+  class_levels <- gene_classes2 %>% distinct(class) %>% pull(class)
+
+  plot_df <- long3 %>%
+    mutate(gene_id = as.character(gene_id)) %>%
+    left_join(gene_classes2, by = "gene_id", relationship = "many-to-many") %>%
+    mutate(
+      class   = factor(class, levels = class_levels),
+      gene_id = factor(gene_id, levels = unique(gene_order))
+    )
+
+  genome_levels <- c(top_genomes, "Other")
+  plot_df <- plot_df %>% mutate(Genome_grp = factor(Genome_grp, levels = genome_levels))
+
+  # colours: viridis for top genomes, grey for Other
+  keep_cols <- setNames(
+  scico(length(top_genomes), palette = "managua"),
+  top_genomes
+)
+  mag_cols <- c(keep_cols, Other = other_colour)
+
+  # legend labels include abundance
+  ab_vec <- ab_map$rel_abun
+  names(ab_vec) <- ab_map$Genome
+
+  legend_labels <- c(
+    setNames(
+      vapply(
+        top_genomes,
+        function(g) {
+          ra <- ab_vec[[g]]
+          if (is.null(ra) || is.na(ra)) sprintf("%s (NA%%)", g) else sprintf("%s (%.2f%%)", g, ra)
+        },
+        character(1)
+      ),
+      top_genomes
+    ),
+    Other = "Other"
+  )
+
+  p <- ggplot(plot_df, aes(x = gene_id, y = rel_abun, fill = Genome_grp)) +
+    geom_col(width = 0.9) +
+    scale_fill_manual(values = mag_cols, breaks = genome_levels, labels = legend_labels, drop = FALSE) +
     labs(
       x = "CAZy family (gene_id)",
-      y = ylab,
+      y = "Relative abundance (%) of genomes with count ≥ 1",
       title = title,
       fill = "MAG / species"
     ) +
@@ -1285,7 +2291,8 @@ make_stacked_contrib_plot <- function(df_counts,
     theme(
       axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 7),
       legend.position = "right"
-    )
+    ) +
+    scale_y_continuous(labels = function(x) paste0(x, "%"), expand = expansion(mult = c(0, 0.05)))
 
   if (facet_by_class) {
     p <- p +
@@ -1297,61 +2304,66 @@ make_stacked_contrib_plot <- function(df_counts,
       )
   }
 
-  p <- p +
-    scale_y_continuous(
-      labels = if (mode == "proportion") percent_format(accuracy = 1) else waiver(),
-      expand = expansion(mult = c(0, 0.05))
-    ) +
-    coord_cartesian(ylim = c(0, 25))
-
+  if (!is.null(y_lim)) p <- p + coord_cartesian(ylim = y_lim)
   p
 }
 
-# -------------------------------------------------------------------
-# Use the SAME gene class object for both plots:
-# e.g. gene_classes_cel_len (swap to whichever shared set you want)
-# -------------------------------------------------------------------
 GENE_CLASSES <- gene_classes_cel_len
 
-p_meso_stack <- make_stacked_contrib_plot(
+# lenient
+p_meso_abunmask_len <- make_abun_stack_plot(
+  df_counts = gene_count_meso_cel_len,
+  gene_classes = GENE_CLASSES,
+  mags_tax = meso_mags_tax,
+  name_col = "new",
+  rel_abun_col = "rel_abun",
+  top_n_abun = 20,
+  title = "Mesophilic (lenient): abundance of genomes with CAZy count ≥ 1 (top 20 coloured)"
+)
+
+p_thermo_abunmask_len <- make_abun_stack_plot(
+  df_counts = gene_count_thermo_cel_len,
+  gene_classes = GENE_CLASSES,
+  mags_tax = thermo_mags_tax,
+  name_col = "new",
+  rel_abun_col = "rel_abun",
+  top_n_abun = 20,
+  title = "Thermophilic (lenient): abundance of genomes with CAZy count ≥ 1 (top 20 coloured)"
+)
+
+p_len <- p_meso_abunmask_len / p_thermo_abunmask_len
+
+ggsave("cellulose/abun_masked_by_gene_lenient_top20.png", p_len,
+       width = 20, height = 12, dpi = 300)
+
+# conservative
+p_meso_abunmask_con <- make_abun_stack_plot(
   df_counts = gene_count_meso_cel_con,
   gene_classes = GENE_CLASSES,
-  top_n = 7,
-  mode = "count",
-  genome_palette = c(
-    "navy", "royalblue4",
-    "steelblue3", "mediumaquamarine",
-    "seagreen1", "seagreen3", "olivedrab"
-  ),
-  other_colour = "grey80",
-  title = "Mesophilic contribution (cellulose CAZy gene counts) (conservative)"
+  mags_tax = meso_mags_tax,
+  name_col = "new",
+  rel_abun_col = "rel_abun",
+  top_n_abun = 20,
+  title = "Mesophilic (conservative): abundance of genomes with CAZy count ≥ 1 (top 20 coloured)"
 )
 
-p_thermo_stack <- make_stacked_contrib_plot(
+p_thermo_abunmask_con <- make_abun_stack_plot(
   df_counts = gene_count_thermo_cel_con,
   gene_classes = GENE_CLASSES,
-  top_n = 7,
-  mode = "count",
-  genome_palette = c(
-    "firebrick4", "firebrick3",
-    "firebrick1", "darkorange1",
-    "darkorange3", "darkorange4", "coral4"
-  ),
-  other_colour = "grey80",
-  title = "Thermophilic contribution (cellulose CAZy gene counts) (conservative)"
+  mags_tax = thermo_mags_tax,
+  name_col = "new",
+  rel_abun_col = "rel_abun",
+  top_n_abun = 20,
+  title = "Thermophilic (conservative): abundance of genomes with CAZy count ≥ 1 (top 20 coloured)"
 )
 
-p <- p_meso_stack / p_thermo_stack
+p_con <- p_meso_abunmask_con | p_thermo_abunmask_con
 
-
-
-ggsave(filename = "cellulose/attribution_barplot_conservative.png", plot = p,
-       width = 20, height = 12, dpi = 300)
+ggsave("cellulose/abun_masked_by_gene_conservative_top20.png", p_con,
+       width = 15, height = 7, dpi = 300)
 
 
 ```
-
-
 
 
         --------------------------------------------------------------
@@ -1890,142 +2902,142 @@ ggsave(filename = "hemicellulose/mag_gene_counts_barplot_conservative.png", plot
 Attribution plot
 ```{r}
 
-### lenient
-
-library(tidyverse)
-library(scales)
-library(grid)   # unit()
-
-# ============================================================
-# STACKED CONTRIBUTION PLOT FUNCTION
-# ============================================================
 
 make_stacked_contrib_plot <- function(df_counts,
                                       gene_classes,
-                                      top_n = 7,
+                                      top_n = 10,
                                       title = "",
                                       mode = c("proportion", "count"),
                                       facet_by_class = TRUE,
                                       genome_palette = NULL,
                                       other_colour = "grey70",
-                                      y_lim = NULL) {
+                                      y_lim = NULL,
+                                      mags_tax = NULL,
+                                      name_col = "new",
+                                      rel_abun_col = "rel_abun",
+                                      rel_abun_digits = 2,
+                                      select_top_by = c("gene_count", "abundance")) {
 
   mode <- match.arg(mode)
+  select_top_by <- match.arg(select_top_by)
 
-  # ----------------------------------------------------------
-  # Wide -> long
-  # ----------------------------------------------------------
   long <- df_counts %>%
     mutate(across(-gene_id, ~ as.numeric(.x))) %>%
     pivot_longer(-gene_id, names_to = "Genome", values_to = "count") %>%
     mutate(count = replace_na(count, 0))
 
-  # ----------------------------------------------------------
-  # Select top N genomes by total contribution
-  # ----------------------------------------------------------
-  top_genomes <- long %>%
-    group_by(Genome) %>%
-    summarise(total = sum(count), .groups = "drop") %>%
-    arrange(desc(total)) %>%
-    slice_head(n = top_n) %>%
-    pull(Genome)
+  present_genomes <- unique(long$Genome)
 
-  # Collapse others
+  if (select_top_by == "abundance") {
+    if (is.null(mags_tax)) stop("select_top_by='abundance' requires mags_tax.")
+
+    ab_map <- mags_tax %>%
+      select(Genome = all_of(name_col), rel_abun = all_of(rel_abun_col)) %>%
+      filter(!is.na(Genome)) %>%
+      mutate(rel_abun = as.numeric(rel_abun)) %>%
+      distinct(Genome, .keep_all = TRUE)
+
+    keep_genomes <- ab_map %>%
+      filter(Genome %in% present_genomes) %>%
+      arrange(desc(rel_abun)) %>%
+      slice_head(n = top_n) %>%
+      pull(Genome)
+
+  } else {
+    keep_genomes <- long %>%
+      group_by(Genome) %>%
+      summarise(total = sum(count), .groups = "drop") %>%
+      arrange(desc(total)) %>%
+      slice_head(n = top_n) %>%
+      pull(Genome)
+  }
+
   long2 <- long %>%
-    mutate(Genome_grp = if_else(Genome %in% top_genomes, Genome, "Other"))
+    mutate(Genome_grp = if_else(Genome %in% keep_genomes, Genome, "Other"))
 
-  # ----------------------------------------------------------
-  # Aggregate counts per gene_id and Genome_grp
-  # ----------------------------------------------------------
   plot_df <- long2 %>%
     group_by(gene_id, Genome_grp) %>%
     summarise(count = sum(count), .groups = "drop")
 
-  # ----------------------------------------------------------
-  # Proportion mode (optional)
-  # ----------------------------------------------------------
   if (mode == "proportion") {
     plot_df <- plot_df %>%
       group_by(gene_id) %>%
-      mutate(
-        denom = sum(count),
-        prop  = if_else(denom > 0, count / denom, 0)
-      ) %>%
+      mutate(denom = sum(count), prop = if_else(denom > 0, count / denom, 0)) %>%
       ungroup() %>%
       select(-denom)
   }
 
-  # ----------------------------------------------------------
-  # Join class info
-  # ----------------------------------------------------------
-  gene_order <- gene_classes %>%
-    mutate(gene_id = as.character(gene_id)) %>%
-    pull(gene_id)
+  gene_classes2 <- gene_classes %>%
+    mutate(gene_id = as.character(gene_id),
+           class = str_squish(class))
 
-  class_levels <- gene_classes %>%
-    mutate(class = str_squish(class)) %>%
-    distinct(class) %>%
-    pull(class)
+  gene_order <- gene_classes2 %>% pull(gene_id)
+  class_levels <- gene_classes2 %>% distinct(class) %>% pull(class)
 
   plot_df <- plot_df %>%
     mutate(gene_id = as.character(gene_id)) %>%
-    left_join(
-      gene_classes %>%
-        mutate(gene_id = as.character(gene_id),
-               class = str_squish(class)),
-      by = "gene_id"
-    ) %>%
+    left_join(gene_classes2, by = "gene_id", relationship = "many-to-many") %>%
     mutate(
-      class  = factor(class, levels = class_levels),
+      class   = factor(class, levels = class_levels),
       gene_id = factor(gene_id, levels = unique(gene_order))
     )
 
-  # ----------------------------------------------------------
-  # Fix legend order
-  # ----------------------------------------------------------
-  genome_levels <- c(top_genomes, "Other")
+  genome_levels <- c(keep_genomes, "Other")
+  plot_df <- plot_df %>% mutate(Genome_grp = factor(Genome_grp, levels = genome_levels))
 
-  plot_df <- plot_df %>%
-    mutate(Genome_grp = factor(Genome_grp, levels = genome_levels))
+  n_keep <- length(keep_genomes)
 
-  # ----------------------------------------------------------
-  # COLOUR CONTROL
-  # ----------------------------------------------------------
   if (is.null(genome_palette)) {
-    pal_fun <- colorRampPalette(c("steelblue4", "goldenrod2", "firebrick3"))
-    mag_cols <- setNames(pal_fun(length(top_genomes)), top_genomes)
+    pal_fun <- grDevices::colorRampPalette(c("steelblue4", "goldenrod2", "firebrick3"))
+    keep_cols <- setNames(pal_fun(n_keep), keep_genomes)
   } else {
-    if (length(genome_palette) < length(top_genomes)) {
-      stop("Not enough colours supplied in genome_palette for top_n genomes.")
-    }
-    mag_cols <- setNames(genome_palette[seq_along(top_genomes)], top_genomes)
+    if (length(genome_palette) < n_keep) stop("Not enough colours supplied in genome_palette.")
+    keep_cols <- setNames(genome_palette[seq_len(n_keep)], keep_genomes)
   }
 
-  # Force "Other" to grey
-  mag_cols <- c(mag_cols, Other = other_colour)
+  mag_cols <- c(keep_cols, Other = other_colour)
 
-  # ----------------------------------------------------------
-  # Plot
-  # ----------------------------------------------------------
+  legend_labels <- setNames(genome_levels, genome_levels)
+
+  if (!is.null(mags_tax)) {
+    ab_map2 <- mags_tax %>%
+      select(Genome = all_of(name_col), rel_abun = all_of(rel_abun_col)) %>%
+      filter(!is.na(Genome)) %>%
+      mutate(rel_abun = as.numeric(rel_abun)) %>%
+      distinct(Genome, .keep_all = TRUE)
+
+    ab_vec <- ab_map2$rel_abun
+    names(ab_vec) <- ab_map2$Genome
+
+    keep_labels <- vapply(
+      keep_genomes,
+      function(g) {
+        ra <- ab_vec[[g]]
+        if (is.null(ra) || is.na(ra)) sprintf("%s (NA%%)", g)
+        else sprintf(paste0("%s (%.", rel_abun_digits, "f%%)"), g, ra)
+      },
+      character(1)
+    )
+    names(keep_labels) <- keep_genomes
+    legend_labels <- c(keep_labels, Other = "Other")
+  }
+
   yvar <- if (mode == "proportion") "prop" else "count"
-  ylab <- if (mode == "proportion")
-    "Proportion of total gene count"
-  else
-    "Total gene count (summed across selected MAGs)"
+  ylab <- if (mode == "proportion") "Proportion of total gene count"
+  else "Total gene count (summed across selected MAGs)"
 
   p <- ggplot(plot_df, aes(x = gene_id, y = .data[[yvar]], fill = Genome_grp)) +
     geom_col(width = 0.9) +
-    scale_fill_manual(values = mag_cols, drop = FALSE) +
-    labs(
-      x = "CAZy family (gene_id)",
-      y = ylab,
-      title = title,
-      fill = "MAG / species"
-    ) +
+    scale_fill_manual(values = mag_cols, breaks = genome_levels, labels = legend_labels, drop = FALSE) +
+    labs(x = "CAZy family (gene_id)", y = ylab, title = title, fill = "MAG / species") +
     theme_bw() +
     theme(
       axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 7),
       legend.position = "right"
+    ) +
+    scale_y_continuous(
+      labels = if (mode == "proportion") percent_format(accuracy = 1) else waiver(),
+      expand = expansion(mult = c(0, 0.05))
     )
 
   if (facet_by_class) {
@@ -2038,111 +3050,354 @@ make_stacked_contrib_plot <- function(df_counts,
       )
   }
 
-  # ----------------------------------------------------------
-  # Apply consistent y-axis scaling
-  # ----------------------------------------------------------
-  p <- p +
-    scale_y_continuous(
-      labels = if (mode == "proportion")
-        percent_format(accuracy = 1)
-      else
-        waiver(),
-      expand = expansion(mult = c(0, 0.05))
-    )
-
-  if (!is.null(y_lim)) {
-    p <- p + coord_cartesian(ylim = y_lim)
-  }
-
-  return(p)
+  if (!is.null(y_lim)) p <- p + coord_cartesian(ylim = y_lim)
+  p
 }
-
-# ============================================================
-# LENIENT (0–140)
-# ============================================================
 
 GENE_CLASSES <- gene_classes_hem_len
 
-p_meso_len <- make_stacked_contrib_plot(
+PAL_MESO_10 <- c(
+  "orchid1", "purple", "slateblue", "slateblue4", "navy",
+  "steelblue3", "mediumaquamarine", "seagreen1", "seagreen3", "olivedrab"
+)
+
+PAL_THERMO_10 <- c(
+  "black", "firebrick4", "firebrick3",
+  "firebrick1", "gold3", "gold1", "darkorange1",
+  "chocolate", "darkorange4", "darkred"
+)
+
+# top 10 by gene count (lenient)
+p_meso_gene_len <- make_stacked_contrib_plot(
   df_counts = gene_count_meso_hem_len,
   gene_classes = GENE_CLASSES,
-  top_n = 7,
+  top_n = 10,
+  select_top_by = "gene_count",
   mode = "count",
   y_lim = c(0, 140),
-  genome_palette = c(
-    "navy", "royalblue4",
-    "steelblue3", "mediumaquamarine",
-    "seagreen1", "seagreen3", "olivedrab"
-  ),
+  mags_tax = meso_mags_tax,
+  name_col = "new",
+  rel_abun_col = "rel_abun",
+  rel_abun_digits = 2,
+  genome_palette = PAL_MESO_10,
   other_colour = "grey80",
-  title = "Mesophilic contribution (hemicellulose CAZy gene counts) (lenient)"
+  title = "Mesophilic contribution (hemicellulose CAZy gene counts) (lenient) — top 10 by gene count"
 )
 
-p_thermo_len <- make_stacked_contrib_plot(
+p_thermo_gene_len <- make_stacked_contrib_plot(
   df_counts = gene_count_thermo_hem_len,
   gene_classes = GENE_CLASSES,
-  top_n = 7,
+  top_n = 10,
+  select_top_by = "gene_count",
   mode = "count",
   y_lim = c(0, 140),
-  genome_palette = c(
-    "firebrick4", "firebrick3",
-    "firebrick1","goldenrod1", "darkorange1",
-    "darkorange3", "darkorange4", "coral4"
-  ),
+  mags_tax = thermo_mags_tax,
+  name_col = "new",
+  rel_abun_col = "rel_abun",
+  rel_abun_digits = 2,
+  genome_palette = PAL_THERMO_10,
   other_colour = "grey80",
-  title = "Thermophilic contribution (hemicellulose CAZy gene counts) (lenient)"
+  title = "Thermophilic contribution (hemicellulose CAZy gene counts) (lenient) — top 10 by gene count"
 )
 
-p_lenient <- p_meso_len / p_thermo_len
-
-
-ggsave(filename = "hemicellulose/attribution_barplot_lenient.png", plot = p_lenient,
+p_gene_len <- p_meso_gene_len / p_thermo_gene_len
+ggsave("hemicellulose/attribution_barplot_lenient_top10_gene.png", p_gene_len,
        width = 20, height = 12, dpi = 300)
 
-# ============================================================
-# CONSERVATIVE (0–35)
-# ============================================================
-
-p_meso_con <- make_stacked_contrib_plot(
+# top 10 by gene count (conservative)
+p_meso_gene_con <- make_stacked_contrib_plot(
   df_counts = gene_count_meso_hem_con,
   gene_classes = GENE_CLASSES,
-  top_n = 7,
+  top_n = 10,
+  select_top_by = "gene_count",
   mode = "count",
   y_lim = c(0, 35),
-  genome_palette = c(
-    "navy", "royalblue4",
-    "steelblue3", "mediumaquamarine",
-    "seagreen1", "seagreen3", "olivedrab"
-  ),
+  mags_tax = meso_mags_tax,
+  name_col = "new",
+  rel_abun_col = "rel_abun",
+  rel_abun_digits = 2,
+  genome_palette = PAL_MESO_10,
   other_colour = "grey80",
-  title = "Mesophilic contribution (hemicellulose CAZy gene counts) (conservative)"
+  title = "Mesophilic contribution (hemicellulose CAZy gene counts) (conservative) — top 10 by gene count"
 )
 
-p_thermo_con <- make_stacked_contrib_plot(
+p_thermo_gene_con <- make_stacked_contrib_plot(
   df_counts = gene_count_thermo_hem_con,
   gene_classes = GENE_CLASSES,
-  top_n = 7,
+  top_n = 10,
+  select_top_by = "gene_count",
   mode = "count",
   y_lim = c(0, 35),
-  genome_palette = c(
-    "firebrick4", "firebrick3",
-    "firebrick1", "goldenrod1", "darkorange1",
-    "darkorange3", "darkorange4", "coral4"
-  ),
+  mags_tax = thermo_mags_tax,
+  name_col = "new",
+  rel_abun_col = "rel_abun",
+  rel_abun_digits = 2,
+  genome_palette = PAL_THERMO_10,
   other_colour = "grey80",
-  title = "Thermophilic contribution (hemicellulose CAZy gene counts) (conservative)"
+  title = "Thermophilic contribution (hemicellulose CAZy gene counts) (conservative) — top 10 by gene count"
 )
 
-p_conservative <- p_meso_con / p_thermo_con
-
-
-
-ggsave(filename = "hemicellulose/attribution_barplot_conservative.png", plot = p_conservative,
+p_gene_con <- p_meso_gene_con / p_thermo_gene_con
+ggsave("hemicellulose/attribution_barplot_conservative_top10_gene.png", p_gene_con,
        width = 20, height = 12, dpi = 300)
 
+# top 10 by abundance (lenient)
+p_meso_abun_len <- make_stacked_contrib_plot(
+  df_counts = gene_count_meso_hem_len,
+  gene_classes = GENE_CLASSES,
+  top_n = 10,
+  select_top_by = "abundance",
+  mode = "count",
+  y_lim = c(0, 140),
+  mags_tax = meso_mags_tax,
+  name_col = "new",
+  rel_abun_col = "rel_abun",
+  rel_abun_digits = 2,
+  genome_palette = PAL_MESO_10,
+  other_colour = "grey80",
+  title = "Mesophilic contribution (hemicellulose CAZy gene counts) (lenient) — top 10 by abundance"
+)
+
+p_thermo_abun_len <- make_stacked_contrib_plot(
+  df_counts = gene_count_thermo_hem_len,
+  gene_classes = GENE_CLASSES,
+  top_n = 10,
+  select_top_by = "abundance",
+  mode = "count",
+  y_lim = c(0, 140),
+  mags_tax = thermo_mags_tax,
+  name_col = "new",
+  rel_abun_col = "rel_abun",
+  rel_abun_digits = 2,
+  genome_palette = PAL_THERMO_10,
+  other_colour = "grey80",
+  title = "Thermophilic contribution (hemicellulose CAZy gene counts) (lenient) — top 10 by abundance"
+)
+
+p_abun_len <- p_meso_abun_len / p_thermo_abun_len
+ggsave("hemicellulose/abun_attribution_barplot_lenient_top10.png", p_abun_len,
+       width = 20, height = 12, dpi = 300)
+
+# top 10 by abundance (conservative)
+p_meso_abun_con <- make_stacked_contrib_plot(
+  df_counts = gene_count_meso_hem_con,
+  gene_classes = GENE_CLASSES,
+  top_n = 10,
+  select_top_by = "abundance",
+  mode = "count",
+  y_lim = c(0, 35),
+  mags_tax = meso_mags_tax,
+  name_col = "new",
+  rel_abun_col = "rel_abun",
+  rel_abun_digits = 2,
+  genome_palette = PAL_MESO_10,
+  other_colour = "grey80",
+  title = "Mesophilic contribution (hemicellulose CAZy gene counts) (conservative) — top 10 by abundance"
+)
+
+p_thermo_abun_con <- make_stacked_contrib_plot(
+  df_counts = gene_count_thermo_hem_con,
+  gene_classes = GENE_CLASSES,
+  top_n = 10,
+  select_top_by = "abundance",
+  mode = "count",
+  y_lim = c(0, 35),
+  mags_tax = thermo_mags_tax,
+  name_col = "new",
+  rel_abun_col = "rel_abun",
+  rel_abun_digits = 2,
+  genome_palette = PAL_THERMO_10,
+  other_colour = "grey80",
+  title = "Thermophilic contribution (hemicellulose CAZy gene counts) (conservative) — top 10 by abundance"
+)
+
+p_abun_con <- p_meso_abun_con / p_thermo_abun_con
+ggsave("hemicellulose/abun_attribution_barplot_conservative_top10.png", p_abun_con,
+       width = 20, height = 12, dpi = 300)
 
 ```
 
+
+Masked abundance stacked barplot
+```{r}
+
+
+make_abun_stack_plot <- function(df_counts,
+                                 gene_classes,
+                                 mags_tax,
+                                 name_col = "new",
+                                 rel_abun_col = "rel_abun",
+                                 rel_abun_digits = 2,
+                                 top_n = 10,
+                                 title = "",
+                                 y_lim = NULL,
+                                 other_colour = "grey80") {
+
+  long <- df_counts %>%
+    mutate(across(-gene_id, ~ as.numeric(.x))) %>%
+    pivot_longer(-gene_id, names_to = "Genome", values_to = "count") %>%
+    mutate(count = replace_na(count, 0))
+
+  ab_map <- mags_tax %>%
+    select(Genome = all_of(name_col),
+           rel_abun = all_of(rel_abun_col)) %>%
+    filter(!is.na(Genome)) %>%
+    mutate(rel_abun = as.numeric(rel_abun)) %>%
+    distinct(Genome, .keep_all = TRUE)
+
+  long <- long %>% left_join(ab_map, by = "Genome")
+
+  plot_df0 <- long %>%
+    filter(count >= 1) %>%
+    select(gene_id, Genome, rel_abun)
+
+  genomes_with_any_gene <- plot_df0 %>%
+    distinct(Genome) %>%
+    pull(Genome)
+
+  top_genomes <- ab_map %>%
+    filter(Genome %in% genomes_with_any_gene) %>%
+    arrange(desc(rel_abun)) %>%
+    slice_head(n = top_n) %>%
+    pull(Genome)
+
+  plot_df <- plot_df0 %>%
+    mutate(Genome_grp = if_else(Genome %in% top_genomes, Genome, "Other")) %>%
+    group_by(gene_id, Genome_grp) %>%
+    summarise(rel_abun = sum(rel_abun, na.rm = TRUE), .groups = "drop")
+
+  gene_classes2 <- gene_classes %>%
+    mutate(gene_id = as.character(gene_id),
+           class = str_squish(class))
+
+  gene_order <- gene_classes2 %>% pull(gene_id)
+  class_levels <- gene_classes2 %>% distinct(class) %>% pull(class)
+
+  plot_df <- plot_df %>%
+    mutate(gene_id = as.character(gene_id)) %>%
+    left_join(gene_classes2, by = "gene_id", relationship = "many-to-many") %>%
+    mutate(
+      class   = factor(class, levels = class_levels),
+      gene_id = factor(gene_id, levels = unique(gene_order))
+    )
+
+  genome_levels <- c(top_genomes, "Other")
+  plot_df <- plot_df %>% mutate(Genome_grp = factor(Genome_grp, levels = genome_levels))
+
+  keep_cols <- setNames(scico(length(top_genomes), palette = "managua"), top_genomes)
+  mag_cols <- c(keep_cols, Other = other_colour)
+
+  ab_vec <- ab_map$rel_abun
+  names(ab_vec) <- ab_map$Genome
+
+  keep_labels <- vapply(
+    top_genomes,
+    function(g) {
+      ra <- ab_vec[[g]]
+      if (is.null(ra) || is.na(ra)) sprintf("%s (NA%%)", g)
+      else sprintf(paste0("%s (%.", rel_abun_digits, "f%%)"), g, ra)
+    },
+    character(1)
+  )
+  names(keep_labels) <- top_genomes
+  legend_labels <- c(keep_labels, Other = "Other")
+
+  p <- ggplot(plot_df, aes(x = gene_id, y = rel_abun, fill = Genome_grp)) +
+    geom_col(width = 0.9) +
+    scale_fill_manual(
+      values = mag_cols,
+      breaks = genome_levels,
+      labels = legend_labels,
+      drop = FALSE
+    ) +
+    labs(
+      x = "CAZy family (gene_id)",
+      y = "Relative abundance (%)",
+      title = title,
+      fill = "MAG / species"
+    ) +
+    theme_bw() +
+    theme(
+      axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 7),
+      legend.position = "right"
+    ) +
+    scale_y_continuous(expand = expansion(mult = c(0, 0.05)))
+
+  p <- p +
+    facet_grid(. ~ class, scales = "free_x", space = "free_x", switch = "x") +
+    theme(
+      panel.spacing.x = unit(0.8, "lines"),
+      strip.placement = "outside",
+      strip.background = element_rect(fill = "grey95", colour = NA)
+    )
+
+  if (!is.null(y_lim)) p <- p + coord_cartesian(ylim = y_lim)
+  p
+}
+
+GENE_CLASSES <- gene_classes_hem_len
+
+p_meso_len <- make_abun_stack_plot(
+  df_counts = gene_count_meso_hem_len,
+  gene_classes = GENE_CLASSES,
+  mags_tax = meso_mags_tax,
+  name_col = "new",
+  rel_abun_col = "rel_abun",
+  rel_abun_digits = 2,
+  top_n = 10,
+  y_lim = c(0, 24),
+  title = "Mesophilic (lenient): relative abundance of genomes with CAZy count ≥ 1"
+)
+
+p_thermo_len <- make_abun_stack_plot(
+  df_counts = gene_count_thermo_hem_len,
+  gene_classes = GENE_CLASSES,
+  mags_tax = thermo_mags_tax,
+  name_col = "new",
+  rel_abun_col = "rel_abun",
+  rel_abun_digits = 2,
+  top_n = 10,
+  y_lim = c(0, 24),
+  title = "Thermophilic (lenient): relative abundance of genomes with CAZy count ≥ 1"
+)
+
+p_len <- p_meso_len / p_thermo_len
+
+ggsave("hemicellulose/relabun_attribution_lenient_top10.png",
+       p_len, width = 20, height = 12, dpi = 300)
+
+p_meso_con <- make_abun_stack_plot(
+  df_counts = gene_count_meso_hem_con,
+  gene_classes = GENE_CLASSES,
+  mags_tax = meso_mags_tax,
+  name_col = "new",
+  rel_abun_col = "rel_abun",
+  rel_abun_digits = 2,
+  top_n = 10,
+  y_lim = c(0, 17),
+  title = "Mesophilic (conservative): relative abundance of genomes with CAZy count ≥ 1"
+)
+
+p_thermo_con <- make_abun_stack_plot(
+  df_counts = gene_count_thermo_hem_con,
+  gene_classes = GENE_CLASSES,
+  mags_tax = thermo_mags_tax,
+  name_col = "new",
+  rel_abun_col = "rel_abun",
+  rel_abun_digits = 2,
+  top_n = 10,
+  y_lim = c(0, 17),
+  title = "Thermophilic (conservative): relative abundance of genomes with CAZy count ≥ 1"
+)
+
+p_con <- p_meso_con / p_thermo_con
+
+ggsave("hemicellulose/relabun_attribution_conservative_top10.png",
+       p_con, width = 20, height = 12, dpi = 300)
+
+
+
+```
 
 
 ```{r}
