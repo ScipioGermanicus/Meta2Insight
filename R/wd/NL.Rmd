@@ -1,0 +1,345 @@
+---
+title: "NL"
+author: "Lasse Steffensen"
+date: "2026-03-02"
+output: html_document
+---
+
+Pre
+```{r}
+setwd("C:/Users/lasse/Desktop/wd/25/01_05_cor/NL")
+
+
+library(tidyverse)
+library(scales)
+library(ggVennDiagram)
+
+
+
+# My data
+meso_mags <- read.csv("C:/Users/lasse/Desktop/wd/25/coverm_rel_abun/meso_05_mags.tsv", header = TRUE, sep = "\t") %>%
+  select(-rel_abun, -mean, -cov_frac)
+
+thermo_mags <- read.csv("C:/Users/lasse/Desktop/wd/25/coverm_rel_abun/thermo_05_mags.tsv", header = TRUE, sep = "\t") %>%
+  select(-rel_abun, -mean, -cov_frac)
+
+MiDAS_GTDB_tax <- read.csv("C:/Users/lasse/Desktop/wd/25/01_05_cor/write_files/GTDB_MiDAS_tax.tsv", header = TRUE, sep = "\t")
+
+module_completeness_all <- read.csv("C:/Users/lasse/Desktop/wd/25/df/26/module_completeness_all_dereps.tsv", header = TRUE, sep = "\t")
+
+
+# Netherlands sample data
+metadata <- read.csv("C:/Users/lasse/Desktop/wd/25/df/26/NL_data/metadata_1.txt", header = TRUE, sep = "\t")
+
+otu_norm <- read.csv("C:/Users/lasse/Desktop/wd/25/df/26/NL_data/otutable_normalised.tsv", header = TRUE, sep = "\t") %>%
+  select(OTU, barcode25, Kingdom, Phylum, Class, Order, Family, Genus, Species) %>%
+  rename(rel_abun = barcode25) %>%
+  mutate(Kingdom = str_trim(Kingdom)) %>%
+  mutate(Phylum = str_trim(Phylum)) %>%
+  mutate(Class = str_trim(Class)) %>%
+  mutate(Order = str_trim(Order)) %>%
+  mutate(Family = str_trim(Family)) %>%
+  mutate(Genus = str_trim(Genus)) %>%
+  mutate(Species = str_trim(Species))
+
+midas_barcode_map <- read.csv("C:/Users/lasse/Desktop/wd/25/df/26/NL_data/usearch_midas_derep_out.tsv", header = FALSE, sep = "\t") %>%
+  select(-V2, -V3) %>%
+  rename(
+    barcode = V1,
+    midas_tax = V4
+  )
+
+
+# Sum rel_abun per distinct species in otu_norm
+otu_norm_distinct <- otu_norm %>%
+  group_by(Species) %>%
+  mutate(rel_abun = sum(rel_abun, na.rm = TRUE)) %>%
+  ungroup() %>%
+  distinct(Species, .keep_all = TRUE) %>%
+  filter(rel_abun > 0.05)
+
+
+# Parse tax in midas_barcode_map
+midas_barcode_map <- midas_barcode_map %>%
+  separate_rows(midas_tax, sep = ",") %>%
+  extract(midas_tax, into = c("rank", "name"), regex = "^([a-z]):(.*)$", remove = TRUE) %>%
+  mutate(
+    rank = recode(rank, d = "k"),
+    value = paste0(rank, "__", name)
+  ) %>%
+  select(-name) %>%
+  pivot_wider(
+    names_from  = rank,
+    values_from = value
+  ) %>%
+  rename(
+    Kingdom = k,
+    Phylum  = p,
+    Class   = c,
+    Order   = o,
+    Family  = f,
+    Genus   = g,
+    Species = s
+  ) %>%
+  select(-"NA")
+
+
+# Check how many species are not actually in midas_barcode_map
+db_species  <- midas_barcode_map %>% distinct(Species)
+otu_species <- otu_norm_distinct %>% distinct(Species)
+
+# how many OTU species are present in database
+n_present <- otu_species %>%
+  semi_join(db_species, by = "Species") %>%
+  nrow()
+
+# how many are missing from database
+n_missing <- otu_species %>%
+  anti_join(db_species, by = "Species") %>%
+  nrow()
+
+n_present
+n_missing
+
+
+
+
+```
+
+Barplot: Species-level contribution to relative abundance
+```{r}
+
+library(dplyr)
+
+# 1) Vector of species present in BOTH dataframes
+shared_species <- intersect(db_species$Species,
+                            otu_species$Species)
+
+# 2) Total relative abundance
+total_rel_abun <- sum(otu_norm_distinct$rel_abun, na.rm = TRUE)
+
+# 3) Relative abundance explained by shared species
+explained_rel_abun <- otu_norm_distinct %>%
+  filter(Species %in% shared_species) %>%
+  summarise(total = sum(rel_abun, na.rm = TRUE)) %>%
+  pull(total)
+
+# 4) Proportion explained
+proportion_explained <- explained_rel_abun / total_rel_abun
+
+proportion_explained
+
+```
+
+
+Most abundant species (shared one's indicated)
+```{r}
+
+
+# top 30 species by rel_abun (from otu_norm_distinct)
+top30 <- otu_norm_distinct %>%
+  arrange(desc(rel_abun)) %>%
+  slice_head(n = 30) %>%
+  pull(Species)
+
+# build stacked-bar data: each top30 species kept, all others collapsed to "Other"
+plot_df <- otu_norm_distinct %>%
+  mutate(group = if_else(Species %in% top30, Species, "Other")) %>%
+  group_by(group) %>%
+  summarise(rel_abun = sum(rel_abun, na.rm = TRUE), .groups = "drop") %>%
+  mutate(group = factor(group, levels = c(top30, "Other")))
+
+# colours (top30 coloured; Other grey)
+cols <- c(setNames(hue_pal()(length(top30)), top30),
+          Other = "grey70")
+
+# labels with asterisk for shared species (legend only)
+label_map <- setNames(
+  ifelse(names(cols) %in% shared_species, paste0(names(cols), " *"), names(cols)),
+  names(cols)
+)
+
+ggplot(plot_df, aes(x = "", y = rel_abun, fill = group)) +
+  geom_col(width = 0.6) +
+  scale_fill_manual(values = cols, breaks = names(cols), labels = label_map) +
+  theme_bw() +
+  labs(x = NULL, y = "Relative abundance", fill = "Species (* = shared)") +
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())
+
+```
+
+
+Top 30 genera
+```{r}
+
+library(dplyr)
+library(ggplot2)
+library(scales)
+
+# 1) Sum rel_abun per genus
+otu_genus <- otu_norm %>%
+  group_by(Genus) %>%
+  summarise(rel_abun = sum(rel_abun, na.rm = TRUE), .groups = "drop") %>%
+  arrange(desc(rel_abun))
+
+# 2) Top 30 genera
+top30_g <- otu_genus %>%
+  slice_head(n = 30) %>%
+  pull(Genus)
+
+# 3) Collapse remainder to "Other" for a single stacked bar
+plot_df <- otu_genus %>%
+  mutate(group = if_else(Genus %in% top30_g, Genus, "Other")) %>%
+  group_by(group) %>%
+  summarise(rel_abun = sum(rel_abun, na.rm = TRUE), .groups = "drop") %>%
+  mutate(group = factor(group, levels = c(top30_g, "Other")))
+
+# 4) Colours + plot
+cols <- c(setNames(hue_pal()(length(top30_g)), top30_g),
+          Other = "grey70")
+
+ggplot(plot_df, aes(x = "", y = rel_abun, fill = group)) +
+  geom_col(width = 0.6) +
+  scale_fill_manual(values = cols, breaks = names(cols)) +
+  theme_bw() +
+  labs(x = NULL, y = "Relative abundance", fill = "Genus") +
+  theme(axis.text.x = element_blank(),
+        axis.ticks.x = element_blank())
+
+```
+
+
+MiDAS taxonomy overlap: Netherlands >< my samples
+```{r}
+
+# Taxonomy dataframes for meso and thermo
+vm <- c("NNF_AD05_mmlongv091.bin.1.449", "NNF_AD17_mmlongv091.bin.1.120", "NNF_AD07_mmlongv091.bin.1.54", "NNF_AD03_mmlongv091.bin.1.182")
+
+meso_mags_tax <- meso_mags %>%
+  left_join(MiDAS_GTDB_tax, by = c("Genome" = "FLASV")) %>%
+  filter(!Genome %in% vm)
+
+vt <- c("NNF_AD03_mmlongv091.bin.1.182", "BC14.bin.2.701", "NNF_AD07_mmlongv091.bin.1.54", "BC13.bin.3.839", "NNF_AD14_mmlongv091.bin.1.148", "NNF_AD17_mmlongv091.bin.1.120", "NNF_AD09_mmlongv091.bin.1.346")
+
+thermo_mags_tax <- thermo_mags %>%
+  left_join(MiDAS_GTDB_tax, by = c("Genome" = "FLASV")) %>%
+  filter(!Genome %in% vt)
+
+# Reformat meso and thermo to match otu_norm tax format
+meso_mags_tax_s <- meso_mags_tax %>%
+  mutate(s = paste0("s__", s))
+
+thermo_mags_tax_s <- thermo_mags_tax %>%
+  mutate(s = paste0("s__", s))
+
+
+# Create Venn diagram
+# species sets (unique, non-missing)
+sets <- list(
+  `NL sample` = otu_norm_distinct %>%
+    transmute(species = Species) %>%
+    filter(!is.na(species), species != "") %>%
+    distinct() %>%
+    pull(species),
+
+  `Meso` = meso_mags_tax_s %>%
+    transmute(species = s) %>%
+    filter(!is.na(species), species != "") %>%
+    distinct() %>%
+    pull(species),
+
+  `Thermo` = thermo_mags_tax_s %>%
+    transmute(species = s) %>%
+    filter(!is.na(species), species != "") %>%
+    distinct() %>%
+    pull(species)
+)
+
+ggVennDiagram(sets, label_alpha = 0) +
+  theme_light() +
+  labs(title = "Species-level overlap")
+
+
+```
+
+Genus-level overlap (Venn diagram)
+```{r}
+
+# Reformat meso and thermo to match otu_norm tax format
+meso_mags_tax_g <- meso_mags_tax %>%
+  mutate(g = paste0("g__", g))
+
+thermo_mags_tax_g <- thermo_mags_tax %>%
+  mutate(g = paste0("g__", g))
+
+
+# Create Venn diagram
+# Genus sets (unique, non-missing)
+sets <- list(
+  `NL sample` = otu_norm_distinct %>%
+    transmute(genus = Genus) %>%
+    filter(!is.na(genus), genus != "") %>%
+    distinct() %>%
+    pull(genus),
+
+  `Meso` = meso_mags_tax_g %>%
+    transmute(genus = g) %>%
+    filter(!is.na(genus), genus != "") %>%
+    distinct() %>%
+    pull(genus),
+
+  `Thermo` = thermo_mags_tax_g %>%
+    transmute(genus = g) %>%
+    filter(!is.na(genus), genus != "") %>%
+    distinct() %>%
+    pull(genus)
+)
+
+ggVennDiagram(sets, label_alpha = 0) +
+  theme_light() +
+  labs(title = "Genus-level overlap")
+
+```
+
+
+```{r}
+
+
+```
+
+
+```{r}
+
+
+```
+
+
+```{r}
+
+
+```
+
+
+```{r}
+
+
+```
+
+
+```{r}
+
+
+```
+
+
+```{r}
+
+
+```
+
+
+```{r}
+
+
+```
+
