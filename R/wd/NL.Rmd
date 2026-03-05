@@ -17,7 +17,7 @@ library(ggVennDiagram)
 
 
 
-# My data
+#
 meso_mags <- read.csv("C:/Users/lasse/Desktop/wd/25/coverm_rel_abun/meso_05_mags.tsv", header = TRUE, sep = "\t") %>%
   select(-rel_abun, -mean, -cov_frac)
 
