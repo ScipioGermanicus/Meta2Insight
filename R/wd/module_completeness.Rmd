@@ -71,8 +71,6 @@ name_map <- bind_rows(
 # Module file
 modules <- read.csv("C:/Users/lasse/Desktop/wd/25/df/26/module_phase.tsv", sep="\t", header=TRUE)
 
-modules_phase <- read.csv("C:/Users/lasse/Desktop/wd/25/df/module_phase.tsv", sep="\t", header=TRUE)
-
 classifications <- read.csv("C:/Users/lasse/Desktop/wd/25/df/26/module_classifications_functional_guilds.txt", sep="\t", header=TRUE)
 
 write_tsv(name_map, "name_map")
@@ -256,9 +254,7 @@ meso_ann_tax <- meso_annotations %>%
     by = "Genome") %>%
   left_join(modules, by = "module") %>%
   left_join(name_map, by= c("Genome" = "old")) %>%
-  mutate(sample = "meso") %>%
-  select(-new.y) %>%
-  rename("new" = "new.x")
+  mutate(sample = "meso")
 
 
 thermo_ann_tax <- thermo_annotations %>%
@@ -267,9 +263,7 @@ thermo_ann_tax <- thermo_annotations %>%
     by = "Genome") %>%
   left_join(modules, by = "module") %>%
   left_join(name_map, by= c("Genome" = "old")) %>%
-  mutate(sample = "thermo") %>%
-  select(-new.y) %>%
-  rename("new" = "new.x")
+  mutate(sample = "thermo")
 
 joined_ann_tax <- bind_rows(meso_ann_tax, thermo_ann_tax)
 
@@ -7632,7 +7626,7 @@ ggsave(filename = "species/acetyl_modules_allmodules_faceted_boxed.png", plot = 
 
 ................................................................................
 
-Hydrolysis
+Hydrolysis (excl. AA)
 ```{r}
 
 
@@ -8028,6 +8022,405 @@ p <- pm | pt
 
 ggsave(filename = "species_id/hydrolysis.png", plot = p,
        width = 14, height = 9, dpi = 300, limitsize = FALSE)
+
+
+
+
+
+
+```
+
+
+Hydrolysis (excl. AA)
+```{r}
+
+
+
+###########################################################################################################
+###                 Top species per sample (meso + thermo) + shared colours for shared species          ###
+###########################################################################################################
+
+hyd_modules <- c("Peptide transporters", "General L-amino acid transporter", "Polar amino acid transporter", "Neutral amino acid transporter", "Branched-chain amino acid transport", "Glutamate degradation I, glutamate => pyruvate", "Glutamate degradation II, glutamate => propanoate", "Glutamate degradation III, glutamate => butyrate", "Glutamate degradation IV, glutamate => butyrate", "Alanine degradation I, alanine => pyruvate", "Alanine degradation II, alanine => pyruvate", "Alanine degradation III, alanine => pyruvate + L-glutamate", "Arginine degradation I, L-arginine => L-glutamate", "Arginine degradation II, L-arginine => L-glutamate", "Arginine degradation III, L-arginine => L-proline", "Arginine degradation IV, L-arginine => 4-aminobutanoate", "Arginine degradation V, L-arginine => acetyl-CoA +  D-alanine", "Arginine degradation VI, arginine => L-ornithine", "Arginine degradation VII, arginine => 5-aminovalerate", "Asparagine degradation, L-asparagine => L-aspartate", "Aspartate degradation I, aspartate => pyruvate", "Aspartate degradation II, aspartate => glutamine + fumarate", "Cysteine degradation I, L-cysteine => L-serine", "Cysteine degradation II, L-cysteine => pyruvate", "Glutamine degradation I, L-glutamine => L-glutamate", "Glutamine degradation II, L-glutamine => L-glutamate", "Glycine degradation I, glycine => formate", "Glycine degradation II, glycine => acetate", "Histidine degradation, histidine => glutamate", "Isoleucine degradation I, isoleucine => acetyl-CoA + propanoyl-CoA", "Isoleucine degradation II, isoleucine => 2-methylbutyrate", "Leucine degradation I, leucine => acetoacetate + acetyl-CoA", "Leucine degradation II, leucine => 3-methylbutyrate", "Leucine degradation III, leucine => 4-methylpentanoate", "Lysine degradation I, lysine => butyrate + acetate", "Lysine syntrophic degradation I, lysine => acetate", "Lysine syntrophic degradation II, lysine => butyrate", "Methionine degradation I, L-methionine => L-homocysteine", "Methionine degradation II, L-methionine => 2-oxobutanoate", "Proline degradation I, L-proline => L-glutamate", "Proline degradation II, L-proline => 5-aminovalerate", "Serine degradation I, serine => pyruvate", "Serine degradation II, serine => glycine", "Threonine degradation I, L-threonine => glycine", "Threonine degradation II, L-threonine => acetyl-CoA", "Threonine degradation III, L-threonine => propionate", "Trytophan degradation I, L-tryptophan => pyruvate", "Trytophan degradation II, L-tryptophan => indole-propionate", "Tyrosine degradation, L-tyrosine => phloretate", "Phenylalanine degradation, L-phenylalanine => phenylpyruvate", "Valine degradation I, L-valine => propanoyl-CoA", "Valine degradation II, L-valine => 2-methylpropanoate")
+
+# Determine which new are eligible per sample (>=1 target module at 100% in that sample)
+hyd <- joined_ann_tax %>%
+  filter(module %in% hyd_modules) %>%
+  mutate(new = na_if(new, "")) %>%
+  filter(!is.na(new)) %>%
+  group_by(sample, Genome, new, module) %>%
+  summarise(p = max(Percent_steps_found, na.rm = TRUE), .groups = "drop")
+
+eligible_new_by_sample <- hyd %>%
+  group_by(sample, new) %>%
+  summarise(has100 = any(p >= 100, na.rm = TRUE), .groups = "drop") %>%
+  filter(has100)
+
+# Top 7 within EACH sample (based on that sample's abundance table)
+top7_new_meso <- new_abun %>%
+  filter(sample == "meso") %>%
+  semi_join(eligible_new_by_sample %>% filter(sample == "meso"), by = c("sample", "new")) %>%
+  arrange(desc(new_r_abund)) %>%
+  slice_head(n = 7) %>%
+  pull(new)
+
+top7_new_thermo <- new_abun %>%
+  filter(sample == "thermo") %>%
+  semi_join(eligible_new_by_sample %>% filter(sample == "thermo"), by = c("sample", "new")) %>%
+  arrange(desc(new_r_abund)) %>%
+  slice_head(n = 7) %>%
+  pull(new)
+
+# Also always include the most abundant species with 100% completeness for each target module
+must_show_meso <- hyd %>%
+  filter(sample == "meso", p >= 100) %>%
+  left_join(new_abun %>% filter(sample == "meso"), by = c("sample", "new")) %>%
+  group_by(module) %>%
+  arrange(desc(new_r_abund), .by_group = TRUE) %>%
+  slice_head(n = 1) %>%
+  ungroup() %>%
+  pull(new) %>%
+  unique()
+
+must_show_thermo <- hyd %>%
+  filter(sample == "thermo", p >= 100) %>%
+  left_join(new_abun %>% filter(sample == "thermo"), by = c("sample", "new")) %>%
+  group_by(module) %>%
+  arrange(desc(new_r_abund), .by_group = TRUE) %>%
+  slice_head(n = 1) %>%
+  ungroup() %>%
+  pull(new) %>%
+  unique()
+
+# Final species to show:
+# top 7 by abundance + forced inclusion of top complete species per module
+top_new_meso <- c(top7_new_meso, setdiff(must_show_meso, top7_new_meso))
+top_new_thermo <- c(top7_new_thermo, setdiff(must_show_thermo, top7_new_thermo))
+
+# Shared species among the two displayed lists
+shared_new <- intersect(top_new_meso, top_new_thermo)
+
+# Shared colours only (everything else will be grey; absent modules light grey)
+pal_shared <- if (length(shared_new) == 0) character(0) else
+  colorRampPalette(brewer.pal(12, "Paired"))(length(shared_new))
+
+new_cols <- c(
+  setNames(pal_shared, shared_new),
+  Unique = "grey55",
+  Absent = "grey94"
+)
+
+# Use target module order directly
+module_order_hyd <- hyd_modules
+
+# Module-specific number of steps needed
+module_steps_hyd <- joined_ann_tax %>%
+  filter(module %in% hyd_modules) %>%
+  group_by(module) %>%
+  summarise(Steps_needed = max(Steps_needed, na.rm = TRUE), .groups = "drop")
+
+
+###########################################################################################################
+###                                             Meso                                                    ###
+###########################################################################################################
+
+m <- joined_ann_tax %>%
+  filter(module %in% hyd_modules, sample == "meso") %>%
+  mutate(new = na_if(new, "")) %>%
+  filter(!is.na(new)) %>%
+  filter(new %in% top_new_meso)
+
+m_new0 <- m %>%
+  group_by(Genome, new, module) %>%
+  summarise(
+    Percent_steps_found = max(Percent_steps_found, na.rm = TRUE),
+    Steps_found         = max(Steps_found, na.rm = TRUE),
+    Steps_needed        = max(Steps_needed, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  group_by(new, module) %>%
+  summarise(
+    Percent_steps_found = max(Percent_steps_found, na.rm = TRUE),
+    Steps_found         = max(Steps_found, na.rm = TRUE),
+    Steps_needed        = max(Steps_needed, na.rm = TRUE),
+    n_genomes = case_when(
+      max(Percent_steps_found, na.rm = TRUE) >= 100 ~ n_distinct(Genome[Percent_steps_found >= 100]),
+      max(Percent_steps_found, na.rm = TRUE) >=  75 ~ n_distinct(Genome[Percent_steps_found >=  75 & Percent_steps_found < 100]),
+      max(Percent_steps_found, na.rm = TRUE) >=  50 ~ n_distinct(Genome[Percent_steps_found >=  50 & Percent_steps_found <  75]),
+      TRUE                                          ~ 0
+    ),
+    .groups = "drop"
+  )
+
+m_new <- m_new0 %>%
+  mutate(module = factor(module, levels = module_order_hyd)) %>%
+  complete(
+    new,
+    module,
+    fill = list(
+      Percent_steps_found = 0,
+      Steps_found = 0,
+      n_genomes = 0
+    )
+  ) %>%
+  left_join(module_steps_hyd, by = "module", suffix = c("", ".mod")) %>%
+  mutate(
+    Steps_needed  = coalesce(Steps_needed, Steps_needed.mod),
+    missing_steps = pmax(Steps_needed - Steps_found, 0)
+  ) %>%
+  select(-Steps_needed.mod) %>%
+  ungroup()
+
+m_new <- m_new %>%
+  group_by(new) %>%
+  filter(any(Steps_found > 0, na.rm = TRUE)) %>%
+  ungroup()
+
+# Join new abundance
+m_new <- m_new %>%
+  left_join(new_abun %>% filter(sample == "meso"), by = "new")
+
+m_new <- m_new %>%
+  mutate(
+    status = case_when(
+      Steps_found <= 0 | is.na(Steps_found) ~ "Absent",
+      missing_steps == 0                    ~ "Complete",
+      missing_steps == 1                    ~ "1 missing",
+      missing_steps > 1                     ~ "Multiple missing"
+    ),
+    alpha = case_when(
+      status == "Absent"           ~ 1.00,
+      status == "Complete"         ~ 1.00,
+      status == "1 missing"        ~ 0.65,
+      status == "Multiple missing" ~ 0.65
+    ),
+    fill_key = case_when(
+      status == "Absent"         ~ "Absent",
+      new %in% shared_new        ~ as.character(new),
+      TRUE                       ~ "Unique"
+    )
+  )
+
+new_labels <- new_abun %>%
+  filter(sample == "meso") %>%
+  mutate(abun_lab = sprintf("%.1f%%", new_r_abund)) %>%
+  semi_join(m_new %>% distinct(new), by = "new")
+
+# Enforce meso y order (top->bottom)
+m_new <- m_new %>%
+  mutate(new = factor(new, levels = top_new_meso))
+
+new_labels <- new_labels %>%
+  mutate(new = factor(new, levels = top_new_meso))
+
+pm <- ggplot(m_new, aes(x = module, y = new)) +
+  geom_tile(aes(fill = fill_key, alpha = alpha),
+            color = NA, width = 0.9, height = 0.9) +
+  ggpattern::geom_tile_pattern(
+    data = dplyr::filter(m_new, status == "Multiple missing"),
+    aes(x = module, y = new),
+    inherit.aes = FALSE,
+    fill = NA,
+    colour = NA,
+    width = 0.9,
+    height = 0.9,
+    pattern = "stripe",
+    pattern_fill = "white",
+    pattern_colour = "white",
+    pattern_angle = 45,
+    pattern_density = 0.35,
+    pattern_spacing = 0.02,
+    pattern_alpha = 1
+  ) +
+  scale_fill_manual(values = new_cols, guide = "none") +
+  scale_alpha(
+    name   = "Module status",
+    limits = c(0, 1),
+    breaks = c(0.65, 1.00),
+    labels = c("1 missing", "Complete"),
+    range  = c(0, 1)
+  ) +
+  guides(alpha = guide_legend(override.aes = list(fill = "grey40", colour = NA))) +
+  geom_text(
+    data = new_labels,
+    aes(x = -Inf, y = new, label = abun_lab),
+    inherit.aes = FALSE,
+    hjust = 1,
+    size = 3,
+    colour = "black"
+  ) +
+  geom_text(
+    data = dplyr::filter(m_new, Steps_found > 0),
+    aes(label = n_genomes),
+    colour = "white",
+    size = 3
+  ) +
+  coord_cartesian(clip = "off") +
+  theme_void() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 10),
+    axis.text.y = element_text(size = 10, hjust = -0.35),
+    axis.ticks  = element_line(color = "black"),
+    axis.title  = element_blank(),
+    legend.position = "right",
+    panel.background = element_rect(fill = "white", color = NA),
+    plot.background  = element_rect(fill = "white", color = NA),
+    plot.margin = margin(t = 0, r = 20, b = 0, l = 60)
+  )
+
+
+###########################################################################################################
+###                                             Thermo                                                  ###
+###########################################################################################################
+
+m <- joined_ann_tax %>%
+  filter(module %in% hyd_modules, sample == "thermo") %>%
+  mutate(new = na_if(new, "")) %>%
+  filter(!is.na(new)) %>%
+  filter(new %in% top_new_thermo)
+
+m_new0 <- m %>%
+  group_by(Genome, new, module) %>%
+  summarise(
+    Percent_steps_found = max(Percent_steps_found, na.rm = TRUE),
+    Steps_found         = max(Steps_found, na.rm = TRUE),
+    Steps_needed        = max(Steps_needed, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  group_by(new, module) %>%
+  summarise(
+    Percent_steps_found = max(Percent_steps_found, na.rm = TRUE),
+    Steps_found         = max(Steps_found, na.rm = TRUE),
+    Steps_needed        = max(Steps_needed, na.rm = TRUE),
+    n_genomes = case_when(
+      max(Percent_steps_found, na.rm = TRUE) >= 100 ~ n_distinct(Genome[Percent_steps_found >= 100]),
+      max(Percent_steps_found, na.rm = TRUE) >=  75 ~ n_distinct(Genome[Percent_steps_found >=  75 & Percent_steps_found < 100]),
+      max(Percent_steps_found, na.rm = TRUE) >=  50 ~ n_distinct(Genome[Percent_steps_found >=  50 & Percent_steps_found <  75]),
+      TRUE                                          ~ 0
+    ),
+    .groups = "drop"
+  )
+
+m_new <- m_new0 %>%
+  mutate(module = factor(module, levels = module_order_hyd)) %>%
+  complete(
+    new,
+    module,
+    fill = list(
+      Percent_steps_found = 0,
+      Steps_found = 0,
+      n_genomes = 0
+    )
+  ) %>%
+  left_join(module_steps_hyd, by = "module", suffix = c("", ".mod")) %>%
+  mutate(
+    Steps_needed  = coalesce(Steps_needed, Steps_needed.mod),
+    missing_steps = pmax(Steps_needed - Steps_found, 0)
+  ) %>%
+  select(-Steps_needed.mod) %>%
+  ungroup()
+
+m_new <- m_new %>%
+  group_by(new) %>%
+  filter(any(Steps_found > 0, na.rm = TRUE)) %>%
+  ungroup()
+
+# Join genus abundance
+m_new <- m_new %>%
+  left_join(new_abun %>% filter(sample == "thermo"), by = "new")
+
+m_new <- m_new %>%
+  mutate(
+    status = case_when(
+      Steps_found <= 0 | is.na(Steps_found) ~ "Absent",
+      missing_steps == 0                    ~ "Complete",
+      missing_steps == 1                    ~ "1 missing",
+      missing_steps > 1                     ~ "Multiple missing"
+    ),
+    alpha = case_when(
+      status == "Absent"           ~ 1.00,
+      status == "Complete"         ~ 1.00,
+      status == "1 missing"        ~ 0.65,
+      status == "Multiple missing" ~ 0.65
+    ),
+    fill_key = case_when(
+      status == "Absent"         ~ "Absent",
+      new %in% shared_new        ~ as.character(new),
+      TRUE                       ~ "Unique"
+    )
+  )
+
+new_labels <- new_abun %>%
+  filter(sample == "thermo") %>%
+  mutate(abun_lab = sprintf("%.1f%%", new_r_abund)) %>%
+  semi_join(m_new %>% distinct(new), by = "new")
+
+# Enforce thermo y order (top->bottom)
+m_new <- m_new %>%
+  mutate(new = factor(new, levels = top_new_thermo))
+
+new_labels <- new_labels %>%
+  mutate(new = factor(new, levels = top_new_thermo))
+
+pt <- ggplot(m_new, aes(x = module, y = new)) +
+  geom_tile(aes(fill = fill_key, alpha = alpha),
+            color = NA, width = 0.9, height = 0.9) +
+  ggpattern::geom_tile_pattern(
+    data = dplyr::filter(m_new, status == "Multiple missing"),
+    aes(x = module, y = new),
+    inherit.aes = FALSE,
+    fill = NA,
+    colour = NA,
+    width = 0.9,
+    height = 0.9,
+    pattern = "stripe",
+    pattern_fill = "white",
+    pattern_colour = "white",
+    pattern_angle = 45,
+    pattern_density = 0.35,
+    pattern_spacing = 0.02,
+    pattern_alpha = 1
+  ) +
+  scale_fill_manual(values = new_cols, guide = "none") +
+  scale_alpha(
+    name   = "Module status",
+    limits = c(0, 1),
+    breaks = c(0.65, 1.00),
+    labels = c("1 missing", "Complete"),
+    range  = c(0, 1)
+  ) +
+  guides(alpha = guide_legend(override.aes = list(fill = "grey40", colour = NA))) +
+  geom_text(
+    data = new_labels,
+    aes(x = -Inf, y = new, label = abun_lab),
+    inherit.aes = FALSE,
+    hjust = 1,
+    size = 3,
+    colour = "black"
+  ) +
+  geom_text(
+    data = dplyr::filter(m_new, Steps_found > 0),
+    aes(label = n_genomes),
+    colour = "white",
+    size = 3
+  ) +
+  coord_cartesian(clip = "off") +
+  theme_void() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 10),
+    axis.text.y = element_text(size = 10, hjust = -0.35),
+    axis.ticks  = element_line(color = "black"),
+    axis.title  = element_blank(),
+    legend.position = "right",
+    panel.background = element_rect(fill = "white", color = NA),
+    plot.background  = element_rect(fill = "white", color = NA),
+    plot.margin = margin(t = 0, r = 20, b = 0, l = 60)
+  )
+
+p <- pm | pt
+
+
+ggsave(filename = "species_id/peptides.png", plot = p,
+       width = 35, height = 9, dpi = 300, limitsize = FALSE)
 
 
 
