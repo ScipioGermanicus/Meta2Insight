@@ -753,22 +753,4 @@ missing_species_annotated_thermo <- missing_species_genomes_thermo %>%
     .after = genome_base
   )
 
-
-# -----------------------------
-# 5) Sanity checks
-# -----------------------------
-message("THERMO missing species clusters (count): ", nrow(missing_species_thermo))
-message("THERMO missing genomes (count): ", nrow(missing_species_annotated_thermo))
-message("THERMO taxonomy NAs (species_label): ", sum(is.na(missing_species_annotated_thermo$species_label)))
-
-
-# Genome-level table with full taxonomy
-write.table(
-  missing_species_annotated_thermo,
-  file = "missing_species_annotated_thermo.tsv",
-  sep = "\t",
-  quote = FALSE,
-  row.names = FALSE
-)
-
 ```
