@@ -1,0 +1,625 @@
+---
+title: "picrust2"
+author: "Lasse Steffensen"
+date: "2026-03-16"
+output: html_document
+---
+
+
+................................................................................
+                                      Pre
+................................................................................
+
+```{r}
+
+setwd("C:/Users/lasse/Desktop/wd/picrust2")
+
+library(tidyverse)
+library(patchwork)
+
+# data
+marker_predicted_and_nsti_meso <- read.csv("C:/Users/lasse/Desktop/wd/picrust2/df/meso/combined_marker_predicted_and_nsti.tsv", header = TRUE, sep = "\t")
+
+marker_predicted_and_nsti_thermo <- read.csv("C:/Users/lasse/Desktop/wd/picrust2/df/thermo/combined_marker_predicted_and_nsti.tsv", header = TRUE, sep = "\t")
+
+marker_predicted_and_nsti_test <- read.csv("C:/Users/lasse/Desktop/wd/picrust2/df/test_data/combined_marker_predicted_and_nsti.tsv", header = TRUE, sep = "\t")
+
+
+path_abun_contrib_meso <- read.csv("C:/Users/lasse/Desktop/wd/picrust2/df/meso/pathways_out/path_abun_contrib.tsv", header = TRUE, sep = "\t")
+
+path_abun_contrib_thermo <- read.csv("C:/Users/lasse/Desktop/wd/picrust2/df/thermo/pathways_out/path_abun_contrib.tsv", header = TRUE, sep = "\t")
+
+path_abun_contrib_test <- read.csv("C:/Users/lasse/Desktop/wd/picrust2/df/test_data/pathways_out/path_abun_contrib.tsv", header = TRUE, sep = "\t")
+
+
+path_abun_unstrat_meso <- read.csv("C:/Users/lasse/Desktop/wd/picrust2/df/meso/pathways_out/path_abun_unstrat.tsv", header = TRUE, sep = "\t")
+
+path_abun_unstrat_thermo <- read.csv("C:/Users/lasse/Desktop/wd/picrust2/df/thermo/pathways_out/path_abun_unstrat.tsv", header = TRUE, sep = "\t")
+
+path_abun_unstrat_test <- read.csv("C:/Users/lasse/Desktop/wd/picrust2/df/test_data/pathways_out/path_abun_unstrat.tsv", header = TRUE, sep = "\t")
+
+
+
+pred_metagenome_unstrat_meso <- read.csv("C:/Users/lasse/Desktop/wd/picrust2/df/meso/EC_metagenome_out/pred_metagenome_unstrat.tsv", header = TRUE, sep = "\t")
+
+pred_metagenome_unstrat_thermo <- read.csv("C:/Users/lasse/Desktop/wd/picrust2/df/thermo/EC_metagenome_out/pred_metagenome_unstrat.tsv", header = TRUE, sep = "\t")
+
+pred_metagenome_strat_meso <- read.csv("C:/Users/lasse/Desktop/wd/picrust2/df/meso/EC_metagenome_out/pred_metagenome_contrib.tsv", header = TRUE, sep = "\t")
+
+pred_metagenome_strat_thermo <- read.csv("C:/Users/lasse/Desktop/wd/picrust2/df/thermo/EC_metagenome_out/pred_metagenome_contrib.tsv", header = TRUE, sep = "\t")
+
+
+
+```
+
+Target pathways
+```{r}
+
+# Vectors with target pathways, labels, and phases
+pathways <- c("METH-ACETATE-PWY", "METHANOGENESIS-PWY", "CO2FORM-PWY", "PWY-5247", "PWY-5259", "PWY-8480", "PWY-5676", "P163-PWY", "CENTFERM-PWY", "PWY-5677", "PWY-8086", "PWY-5494", "PWY0-43", "PWY-5088", "GLUDEG-II-PWY", "P108-PWY", "PWY-5536", "PWY2DDB-10", "PWY-8377", "PWY-8274", "PWY-5481", "P41-PWY", "PWY-5100", "PWY-7246", "PWY-7248", "PWY-1081")
+
+labels <- c("Acetoclastic methanogenesis", "Hydrogenotrophic methanogenesis", "Methanogenesis from methanol", "Methanogenesis from methylamine", "Methanogenesis from methanethiol", "Wood-Ljungdahl pathway (homoacetogenesis)", "Acetyl-CoA fermentation to butanoate", "Lysine fermentation to butanoate + acetate", "Pyruvate fermentation to butanoate", "Succinate fermentation to butanoate", "(S)-lactate fermentation to propanoate", "(R)-lactate fermentation to propanoate", "Succinate fermentation to propanoate", "L-Glutamate degradation VIII (to propanoate)", "L-Glutamate degradation VII (to butanoate)", "Pyruvate fermentation to propanoate I", "acetate formation from acetyl-CoA III (succinate)", "Lactate conversion to acetate", "Lactate fermentation to acetate, CO2, and hydrogen", "Pyruvate fermentation to (R)-lactate", "Pyruvate fermentation to (S)-lactate", "Pyruvate fermentation to acetate and (S)-lactate I", "Pyruvate fermentation to acetate and lactate II", "Pectin degradation I", "Pectin degradation II", "Pectin degradation III")
+
+phases <- c("Methanogenesis", "Methanogenesis", "Methanogenesis", "Methanogenesis", "Methanogenesis", "Acetogenesis", "Acidogenesis", "Acidogenesis", "Acidogenesis", "Acidogenesis", "Acidogenesis", "Acidogenesis", "Acidogenesis", "Acidogenesis", "Acidogenesis", "Acidogenesis", "Acidogenesis", "Acidogenesis", "Acidogenesis", "Acidogenesis", "Acidogenesis", "Acidogenesis", "Acidogenesis", "Hydrolysis", "Hydrolysis", "Hydrolysis")
+
+# Create df 
+pathway_df <- tibble(
+  pathway = pathways,
+  label   = labels,
+  phase   = phases
+)
+
+pathway_df <- pathway_df %>%
+  mutate(
+    pathway = factor(pathway, levels = pathways),
+    label   = factor(label, levels = labels),
+    phase   = factor(phase)
+  )
+
+# Correct order
+labels_ordered <- c("Pectin degradation I", "Pectin degradation II", "Pectin degradation III", "L-Glutamate degradation VIII (to propanoate)", "L-Glutamate degradation VII (to butanoate)", "Lysine fermentation to butanoate + acetate", "Pyruvate fermentation to butanoate", "Pyruvate fermentation to propanoate I", "Pyruvate fermentation to (R)-lactate", "Pyruvate fermentation to (S)-lactate", "Pyruvate fermentation to acetate and (S)-lactate I", "Pyruvate fermentation to acetate and lactate II", "acetate formation from acetyl-CoA III (succinate)", "Acetyl-CoA fermentation to butanoate", "Succinate fermentation to butanoate", "Succinate fermentation to propanoate", "(S)-lactate fermentation to propanoate", "(R)-lactate fermentation to propanoate", "Lactate conversion to acetate", "Lactate fermentation to acetate, CO2, and hydrogen", "Wood-Ljungdahl pathway (homoacetogenesis)", "Acetoclastic methanogenesis", "Hydrogenotrophic methanogenesis", "Methanogenesis from methanol", "Methanogenesis from methylamine", "Methanogenesis from methanethiol")
+
+
+# reorder based on labels_ordered
+pathway_df <- pathway_df %>%
+  mutate(label = factor(label, levels = labels_ordered)) %>%
+  arrange(label)
+
+
+
+```
+
+```{r}
+
+path_abun_contrib_meso_target <- path_abun_contrib_meso %>%
+  filter(function. %in% pathways)
+
+path_abun_contrib_thermo_target <- path_abun_contrib_thermo %>%
+  filter(function. %in% pathways)
+
+path_abun_contrib_test_target <- path_abun_contrib_test %>%
+  filter(function. %in% pathways)
+
+
+path_abun_unstrat_meso_target <- path_abun_unstrat_meso %>%
+  filter(pathway %in% pathways)
+
+path_abun_unstrat_thermo_target <- path_abun_unstrat_thermo %>%
+  filter(pathway %in% pathways)
+
+
+```
+
+
+
+
+................................................................................
+                              NSTI distribution
+................................................................................
+
+Violin plot
+```{r}
+
+
+# Combine NSTI values from all three datasets into one plotting dataframe
+nsti_df <- bind_rows(
+  marker_predicted_and_nsti_meso %>%
+    transmute(
+      sample_type = "Mesophilic",
+      NSTI = metadata_NSTI
+    ),
+  marker_predicted_and_nsti_thermo %>%
+    transmute(
+      sample_type = "Thermophilic",
+      NSTI = metadata_NSTI
+    ),
+  marker_predicted_and_nsti_test %>%
+    transmute(
+      sample_type = "PICRUSt2 tutorial data",
+      NSTI = metadata_NSTI
+    )
+) %>%
+  filter(!is.na(NSTI)) %>%
+  mutate(
+    sample_type = factor(
+      sample_type,
+      levels = c("PICRUSt2 tutorial data", "Mesophilic", "Thermophilic")
+    )
+  )
+
+# summary table
+nsti_summary <- nsti_df %>%
+  group_by(sample_type) %>%
+  summarise(
+    n = n(),
+    mean = mean(NSTI),
+    median = median(NSTI),
+    sd = sd(NSTI),
+    min = min(NSTI),
+    max = max(NSTI),
+    .groups = "drop"
+  )
+
+print(nsti_summary)
+
+# Violin plot
+p <- ggplot(nsti_df, aes(x = sample_type, y = NSTI, fill = sample_type)) +
+  geom_violin(trim = FALSE, width = 0.9, alpha = 0.8, colour = NA) +
+  geom_boxplot(
+    width = 0.14,
+    outlier.shape = NA,
+    fill = "white",
+    colour = "black",
+    linewidth = 0.4
+  ) +
+  stat_summary(
+    fun = median,
+    geom = "point",
+    shape = 21,
+    size = 2.8,
+    fill = "white",
+    colour = "black",
+    stroke = 0.5
+  ) +
+  scale_y_continuous(
+    breaks = seq(0, max(nsti_df$NSTI, na.rm = TRUE), by = 0.1),
+    minor_breaks = seq(0, max(nsti_df$NSTI, na.rm = TRUE), by = 0.05),
+    limits = c(0, 1.5)
+  ) +
+  labs(
+    x = NULL,
+    y = "NSTI",
+    title = "Distribution of NSTI values across datasets"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    legend.position = "none",
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor.x = element_blank(),
+    panel.grid.minor.y = element_line(linewidth = 0.2, colour = "grey85"),
+    axis.text.x = element_text(face = "bold"),
+    plot.title = element_text(face = "bold")
+  )
+
+
+ggsave(filename = "figures/violin_plot.png", plot = p,
+       width = 7, height = 8, dpi = 300)
+
+```
+
+................................................................................
+                        Unstratified pathway abundances
+................................................................................
+
+```{r}
+
+
+
+phase_cols <- c(
+  Hydrolysis     = "navyblue",
+  Acidogenesis   = "palegreen4",
+  Acetogenesis   = "palevioletred4",
+  Methanogenesis = "mediumpurple4"
+)
+
+# Extract abundance per pathway
+meso_abun <- path_abun_unstrat_meso %>%
+  filter(pathway %in% pathways) %>%
+  pivot_longer(
+    cols = -pathway,
+    names_to = "sample",
+    values_to = "abundance"
+  ) %>%
+  group_by(pathway) %>%
+  summarise(abundance = sum(abundance, na.rm = TRUE), .groups = "drop")
+
+# Join onto full pathway list → ensures zeros are included
+plot_meso_path <- pathway_df %>%
+  left_join(meso_abun, by = c("pathway" = "pathway")) %>%
+  mutate(
+    abundance = replace_na(abundance, 0),
+    label = factor(label, levels = labels_ordered),
+    phase = factor(
+      phase,
+      levels = c("Hydrolysis", "Acidogenesis", "Acetogenesis", "Methanogenesis")
+    )
+  ) %>%
+  arrange(label)
+
+# Plot
+p <- ggplot(plot_meso_path, aes(x = label, y = abundance, fill = phase)) +
+  geom_col(width = 0.7) +
+  facet_grid(. ~ phase, scales = "free_x", space = "free_x") +
+  scale_fill_manual(values = phase_cols, drop = FALSE) +
+  geom_text(
+    aes(label = round(abundance, 2)),
+    vjust = -0.3,
+    size = 2
+  ) +
+  labs(
+    x = "Pathways",
+    y = "Unstratified pathway abundance",
+    title = "Mesophilic sample: target pathway abundances",
+    fill = "Phase"
+  ) +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 7),
+    panel.spacing.x = unit(0.8, "lines"),
+    legend.position = "none"
+  ) +
+  scale_y_continuous(
+    trans = "pseudo_log",
+    expand = expansion(mult = c(0, 0.08)),
+    limits = c(0, 300000)
+  ) +
+  scale_x_discrete(
+    expand = expansion(add = 1)
+  )
+
+
+
+# ..............................................................................
+
+# Extract abundance per pathway
+thermo_abun <- path_abun_unstrat_thermo %>%
+  filter(pathway %in% pathways) %>%
+  pivot_longer(
+    cols = -pathway,
+    names_to = "sample",
+    values_to = "abundance"
+  ) %>%
+  group_by(pathway) %>%
+  summarise(abundance = sum(abundance, na.rm = TRUE), .groups = "drop")
+
+# Join onto full pathway list → ensures zeros are included
+plot_thermo_path <- pathway_df %>%
+  left_join(thermo_abun, by = c("pathway" = "pathway")) %>%
+  mutate(
+    abundance = replace_na(abundance, 0),
+    label = factor(label, levels = labels_ordered),
+    phase = factor(
+      phase,
+      levels = c("Hydrolysis", "Acidogenesis", "Acetogenesis", "Methanogenesis")
+    )
+  ) %>%
+  arrange(label)
+
+# Plot
+l <- ggplot(plot_thermo_path, aes(x = label, y = abundance, fill = phase)) +
+  geom_col(width = 0.7) +
+  facet_grid(. ~ phase, scales = "free_x", space = "free_x") +
+  scale_fill_manual(values = phase_cols, drop = FALSE) +
+  geom_text(
+    aes(label = round(abundance, 2)),
+    vjust = -0.3,
+    size = 2
+  ) +
+  labs(
+    x = "Pathways",
+    y = "Unstratified pathway abundance",
+    title = "Thermophilic sample: target pathway abundances",
+    fill = "Phase"
+  ) +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 7),
+    panel.spacing.x = unit(0.8, "lines"),
+    legend.position = "none"
+  ) +
+  scale_y_continuous(
+    trans = "pseudo_log",
+    expand = expansion(mult = c(0, 0.08)),
+    limits = c(0, 300000)
+  ) +
+  scale_x_discrete(
+    expand = expansion(add = 1)
+  )
+
+
+g <- p | l
+
+ggsave(filename = "figures/barplot.png", plot = g,
+       width = 14, height = 8, dpi = 300)
+
+```
+
+
+................................................................................
+                           Unstratified EC abundances
+................................................................................
+
+Target ECs
+```{r}
+
+ECs <- c("3.2.15", "3.2.1.67", "3.2.1.82", "3.2.1.171", "3.2.1.174", "3.2.1.173", "3.2.1.89", "3.2.1.181", "3.2.1.164", "3.2.1.23", "3.2.1.99", "3.2.1.55", "4.2.2.2", "4.2.2.9", "4.2.2.10", "4.2.2.23", "4.2.2.24", "3.1.1.11", "3.2.1.73")
+
+enzymes <- c("Endopolygalacturonase", "Exopolygalacturonase", "Exo-poly-alpha-D-galacturonosidase", "Rhamnogalacturonan hydrolase", "Rhamnogalacturonan rhamnohydrolase", "Rhamnogalacturonan galacturonohydrolase", "Endo (1,4) galactanase", "Endo (1,3) galactanase", "Endo (1,6) galactanase", "beta-galactosidase", "Endoarabinase", "alpha-L-arabinofuranosidase", "Endopectate lyase", "Exopectate lyase", "Endopectin lyase", "Rhamnogalacturonan endolyase", "Rhamnogalacturonan exolyase", "Pectin methyl esterase", "Feruloyl esterase")
+
+group <- c("Hydrolases", "Hydrolases", "Hydrolases", "Hydrolases", "Hydrolases", "Hydrolases", "Hydrolases", "Hydrolases", "Hydrolases", "Hydrolases", "Hydrolases", "Hydrolases", "Lyases", "Lyases", "Lyases", "Lyases", "Lyases", "Esterases", "Esterases")
+
+enzymes_df <- tibble(
+  EC = ECs,
+  enzyme   = enzymes,
+  group   = group
+)
+
+```
+
+Unstrat EC
+```{r}
+
+
+group_cols <- c(
+  Hydrolases = "navyblue",
+  Lyases     = "palegreen4",
+  Esterases  = "palevioletred4"
+)
+
+# Extract EC abundances from unstratified table
+ec_abun_meso <- pred_metagenome_unstrat_meso %>%
+  filter(function. %in% ECs) %>%
+  pivot_longer(
+    cols = -function.,
+    names_to = "sample",
+    values_to = "abundance"
+  ) %>%
+  group_by(function.) %>%
+  summarise(
+    abundance = sum(abundance, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# Join onto full EC list so missing ECs are kept as zero
+plot_ec_meso <- enzymes_df %>%
+  left_join(ec_abun_meso, by = c("EC" = "function.")) %>%
+  mutate(
+    abundance = replace_na(abundance, 0),
+    enzyme = factor(enzyme, levels = enzymes),
+    group = factor(group, levels = c("Hydrolases", "Lyases", "Esterases"))
+  )
+
+# Plot
+pl <- ggplot(plot_ec_meso, aes(x = enzyme, y = abundance, fill = group)) +
+  geom_col(width = 0.6) +
+  facet_grid(. ~ group, scales = "free_x", space = "free_x") +
+  scale_fill_manual(values = group_cols, drop = FALSE) +
+  geom_text(
+    aes(label = round(abundance, 0)),
+    vjust = -0.3,
+    size = 2.2
+  ) +
+  labs(
+    x = "Enzymes",
+    y = "Unstratified EC abundance",
+    title = "Mesophilic sample: target EC abundances",
+    fill = "Group"
+  ) +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 7),
+    panel.spacing.x = unit(0.8, "lines"),
+    legend.position = "none"
+  ) +
+  scale_y_continuous(
+    trans = "pseudo_log",
+    expand = expansion(mult = c(0, 0.08)),
+    limits = c(0, 300000)
+  ) +
+  scale_x_discrete(
+    expand = expansion(add = 0.6)
+  )
+
+
+# ..............................................................................
+
+# Extract EC abundances from unstratified table
+ec_abun_thermo <- pred_metagenome_unstrat_thermo %>%
+  filter(function. %in% ECs) %>%
+  pivot_longer(
+    cols = -function.,
+    names_to = "sample",
+    values_to = "abundance"
+  ) %>%
+  group_by(function.) %>%
+  summarise(
+    abundance = sum(abundance, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# Join onto full EC list so missing ECs are kept as zero
+plot_ec_thermo <- enzymes_df %>%
+  left_join(ec_abun_thermo, by = c("EC" = "function.")) %>%
+  mutate(
+    abundance = replace_na(abundance, 0),
+    enzyme = factor(enzyme, levels = enzymes),
+    group = factor(group, levels = c("Hydrolases", "Lyases", "Esterases"))
+  )
+
+# Plot
+ot <- ggplot(plot_ec_thermo, aes(x = enzyme, y = abundance, fill = group)) +
+  geom_col(width = 0.6) +
+  facet_grid(. ~ group, scales = "free_x", space = "free_x") +
+  scale_fill_manual(values = group_cols, drop = FALSE) +
+  geom_text(
+    aes(label = round(abundance, 0)),
+    vjust = -0.3,
+    size = 2.2
+  ) +
+  labs(
+    x = "Enzymes",
+    y = "Unstratified EC abundance",
+    title = "Mesophilic sample: target EC abundances",
+    fill = "Group"
+  ) +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 7),
+    panel.spacing.x = unit(0.8, "lines"),
+    legend.position = "none"
+  ) +
+  scale_y_continuous(
+    trans = "pseudo_log",
+    expand = expansion(mult = c(0, 0.08)),
+    limits = c(0, 300000)
+  ) +
+  scale_x_discrete(
+    expand = expansion(add = 0.6)
+  )
+
+
+plot <- pl | ot
+
+ggsave(filename = "figures/EC_unstrat.png", plot = plot,
+       width = 14, height = 8, dpi = 300)
+
+```
+
+Strat EC 
+```{r}
+
+# --- TOP 10 TAXA --------------------------------------------------------------
+
+top_taxa <- pred_metagenome_strat_meso %>%
+  filter(function. %in% ECs) %>%
+  group_by(taxon) %>%
+  summarise(total_abundance = sum(taxon_function_abun, na.rm = TRUE), .groups = "drop") %>%
+  arrange(desc(total_abundance)) %>%
+  slice_head(n = 10) %>%
+  pull(taxon)
+
+# --- EC × TAXON ABUNDANCE -----------------------------------------------------
+
+ec_tax_meso <- pred_metagenome_strat_meso %>%
+  filter(function. %in% ECs) %>%
+  mutate(
+    taxon_plot = if_else(taxon %in% top_taxa, taxon, "Other")
+  ) %>%
+  group_by(function., taxon_plot) %>%
+  summarise(
+    abundance = sum(taxon_function_abun, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# --- TOTAL PER EC -------------------------------------------------------------
+
+ec_totals <- ec_tax_meso %>%
+  group_by(function.) %>%
+  summarise(total_abundance = sum(abundance), .groups = "drop")
+
+# --- JOIN WITH METADATA -------------------------------------------------------
+
+plot_ec_meso_strat <- enzymes_df %>%
+  left_join(ec_tax_meso, by = c("EC" = "function.")) %>%
+  left_join(ec_totals, by = c("EC" = "function.")) %>%
+  mutate(
+    taxon_plot = replace_na(taxon_plot, "Other"),
+    abundance  = replace_na(abundance, 0),
+    total_abundance = replace_na(total_abundance, 0),
+    enzyme = factor(enzyme, levels = enzymes),
+    group  = factor(group, levels = c("Hydrolases", "Lyases", "Esterases"))
+  ) %>%
+  group_by(EC, enzyme, group, taxon_plot, total_abundance) %>%
+  summarise(abundance = sum(abundance), .groups = "drop")
+
+# --- COLOURS ------------------------------------------------------------------
+
+taxon_cols <- c(
+  setNames(scales::hue_pal()(length(top_taxa)), top_taxa),
+  Other = "grey70"
+)
+
+plot_ec_meso_strat <- plot_ec_meso_strat %>%
+  mutate(
+    taxon_plot = factor(taxon_plot, levels = c(top_taxa, "Other"))
+  )
+
+# --- PLOT ---------------------------------------------------------------------
+
+ps <- ggplot(plot_ec_meso_strat, aes(x = enzyme, y = abundance, fill = taxon_plot)) +
+  geom_col(width = 0.6) +
+  
+  # total labels (one per bar)
+  geom_text(
+    data = plot_ec_meso_strat %>%
+      distinct(EC, enzyme, group, total_abundance),
+    aes(x = enzyme, y = total_abundance, label = round(total_abundance, 0)),
+    vjust = -0.3,
+    size = 2.3,
+    inherit.aes = FALSE
+  ) +
+  
+  facet_grid(. ~ group, scales = "free_x", space = "free_x") +
+  scale_fill_manual(values = taxon_cols, drop = FALSE) +
+  labs(
+    x = "Enzymes",
+    y = "Stratified EC abundance",
+    title = "Mesophilic sample: target EC abundances by taxon"
+  ) +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 7),
+    panel.spacing.x = unit(0.8, "lines"),
+    legend.position = "none"   # <-- remove legend
+  ) +
+  scale_y_continuous(
+    expand = expansion(mult = c(0, 0.1))
+  ) +
+  scale_x_discrete(
+    expand = expansion(add = 0.6)
+  )
+
+ps
+
+ggsave(filename = "figures/test.png", plot = ps,
+       width = 7, height = 8, dpi = 300)
+
+# ..............................................................................
+
+
+
+beta_galactosidase <- pred_metagenome_strat_meso %>%
+  filter(function. == "3.2.1.23")
+
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
