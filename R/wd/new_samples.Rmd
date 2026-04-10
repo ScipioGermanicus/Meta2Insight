@@ -1,0 +1,254 @@
+---
+title: "new_samples"
+author: "Lasse Steffensen"
+date: "2026-04-10"
+output: html_document
+---
+
+```{r}
+
+setwd("C:/Users/lasse/Desktop/wd/picrust2")
+
+library(tidyverse)
+library(patchwork)
+library(ggpicrust2)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(forcats)
+library(patchwork)
+library(scales)
+library(stringr)
+library(stringr)
+library(purrr)
+library(tibble)
+library(lubridate)
+
+
+# load pathway abundances
+abun_crashed_custom_04 <- read.csv("C:/Users/lasse/Desktop/wd/picrust2/df/niko_data/crashed_custom/path_abun_unstrat_04.tsv", header = TRUE, sep = "\t")
+abun_crashed_custom_05 <- read.csv("C:/Users/lasse/Desktop/wd/picrust2/df/niko_data/crashed_custom/path_abun_unstrat_05.tsv", header = TRUE, sep = "\t")
+abun_crashed_custom_16 <- read.csv("C:/Users/lasse/Desktop/wd/picrust2/df/niko_data/crashed_custom/path_abun_unstrat_16.tsv", header = TRUE, sep = "\t")
+abun_crashed_custom_17 <- read.csv("C:/Users/lasse/Desktop/wd/picrust2/df/niko_data/crashed_custom/path_abun_unstrat_17.tsv", header = TRUE, sep = "\t")
+abun_crashed_custom_28 <- read.csv("C:/Users/lasse/Desktop/wd/picrust2/df/niko_data/crashed_custom/path_abun_unstrat_28.tsv", header = TRUE, sep = "\t")
+abun_crashed_custom_40 <- read.csv("C:/Users/lasse/Desktop/wd/picrust2/df/niko_data/crashed_custom/path_abun_unstrat_40.tsv", header = TRUE, sep = "\t")
+abun_crashed_custom_52 <- read.csv("C:/Users/lasse/Desktop/wd/picrust2/df/niko_data/crashed_custom/path_abun_unstrat_52.tsv", header = TRUE, sep = "\t")
+abun_crashed_custom_64 <- read.csv("C:/Users/lasse/Desktop/wd/picrust2/df/niko_data/crashed_custom/path_abun_unstrat_64.tsv", header = TRUE, sep = "\t")
+abun_crashed_custom_76 <- read.csv("C:/Users/lasse/Desktop/wd/picrust2/df/niko_data/crashed_custom/path_abun_unstrat_76.tsv", header = TRUE, sep = "\t")
+abun_crashed_custom_88 <- read.csv("C:/Users/lasse/Desktop/wd/picrust2/df/niko_data/crashed_custom/path_abun_unstrat_88.tsv", header = TRUE, sep = "\t")
+
+abun_healthy_custom_03 <- read.csv("C:/Users/lasse/Desktop/wd/picrust2/df/niko_data/healthy_custom/path_abun_unstrat_03.tsv", header = TRUE, sep = "\t")
+abun_healthy_custom_15 <- read.csv("C:/Users/lasse/Desktop/wd/picrust2/df/niko_data/healthy_custom/path_abun_unstrat_15.tsv", header = TRUE, sep = "\t")
+abun_healthy_custom_27 <- read.csv("C:/Users/lasse/Desktop/wd/picrust2/df/niko_data/healthy_custom/path_abun_unstrat_27.tsv", header = TRUE, sep = "\t")
+abun_healthy_custom_39 <- read.csv("C:/Users/lasse/Desktop/wd/picrust2/df/niko_data/healthy_custom/path_abun_unstrat_39.tsv", header = TRUE, sep = "\t")
+abun_healthy_custom_51 <- read.csv("C:/Users/lasse/Desktop/wd/picrust2/df/niko_data/healthy_custom/path_abun_unstrat_51.tsv", header = TRUE, sep = "\t")
+abun_healthy_custom_63 <- read.csv("C:/Users/lasse/Desktop/wd/picrust2/df/niko_data/healthy_custom/path_abun_unstrat_63.tsv", header = TRUE, sep = "\t")
+abun_healthy_custom_74 <- read.csv("C:/Users/lasse/Desktop/wd/picrust2/df/niko_data/healthy_custom/path_abun_unstrat_74.tsv", header = TRUE, sep = "\t")
+abun_healthy_custom_75 <- read.csv("C:/Users/lasse/Desktop/wd/picrust2/df/niko_data/healthy_custom/path_abun_unstrat_75.tsv", header = TRUE, sep = "\t")
+abun_healthy_custom_86 <- read.csv("C:/Users/lasse/Desktop/wd/picrust2/df/niko_data/healthy_custom/path_abun_unstrat_86.tsv", header = TRUE, sep = "\t")
+abun_healthy_custom_87 <- read.csv("C:/Users/lasse/Desktop/wd/picrust2/df/niko_data/healthy_custom/path_abun_unstrat_87.tsv", header = TRUE, sep = "\t")
+
+
+
+# Construct long-format df
+abun_obj_names <- ls(pattern = "^abun_(crashed|healthy)_custom_\\d+$")
+
+pathway_abun_long <- map_dfr(abun_obj_names, function(obj_name) {
+  df <- get(obj_name)
+
+  # extract group and barcode from object name
+  group   <- str_match(obj_name, "^abun_(crashed|healthy)_custom_\\d+$")[, 2]
+  barcode <- str_match(obj_name, ".*_(\\d+)$")[, 2]
+
+  # standardise expected PICRUSt2 columns
+  df %>%
+    as_tibble() %>%
+    rename(
+      pathway   = 1,
+      abundance = 2
+    ) %>%
+    mutate(
+      group = group,
+      barcode = barcode
+    ) %>%
+    select(group, barcode, pathway, abundance)
+})
+
+
+metadata <- read.csv("C:/Users/lasse/Desktop/wd/picrust2/df/niko_data/metadata_nikos_samples.txt", header = TRUE, sep = "\t")
+
+
+
+# join pathway abundance to metadata
+pathway_df <- pathway_abun_long %>%
+  left_join(
+    metadata %>%
+      mutate(
+        barcode = str_remove(Barcode, "^barcode"),
+        SampleDate = as.Date(SampleDate),
+        group = case_when(
+          ReactorID == "3_R1" ~ "healthy",
+          ReactorID == "3_R2" ~ "crashed",
+          TRUE ~ NA_character_
+        )
+      ) %>%
+      select(
+        group, barcode, Barcode, SampleID, BatchID, ReactorID, SampleDate, Day,
+        SampleType, Inoculum, OLR, HRT, Biogas, FOS, TAC, FOSTAC, pH,
+        SBPFeed, BiogasPerSBP, AverageTotal16SCopies_mL, AverageTotalCells_mL
+      ),
+    by = c("group", "barcode")
+  ) %>%
+  mutate(
+    group = factor(group, levels = c("healthy", "crashed")),
+    ReactorID = factor(ReactorID, levels = c("3_R1", "3_R2"))
+  ) %>%
+  arrange(group, Day, pathway)
+
+
+```
+
+Inspect fold change
+```{r}
+
+
+matched_days <- pathway_df %>%
+  distinct(group, Day) %>%
+  count(Day) %>%
+  filter(n == 2) %>%
+  pull(Day)
+
+fc_by_day <- pathway_df %>%
+  filter(Day %in% matched_days) %>%
+  select(Day, group, pathway, abundance) %>%
+  pivot_wider(names_from = group, values_from = abundance) %>%
+  filter(!is.na(healthy), !is.na(crashed)) %>%
+  mutate(
+    log2_fc = log2((healthy + 1e-9) / (crashed + 1e-9))
+  )
+
+
+
+
+
+
+pathway_interest <- fc_by_day %>%
+  group_by(pathway) %>%
+  summarise(
+    max_abs_log2_fc = max(abs(log2_fc), na.rm = TRUE),
+    day_of_max = Day[which.max(abs(log2_fc))],
+    log2_fc_at_max = log2_fc[which.max(abs(log2_fc))],
+
+    mean_log2_fc = mean(log2_fc, na.rm = TRUE),
+    sd_log2_fc = sd(log2_fc, na.rm = TRUE),
+
+    n_days = n(),
+
+    .groups = "drop"
+  ) %>%
+  arrange(desc(max_abs_log2_fc))
+
+
+```
+
+metacyc pathways df
+```{r}
+
+
+pathway_names <- tribble(
+  ~pathway_id,                     ~pathway_name,                           ~phase,
+  "METH-ACETATE-PWY", "Acetclastic methanogenesis", "Methanogenesis",
+  "METHANOGENESIS-PWY", "Hydrogenotrophic methanogenesis", "Methanogenesis",
+  "CO2FORM-PWY", "Methylotrophic methanogenesis", "Methanogenesis",
+  "PWY-5247", "Methanogenesis from methylamine", "Methanogenesis",
+  "PWY-5259", "Methanogenesis from methanethiol", "Methanogenesis",
+  "PWY-8480", "Reverse Wood-lJungdahl pathway", "Acetogenesis",
+  "PWY-5676", "Acetyl-CoA fermentation to butanoate", "Acidogenesis",
+  "P163-PWY", "L-lysine fermentation to acetate and butanoate", "Acidogenesis",
+  "CENTFERM-PWY", "Pyruvate fermentation to butanoate", "Acidogenesis",
+  "PWY-5677", "Succinate fermentation to butanoate", "Acidogenesis",
+  "PWY-8086", "(S)-lactate fermentation to propanoate, acetate and hydrogen", "Acidogenesis",
+  "PWY-5494", "(R)-lactate fermentation to propanoate II (acrylate pathway)", "Acidogenesis",
+  "PWY0-43", "Conversion of succinate to propanoate", "Acidogenesis",
+  "PWY-5088", "L-glutamate degradation VIII (to propanoate)", "Acidogenesis",
+  "GLUDEG-II-PWY", "L-glutamate degradation VII (to butanoate)", "Acidogenesis",
+  "P108-PWY", "Pyruvate fermentation to propanoate I", "Acidogenesis",
+  "PWY-5536", "Acetate formation from acetyl-CoA (succinate)", "Acidogenesis",
+  "PWY2DDB-10", "Lactate conversion to acetate", "Acidogenesis", 
+  "PWY-8377", "Lactate fermentation to acetate, CO2 and hydrogen", "Acidogenesis",
+  "PWY-8274", "Pyruvate fermentation to (R)-lactate", "Acidogenesis",
+  "PWY-5481", "Pyruvate fermentation to (S)-lactate", "Acidogenesis",
+  "P41-PWY", "Pyruvate fermentation to acetate and (S)-lactate I", "Acidogenesis",
+  "PWY-5100", "Pyruvate fermentation to acetate and lactate II", "Acidogenesis",
+  "CODH-PWY", "wood-Ljungdahl pathway", "Acetogenesis",
+  "TRIGLSYN-PWY", "Diacylglycerol and triacylglycerol biosynthesis", "Acidogenesis",
+  "PWY-6808", "dTDP-α-D-forosamine biosynthesis", "Acidogenesis",
+  "METHYLGALLATE-DEGRADATION-PWY", "Methylgallate degradation", "Acidogenesis",
+  "GALLATE-DEGRADATION-I-PWY", "Gallate degradation II", "Acidogenesis",
+  "PWY-6071", "Superpathway of phenylethylamine degradation", "Acidogenesis",
+  "PWY0-321", "Phenylacetate degradation I (aerobic)", "Acidogenesis",
+  "CRNFORCAT-PWY", "Creatinine degradation I", "Acidogenesis",
+  "PWY-4722", "Creatinine degradation II", "Acidogenesis",
+  "PWY-6338", "Superpathway of vanillin and vanillate degradation", "Acidogenesis",
+  "PWY-6339", "Syringate degradation", "Acidogenesis",
+  "FERMENTATION-PWY", "Mixed acid fermentation", "Acidogenesis",
+  "PWY-5480", "Pyruvate fermentation to ethanol I", "Acidogenesis",
+  "PWY-5486", "Pyruvate fermentation to ethanol II", "Acidogenesis",
+  "PWY-6587", "Pyruvate fermentation to ethanol III", "Acidogenesis",
+
+)
+
+
+
+```
+
+
+
+
+
+Time-series line chart (2 x 2)
+```{r}
+
+
+sample_cols <- c(
+  "healthy" = "#4C78A8",
+  "crashed" = "#E45756"
+)
+
+plot_df <- pathway_df %>%
+  inner_join(pathway_names, by = c("pathway" = "pathway_id")) %>%
+  mutate(
+    pathway_label = pathway_name,
+    abundance_plot = abundance + 1
+  )
+
+p <- ggplot(plot_df, aes(x = Day, y = abundance_plot, colour = group)) +
+  geom_line(linewidth = 0.8) +
+  geom_point(size = 1.6) +
+  scale_colour_manual(values = sample_cols, name = NULL) +
+  scale_y_log10() +
+  facet_wrap(~ pathway_label, scales = "free_y", ncol = 6) +
+  labs(
+    x = "Day",
+    y = "Pathway abundance (log scale)"
+  ) +
+  theme_bw() +
+  theme(
+    legend.position = "top",
+    strip.text = element_text(size = 7),
+    panel.spacing = unit(0.6, "lines")
+  )
+
+
+ggsave(filename = "figures/line_chart.png", plot = p,
+       width = 14, height = 8, dpi = 300)
+
+```
+
+
+Difference-of-difference (database comparison)
+```{r}
+
+
+
+```
