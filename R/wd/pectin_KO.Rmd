@@ -1,0 +1,868 @@
+---
+title: "enzyme_specific_pectin_deg"
+author: "Lasse Steffensen"
+date: "2026-03-04"
+output: html_document
+---
+
+```{r}
+
+setwd("C:/Users/lasse/Desktop/wd/25/01_05/SBP_deg")
+
+library(tidyverse)
+library(ggtext)
+
+# Gene list
+gene_list <- read.csv(
+  "C:/Users/lasse/Desktop/wd/25/df/26/pectin_deg_genes.tsv",
+  header = TRUE, sep = "\t"
+)
+
+
+# Name map
+name_map <- read.csv("C:/Users/lasse/Desktop/wd/25/01_05/module_completeness/name_map.tsv", header = TRUE, sep = "\t")
+
+
+# Tax files
+GTDB_MiDAS_tax <- read.csv("C:/Users/lasse/Desktop/wd/25/01_05_cor/write_files/GTDB_MiDAS_tax.tsv", sep="\t", header=TRUE) %>%
+  select(-domain, -phylum, -class, -order, -family, -genus, -species)
+
+meso_tax <- read.csv("C:/Users/lasse/Desktop/wd/25/01_05_cor/write_files/05/meso_mags_tax.tsv", sep="\t", header=TRUE) %>%
+  left_join(name_map, by = c("Genome" = "old")) %>%
+  left_join(GTDB_MiDAS_tax, by = c("Genome" = "FLASV"))
+
+thermo_tax <- read.csv("C:/Users/lasse/Desktop/wd/25/01_05_cor/write_files/05/thermo_mags_tax.tsv", sep="\t", header=TRUE) %>%
+  left_join(name_map, by = c("Genome" = "old")) %>%
+  left_join(GTDB_MiDAS_tax, by = c("Genome" = "FLASV"))
+
+
+# KO x genome matrix
+ko_genome_matrix <- read.csv("C:/Users/lasse/Desktop/wd/25/df/26/ko_genome_matrix.tsv", sep="\t", header=TRUE)
+
+ko_genome_matrix_meso <- read.csv("C:/Users/lasse/Desktop/wd/25/df/26/ko_genome_matrix.tsv", sep="\t", header=TRUE) %>% 
+  select(KO, any_of(meso_tax$Genome))
+
+ko_genome_matrix_thermo <- read.csv("C:/Users/lasse/Desktop/wd/25/df/26/ko_genome_matrix.tsv", sep="\t", header=TRUE) %>% 
+  select(KO, any_of(thermo_tax$Genome))
+
+
+
+
+
+```
+
+
+```{r}
+
+# Filter for target KOs
+KOs <- na.omit(gene_list$KO)
+
+ko_genome_matrix_meso_f <- ko_genome_matrix_meso %>%
+  filter(KO %in% KOs)
+
+ko_genome_matrix_thermo_f <- ko_genome_matrix_thermo %>%
+  filter(KO %in% KOs)
+
+
+# Renew naming of genomes using name_map, also remove all-zero columns
+rename_vec <- setNames(name_map$new, name_map$old)
+
+ko_genome_matrix_meso_renamed <- ko_genome_matrix_meso_f %>%
+  rename_with(
+    .cols = -KO,
+    .fn   = ~ ifelse(.x %in% names(rename_vec), rename_vec[.x], .x)
+  ) %>%
+  select(KO, where(~ any(. != 0)))
+
+ko_genome_matrix_thermo_renamed <- ko_genome_matrix_thermo_f %>%
+  rename_with(
+    .cols = -KO,
+    .fn   = ~ ifelse(.x %in% names(rename_vec), rename_vec[.x], .x)
+  ) %>%
+  select(KO, where(~ any(. != 0)))
+
+
+# "Flip" matrix to introduce new variables to genomes and join tax info onto (incl. rel_abun)
+ko_genome_matrix_meso_t <- ko_genome_matrix_meso_renamed %>%
+  column_to_rownames("KO") %>%
+  t() %>%
+  as.data.frame() %>%
+  rownames_to_column("genome") %>%
+  left_join(meso_tax, by = c("genome" = "new"))
+
+ko_genome_matrix_thermo_t <- ko_genome_matrix_thermo_renamed %>%
+  column_to_rownames("KO") %>%
+  t() %>%
+  as.data.frame() %>%
+  rownames_to_column("genome") %>%
+  left_join(thermo_tax, by = c("genome" = "new"))
+
+
+
+
+```
+
+
+................................................................................
+                                Tile maps
+................................................................................
+
+
+Meso_x (rel abun collapsed to KO)
+```{r}
+
+ko_genome_matrix_meso_tax <- ko_genome_matrix_meso_t %>%
+  mutate(s = if_else(is.na(s), paste0(g, "_sp"), s)) %>%
+  mutate(genome = paste(s, genome, sep = " / "))
+
+# 1) KO metadata with duplicates preserved, keep gene_list order, and give each row a unique plotting ID
+ko_meta <- gene_list %>%
+  filter(!is.na(KO)) %>%
+  transmute(
+    KO     = as.character(KO),
+    class  = as.character(class),
+    enzyme = as.character(enzyme),   # subclass
+    EC     = as.character(EC)
+  ) %>%
+  filter(KO %in% KOs) %>%
+  mutate(
+    KO_label = KO,
+    KO_id    = make.unique(KO_label),
+    gl_i     = row_number()
+  )
+
+# 2) Matrix to long
+mat_long <- ko_genome_matrix_meso_tax %>%
+  select(genome, rel_abun, any_of(unique(KOs))) %>%
+  pivot_longer(
+    cols = -c(genome, rel_abun),
+    names_to = "KO",
+    values_to = "presence"
+  ) %>%
+  mutate(
+    KO = as.character(KO),
+    presence = as.integer(presence > 0)
+  )
+
+# 3) Replicate each KO column into multiple KO instances
+long <- mat_long %>%
+  inner_join(ko_meta, by = "KO", relationship = "many-to-many")
+
+# 4) Order genomes by descending rel_abun + labels
+genome_order <- long %>%
+  distinct(genome, rel_abun) %>%
+  arrange(desc(rel_abun)) %>%
+  pull(genome)
+
+y_labs <- long %>%
+  distinct(genome, rel_abun) %>%
+  mutate(label = paste0(genome, " (", sprintf("%.2f", rel_abun), "%)"))
+
+long <- long %>%
+  mutate(genome = factor(genome, levels = genome_order))
+
+# KO layout
+ko_layout <- long %>%
+  distinct(class, enzyme, KO, KO_id, KO_label, EC, gl_i) %>%
+  arrange(class, gl_i, KO_id) %>%
+  group_by(class) %>%
+  mutate(x_local = row_number()) %>%
+  ungroup()
+
+class_sizes <- ko_layout %>%
+  count(class, name = "n_kos") %>%
+  arrange(class) %>%
+  mutate(offset = lag(cumsum(n_kos + 2), default = 0))
+
+ko_layout <- ko_layout %>%
+  left_join(class_sizes, by = "class") %>%
+  mutate(x = offset + x_local)
+
+# Subclass separators
+sub_sep <- ko_layout %>%
+  group_by(class, enzyme) %>%
+  summarise(x_end = max(x), .groups = "drop") %>%
+  group_by(class) %>%
+  arrange(x_end, .by_group = TRUE) %>%
+  slice(-n()) %>%
+  ungroup() %>%
+  mutate(x_sep = x_end + 0.5)
+
+# Attach x to plotting data
+long <- long %>%
+  left_join(
+    ko_layout %>% select(class, enzyme, KO, KO_id, x),
+    by = c("class", "enzyme", "KO", "KO_id")
+  )
+
+# Sum rel_abun per KO (each genome counted once per KO)
+ko_rel_abun <- long %>%
+  group_by(genome, KO) %>%
+  summarise(
+    rel_abun = first(rel_abun),
+    has_ko = any(presence == 1),
+    .groups = "drop"
+  ) %>%
+  filter(has_ko) %>%
+  group_by(KO) %>%
+  summarise(ko_rel_abun = sum(rel_abun), .groups = "drop")
+
+# Axis labels with KO-level summed rel_abun (2 decimals + %)
+axis_df <- ko_layout %>%
+  distinct(x, KO_label, KO, enzyme) %>%
+  left_join(ko_rel_abun, by = "KO") %>%
+  mutate(ko_rel_abun = replace_na(ko_rel_abun, 0)) %>%
+  arrange(x) %>%
+  mutate(
+    axis_label = paste0(
+  "<b>", enzyme, "</b>",
+  "<br><span style='font-size:10pt; line-height:1.2;'>", KO, "</span>",
+  "<br><span style='font-size:10pt; line-height:1.2;'>&Sigma; rel. abun. = ", 
+  sprintf("%.2f%%", ko_rel_abun), "</span>"
+)
+  )
+
+p <- ggplot(long, aes(x = x, y = genome, fill = presence)) +
+  geom_tile(color = "white", linewidth = 0.2) +
+  geom_vline(
+    data = sub_sep,
+    aes(xintercept = x_sep),
+    inherit.aes = FALSE,
+    linewidth = 0.6,
+    colour = "grey75"
+  ) +
+  facet_grid(. ~ class, scales = "free_x", space = "free_x") +
+  scale_x_continuous(
+    breaks = axis_df$x,
+    labels = axis_df$axis_label,
+    expand = c(0, 0)
+  ) +
+  scale_y_discrete(labels = setNames(y_labs$label, y_labs$genome)) +
+  scale_fill_gradient(low = "grey90", high = "black", breaks = c(0, 1)) +
+  labs(x = "Gene (KO)", y = "Species (rel. abun. %)", fill = "Presence") +
+  theme_minimal() +
+  theme(
+    axis.text.x = ggtext::element_markdown(angle = 45, hjust = 1, vjust = 1, size = 12),
+    axis.text.x.bottom = ggtext::element_markdown(angle = 45, hjust = 1, vjust = 1, size = 11),
+    axis.text.y = ggtext::element_markdown(size = 11),
+    panel.spacing.x = unit(0.8, "lines"),
+    panel.background = element_rect(fill = "grey98", colour = NA),
+    panel.border = element_rect(fill = NA, colour = "grey60", linewidth = 0.9),
+    strip.background = element_rect(fill = "grey90", colour = "grey60"),
+    strip.text = element_text(face = "bold")
+  )
+
+
+ggsave(filename = "pectin_EC/meso.png", plot = p,
+       width = 21, height = 12, dpi = 300)
+
+```
+
+Thermo_x (rel abun collapsed to KO)
+```{r}
+
+# PME = "Pectin methyl esterase"
+# PG = "Endopolygalacturonase", "Exopolygalacturonase"
+# PL = "Endopectate lyase", "Exopectate lyase"
+# PNL = "Endopectin lyase"
+# PME = Pectin methyl esterase"
+# endo-Gal = "Endo (1,4) galactanase", "Endo (1,6) galactanase", "Endo (1,3) galactanase"
+# β-Gal = "β-galactosidase"
+# endo-A = "Endoarabinase"
+# AF = "α-L arabinofuranosidase"
+# RgH = "Rhamnogalacturonan hydrolase", "Rhamnogalacturonan rhamnohydrolase", "Rhamnogalacturonan galacturonohydrolase"
+# RgL = "Rhamnogalacturonan endolyase", "Rhamnogalacturonan exolyase"
+
+ko_genome_matrix_thermo_tax <- ko_genome_matrix_thermo_t %>%
+  mutate(s = if_else(is.na(s), paste0(g, "_sp"), s)) %>%
+  mutate(genome = paste(s, genome, sep = " / "))
+
+# 1) KO metadata with duplicates preserved, keep gene_list order, and give each row a unique plotting ID
+ko_meta <- gene_list %>%
+  filter(!is.na(KO)) %>%
+  transmute(
+    KO     = as.character(KO),
+    class  = as.character(class),
+    enzyme = as.character(enzyme),   # subclass
+    EC     = as.character(EC)
+  ) %>%
+  filter(KO %in% KOs) %>%
+  mutate(
+    KO_label = KO,
+    KO_id    = make.unique(KO_label),
+    gl_i     = row_number()
+  )
+
+# 2) Matrix to long
+mat_long <- ko_genome_matrix_thermo_tax %>%
+  select(genome, rel_abun, any_of(unique(KOs))) %>%
+  pivot_longer(
+    cols = -c(genome, rel_abun),
+    names_to = "KO",
+    values_to = "presence"
+  ) %>%
+  mutate(
+    KO = as.character(KO),
+    presence = as.integer(presence > 0)
+  )
+
+# 3) Replicate each KO column into multiple KO instances
+long <- mat_long %>%
+  inner_join(ko_meta, by = "KO", relationship = "many-to-many")
+
+# 4) Order genomes by descending rel_abun + labels
+genome_order <- long %>%
+  distinct(genome, rel_abun) %>%
+  arrange(desc(rel_abun)) %>%
+  pull(genome)
+
+y_labs <- long %>%
+  distinct(genome, rel_abun) %>%
+  mutate(label = paste0(genome, " (", sprintf("%.2f", rel_abun), "%)"))
+
+long <- long %>%
+  mutate(genome = factor(genome, levels = genome_order))
+
+# KO layout
+ko_layout <- long %>%
+  distinct(class, enzyme, KO, KO_id, KO_label, EC, gl_i) %>%
+  arrange(class, gl_i, KO_id) %>%
+  group_by(class) %>%
+  mutate(x_local = row_number()) %>%
+  ungroup()
+
+class_sizes <- ko_layout %>%
+  count(class, name = "n_kos") %>%
+  arrange(class) %>%
+  mutate(offset = lag(cumsum(n_kos + 2), default = 0))
+
+ko_layout <- ko_layout %>%
+  left_join(class_sizes, by = "class") %>%
+  mutate(x = offset + x_local)
+
+# Subclass separators
+sub_sep <- ko_layout %>%
+  group_by(class, enzyme) %>%
+  summarise(x_end = max(x), .groups = "drop") %>%
+  group_by(class) %>%
+  arrange(x_end, .by_group = TRUE) %>%
+  slice(-n()) %>%
+  ungroup() %>%
+  mutate(x_sep = x_end + 0.5)
+
+# Attach x to plotting data
+long <- long %>%
+  left_join(
+    ko_layout %>% select(class, enzyme, KO, KO_id, x),
+    by = c("class", "enzyme", "KO", "KO_id")
+  )
+
+# Sum rel_abun per KO (each genome counted once per KO)
+ko_rel_abun <- long %>%
+  group_by(genome, KO) %>%
+  summarise(
+    rel_abun = first(rel_abun),
+    has_ko = any(presence == 1),
+    .groups = "drop"
+  ) %>%
+  filter(has_ko) %>%
+  group_by(KO) %>%
+  summarise(ko_rel_abun = sum(rel_abun), .groups = "drop")
+
+# Axis labels with KO-level summed rel_abun (2 decimals + %)
+axis_df <- ko_layout %>%
+  distinct(x, KO_label, KO, enzyme) %>%
+  left_join(ko_rel_abun, by = "KO") %>%
+  mutate(ko_rel_abun = replace_na(ko_rel_abun, 0)) %>%
+  arrange(x) %>%
+  mutate(
+    axis_label = paste0(
+  "<b>", enzyme, "</b>",
+  "<br><span style='font-size:10pt; line-height:1.2;'>", KO, "</span>",
+  "<br><span style='font-size:10pt; line-height:1.2;'>&Sigma; rel. abun. = ", 
+  sprintf("%.2f%%", ko_rel_abun), "</span>"
+)
+  )
+
+p <- ggplot(long, aes(x = x, y = genome, fill = presence)) +
+  geom_tile(color = "white", linewidth = 0.2) +
+  geom_vline(
+    data = sub_sep,
+    aes(xintercept = x_sep),
+    inherit.aes = FALSE,
+    linewidth = 0.6,
+    colour = "grey75"
+  ) +
+  facet_grid(. ~ class, scales = "free_x", space = "free_x") +
+  scale_x_continuous(
+    breaks = axis_df$x,
+    labels = axis_df$axis_label,
+    expand = c(0, 0)
+  ) +
+  scale_y_discrete(labels = setNames(y_labs$label, y_labs$genome)) +
+  scale_fill_gradient(low = "grey90", high = "black", breaks = c(0, 1)) +
+  labs(x = "Gene (KO)", y = "Species (rel. abun. %)", fill = "Presence") +
+  theme_minimal() +
+  theme(
+    axis.text.x = ggtext::element_markdown(angle = 45, hjust = 1, vjust = 1, size = 12),
+    axis.text.x.bottom = ggtext::element_markdown(angle = 45, hjust = 1, vjust = 1, size = 10),
+    axis.text.y = ggtext::element_markdown(size = 11),
+    panel.spacing.x = unit(0.8, "lines"),
+    panel.background = element_rect(fill = "grey98", colour = NA),
+    panel.border = element_rect(fill = NA, colour = "grey60", linewidth = 0.9),
+    strip.background = element_rect(fill = "grey90", colour = "grey60"),
+    strip.text = element_text(face = "bold")
+  )
+
+
+ggsave(filename = "pectin_EC/thermo.png", plot = p,
+       width = 21, height = 8, dpi = 300)
+
+
+
+```
+
+
+
+
+W. colour
+
+Thermo
+```{r}
+
+# PME = "Pectin methyl esterase"
+# PG = "Endopolygalacturonase", "Exopolygalacturonase"
+# PL = "Endopectate lyase", "Exopectate lyase"
+# PNL = "Endopectin lyase"
+# endo-Gal = "Endo (1,4) galactanase", "Endo (1,6) galactanase", "Endo (1,3) galactanase"
+# β-Gal = "β-galactosidase"
+# endo-A = "Endoarabinase"
+# AF = "α-L arabinofuranosidase"
+# RgH = "Rhamnogalacturonan hydrolase", "Rhamnogalacturonan rhamnohydrolase", "Rhamnogalacturonan galacturonohydrolase"
+# RgL = "Rhamnogalacturonan endolyase", "Rhamnogalacturonan exolyase"
+
+ko_genome_matrix_thermo_tax <- ko_genome_matrix_thermo_t %>%
+  mutate(s = if_else(is.na(s), paste0(g, "_sp"), s)) %>%
+  mutate(genome = paste(s, genome, sep = " / "))
+
+# 1) KO metadata with duplicates preserved, keep gene_list order, and give each row a unique plotting ID
+ko_meta <- gene_list %>%
+  filter(!is.na(KO)) %>%
+  transmute(
+    KO     = as.character(KO),
+    class  = as.character(class),
+    enzyme = as.character(enzyme),
+    EC     = as.character(EC)
+  ) %>%
+  filter(KO %in% KOs) %>%
+  mutate(
+    enzyme_group = case_when(
+      enzyme %in% c("Pectin methyl esterase") ~ "PME",
+      enzyme %in% c("Endopolygalacturonase", "Exopolygalacturonase") ~ "PG",
+      enzyme %in% c("Endopectate lyase", "Exopectate lyase") ~ "PL",
+      enzyme %in% c("Endopectin lyase") ~ "PNL",
+      enzyme %in% c("Endo (1,4) galactanase", "Endo (1,6) galactanase", "Endo (1,3) galactanase") ~ "endo-Gal",
+      enzyme %in% c("β-galactosidase") ~ "\u03b2-Gal",
+      enzyme %in% c("Endoarabinanase") ~ "endo-A",
+      enzyme %in% c("α-L arabinofuranosidase") ~ "AF",
+      enzyme %in% c(
+        "Rhamnogalacturonan hydrolase",
+        "Rhamnogalacturonan rhamnohydrolase",
+        "Rhamnogalacturonan galacturonohydrolase"
+      ) ~ "RgH",
+      enzyme %in% c(
+        "Rhamnogalacturonan endolyase",
+        "Rhamnogalacturonan exolyase"
+      ) ~ "RgL",
+      TRUE ~ "Other"
+    ),
+    KO_label = KO,
+    KO_id    = make.unique(KO_label),
+    gl_i     = row_number()
+  )
+
+# Custom colours for enzyme groups
+group_cols <- c(
+  "PME"      = "#1B5E20",  # dark green
+  "PG"       = "royalblue4",  # dark blue
+  "PL"       = "red3",  # dark red
+  "PNL"      = "slateblue",  # purple
+  "endo-Gal" = "sienna1",  # orange-brown
+  "\u03b2-Gal" = "#00838F",  # teal
+  "endo-A"   = "#4E342E",  # brown
+  "AF"       = "#AD1457",  # magenta
+  "RgH"      = "#283593",  # indigo
+  "RgL"      = "palegreen3",  # blue-grey
+  "Other"    = "mediumorchid"   # dark grey
+)
+
+# 2) Matrix to long
+mat_long <- ko_genome_matrix_thermo_tax %>%
+  select(genome, rel_abun, any_of(unique(KOs))) %>%
+  pivot_longer(
+    cols = -c(genome, rel_abun),
+    names_to = "KO",
+    values_to = "presence"
+  ) %>%
+  mutate(
+    KO = as.character(KO),
+    presence = as.integer(presence > 0)
+  )
+
+# 3) Replicate each KO column into multiple KO instances
+long <- mat_long %>%
+  inner_join(ko_meta, by = "KO", relationship = "many-to-many")
+
+# 4) Order genomes by descending rel_abun + labels
+genome_order <- long %>%
+  distinct(genome, rel_abun) %>%
+  arrange(desc(rel_abun)) %>%
+  pull(genome)
+
+y_labs <- long %>%
+  distinct(genome, rel_abun) %>%
+  mutate(label = paste0(genome, " (", sprintf("%.2f", rel_abun), "%)"))
+
+long <- long %>%
+  mutate(genome = factor(genome, levels = genome_order))
+
+# KO layout
+ko_layout <- long %>%
+  distinct(class, enzyme, enzyme_group, KO, KO_id, KO_label, EC, gl_i) %>%
+  arrange(class, gl_i, KO_id) %>%
+  group_by(class) %>%
+  mutate(x_local = row_number()) %>%
+  ungroup()
+
+class_sizes <- ko_layout %>%
+  count(class, name = "n_kos") %>%
+  arrange(class) %>%
+  mutate(offset = lag(cumsum(n_kos + 2), default = 0))
+
+ko_layout <- ko_layout %>%
+  left_join(class_sizes, by = "class") %>%
+  mutate(x = offset + x_local)
+
+# Subclass separators
+sub_sep <- ko_layout %>%
+  group_by(class, enzyme) %>%
+  summarise(x_end = max(x), .groups = "drop") %>%
+  group_by(class) %>%
+  arrange(x_end, .by_group = TRUE) %>%
+  slice(-n()) %>%
+  ungroup() %>%
+  mutate(x_sep = x_end + 0.5)
+
+# Attach x to plotting data
+long <- long %>%
+  left_join(
+    ko_layout %>% select(class, enzyme, KO, KO_id, x),
+    by = c("class", "enzyme", "KO", "KO_id")
+  )
+
+# Sum rel_abun per KO (each genome counted once per KO)
+ko_rel_abun <- long %>%
+  group_by(genome, KO) %>%
+  summarise(
+    rel_abun = first(rel_abun),
+    has_ko = any(presence == 1),
+    .groups = "drop"
+  ) %>%
+  filter(has_ko) %>%
+  group_by(KO) %>%
+  summarise(ko_rel_abun = sum(rel_abun), .groups = "drop")
+
+# Axis labels with coloured enzyme names only
+axis_df <- ko_layout %>%
+  distinct(x, KO_label, KO, enzyme, enzyme_group) %>%
+  left_join(ko_rel_abun, by = "KO") %>%
+  mutate(
+    ko_rel_abun = replace_na(ko_rel_abun, 0),
+    enzyme_col = unname(group_cols[enzyme_group])
+  ) %>%
+  arrange(x) %>%
+  mutate(
+    axis_label = paste0(
+      "<b><span style='color:", enzyme_col, ";'>", enzyme, "</span></b>",
+      "<br><span style='font-size:10pt; line-height:1.2; color:black;'>", KO, "</span>",
+      "<br><span style='font-size:10pt; line-height:1.2; color:black;'>&Sigma; rel. abun. = ",
+      sprintf("%.2f%%", ko_rel_abun), "</span>"
+    )
+  )
+
+p <- ggplot(long, aes(x = x, y = genome, fill = presence)) +
+  geom_tile(color = "white", linewidth = 0.2) +
+  geom_vline(
+    data = sub_sep,
+    aes(xintercept = x_sep),
+    inherit.aes = FALSE,
+    linewidth = 0.6,
+    colour = "grey75"
+  ) +
+  facet_grid(. ~ class, scales = "free_x", space = "free_x") +
+  scale_x_continuous(
+    breaks = axis_df$x,
+    labels = axis_df$axis_label,
+    expand = c(0, 0)
+  ) +
+  scale_y_discrete(labels = setNames(y_labs$label, y_labs$genome)) +
+  scale_fill_gradient(low = "grey90", high = "black", breaks = c(0, 1)) +
+  labs(x = "Gene (KO)", y = "Species (rel. abun. %)", fill = "Presence") +
+  theme_minimal() +
+  theme(
+    axis.text.x = ggtext::element_markdown(angle = 45, hjust = 1, vjust = 1, size = 12),
+    axis.text.x.bottom = ggtext::element_markdown(angle = 45, hjust = 1, vjust = 1, size = 10),
+    axis.text.y = ggtext::element_markdown(size = 11),
+    panel.spacing.x = unit(0.8, "lines"),
+    panel.background = element_rect(fill = "grey98", colour = NA),
+    panel.border = element_rect(fill = NA, colour = "grey60", linewidth = 0.9),
+    strip.background = element_rect(fill = "grey90", colour = "grey60"),
+    strip.text = element_text(face = "bold")
+  )
+
+ggsave(filename = "pectin_EC/thermo_c.png", plot = p,
+       width = 21, height = 8, dpi = 300)
+
+```
+
+Meso
+```{r}
+
+# PME = "Pectin methyl esterase"
+# PG = "Endopolygalacturonase", "Exopolygalacturonase"
+# PL = "Endopectate lyase", "Exopectate lyase"
+# PNL = "Endopectin lyase"
+# endo-Gal = "Endo (1,4) galactanase", "Endo (1,6) galactanase", "Endo (1,3) galactanase"
+# β-Gal = "β-galactosidase"
+# endo-A = "Endoarabinase"
+# AF = "α-L arabinofuranosidase"
+# RgH = "Rhamnogalacturonan hydrolase", "Rhamnogalacturonan rhamnohydrolase", "Rhamnogalacturonan galacturonohydrolase"
+# RgL = "Rhamnogalacturonan endolyase", "Rhamnogalacturonan exolyase"
+
+ko_genome_matrix_meso_tax <- ko_genome_matrix_meso_t %>%
+  mutate(s = if_else(is.na(s), paste0(g, "_sp"), s)) %>%
+  mutate(genome = paste(s, genome, sep = " / "))
+
+# 1) KO metadata with duplicates preserved, keep gene_list order, and give each row a unique plotting ID
+ko_meta <- gene_list %>%
+  filter(!is.na(KO)) %>%
+  transmute(
+    KO     = as.character(KO),
+    class  = as.character(class),
+    enzyme = as.character(enzyme),
+    EC     = as.character(EC)
+  ) %>%
+  filter(KO %in% KOs) %>%
+  mutate(
+    enzyme_group = case_when(
+      enzyme %in% c("Pectin methyl esterase") ~ "PME",
+      enzyme %in% c("Endopolygalacturonase", "Exopolygalacturonase") ~ "PG",
+      enzyme %in% c("Endopectate lyase", "Exopectate lyase") ~ "PL",
+      enzyme %in% c("Endopectin lyase") ~ "PNL",
+      enzyme %in% c("Endo (1,4) galactanase", "Endo (1,6) galactanase", "Endo (1,3) galactanase") ~ "endo-Gal",
+      enzyme %in% c("β-galactosidase") ~ "\u03b2-Gal",
+      enzyme %in% c("Endoarabinanase") ~ "endo-A",
+      enzyme %in% c("α-L arabinofuranosidase") ~ "AF",
+      enzyme %in% c(
+        "Rhamnogalacturonan hydrolase",
+        "Rhamnogalacturonan rhamnohydrolase",
+        "Rhamnogalacturonan galacturonohydrolase"
+      ) ~ "RgH",
+      enzyme %in% c(
+        "Rhamnogalacturonan endolyase",
+        "Rhamnogalacturonan exolyase"
+      ) ~ "RgL",
+      TRUE ~ "Other"
+    ),
+    KO_label = KO,
+    KO_id    = make.unique(KO_label),
+    gl_i     = row_number()
+  )
+
+# Custom colours for enzyme groups
+group_cols <- c(
+  "PME"        = "#1B5E20",
+  "PG"         = "royalblue4",
+  "PL"         = "red3",
+  "PNL"        = "slateblue",
+  "endo-Gal"   = "sienna1",
+  "\u03b2-Gal" = "#00838F",
+  "endo-A"     = "#4E342E",
+  "AF"         = "#AD1457",
+  "RgH"        = "#283593",
+  "RgL"        = "palegreen3",
+  "Other"      = "mediumorchid"
+)
+
+# 2) Matrix to long
+mat_long <- ko_genome_matrix_meso_tax %>%
+  select(genome, rel_abun, any_of(unique(KOs))) %>%
+  pivot_longer(
+    cols = -c(genome, rel_abun),
+    names_to = "KO",
+    values_to = "presence"
+  ) %>%
+  mutate(
+    KO = as.character(KO),
+    presence = as.integer(presence > 0)
+  )
+
+# 3) Replicate each KO column into multiple KO instances
+long <- mat_long %>%
+  inner_join(ko_meta, by = "KO", relationship = "many-to-many")
+
+# 4) Order genomes by descending rel_abun + labels
+genome_order <- long %>%
+  distinct(genome, rel_abun) %>%
+  arrange(desc(rel_abun)) %>%
+  pull(genome)
+
+y_labs <- long %>%
+  distinct(genome, rel_abun) %>%
+  mutate(label = paste0(genome, " (", sprintf("%.2f", rel_abun), "%)"))
+
+long <- long %>%
+  mutate(genome = factor(genome, levels = genome_order))
+
+# KO layout
+ko_layout <- long %>%
+  distinct(class, enzyme, enzyme_group, KO, KO_id, KO_label, EC, gl_i) %>%
+  arrange(class, gl_i, KO_id) %>%
+  group_by(class) %>%
+  mutate(x_local = row_number()) %>%
+  ungroup()
+
+class_sizes <- ko_layout %>%
+  count(class, name = "n_kos") %>%
+  arrange(class) %>%
+  mutate(offset = lag(cumsum(n_kos + 2), default = 0))
+
+ko_layout <- ko_layout %>%
+  left_join(class_sizes, by = "class") %>%
+  mutate(x = offset + x_local)
+
+# Subclass separators
+sub_sep <- ko_layout %>%
+  group_by(class, enzyme) %>%
+  summarise(x_end = max(x), .groups = "drop") %>%
+  group_by(class) %>%
+  arrange(x_end, .by_group = TRUE) %>%
+  slice(-n()) %>%
+  ungroup() %>%
+  mutate(x_sep = x_end + 0.5)
+
+# Attach x to plotting data
+long <- long %>%
+  left_join(
+    ko_layout %>% select(class, enzyme, KO, KO_id, x),
+    by = c("class", "enzyme", "KO", "KO_id")
+  )
+
+# Sum rel_abun per KO (each genome counted once per KO)
+ko_rel_abun <- long %>%
+  group_by(genome, KO) %>%
+  summarise(
+    rel_abun = first(rel_abun),
+    has_ko = any(presence == 1),
+    .groups = "drop"
+  ) %>%
+  filter(has_ko) %>%
+  group_by(KO) %>%
+  summarise(ko_rel_abun = sum(rel_abun), .groups = "drop")
+
+# Axis labels with coloured enzyme names only
+axis_df <- ko_layout %>%
+  distinct(x, KO_label, KO, enzyme, enzyme_group) %>%
+  left_join(ko_rel_abun, by = "KO") %>%
+  mutate(
+    ko_rel_abun = replace_na(ko_rel_abun, 0),
+    enzyme_col = unname(group_cols[enzyme_group])
+  ) %>%
+  arrange(x) %>%
+  mutate(
+    axis_label = paste0(
+      "<b><span style='color:", enzyme_col, ";'>", enzyme, "</span></b>",
+      "<br><span style='font-size:10pt; line-height:1.2; color:black;'>", KO, "</span>",
+      "<br><span style='font-size:10pt; line-height:1.2; color:black;'>&Sigma; rel. abun. = ",
+      sprintf("%.2f%%", ko_rel_abun), "</span>"
+    )
+  )
+
+p <- ggplot(long, aes(x = x, y = genome, fill = presence)) +
+  geom_tile(color = "white", linewidth = 0.2) +
+  geom_vline(
+    data = sub_sep,
+    aes(xintercept = x_sep),
+    inherit.aes = FALSE,
+    linewidth = 0.6,
+    colour = "grey75"
+  ) +
+  facet_grid(. ~ class, scales = "free_x", space = "free_x") +
+  scale_x_continuous(
+    breaks = axis_df$x,
+    labels = axis_df$axis_label,
+    expand = c(0, 0)
+  ) +
+  scale_y_discrete(labels = setNames(y_labs$label, y_labs$genome)) +
+  scale_fill_gradient(low = "grey90", high = "black", breaks = c(0, 1)) +
+  labs(x = "Gene (KO)", y = "Species (rel. abun. %)", fill = "Presence") +
+  theme_minimal() +
+  theme(
+    axis.text.x = ggtext::element_markdown(angle = 45, hjust = 1, vjust = 1, size = 12),
+    axis.text.x.bottom = ggtext::element_markdown(angle = 45, hjust = 1, vjust = 1, size = 11),
+    axis.text.y = ggtext::element_markdown(size = 11),
+    panel.spacing.x = unit(0.8, "lines"),
+    panel.background = element_rect(fill = "grey98", colour = NA),
+    panel.border = element_rect(fill = NA, colour = "grey60", linewidth = 0.9),
+    strip.background = element_rect(fill = "grey90", colour = "grey60"),
+    strip.text = element_text(face = "bold")
+  )
+
+ggsave(filename = "pectin_EC/meso_c.png", plot = p,
+       width = 21, height = 12, dpi = 300)
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
